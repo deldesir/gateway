@@ -4,8 +4,7 @@ from typing import Literal
 
 
 class LLMConfig(BaseModel):
-    provider: Literal["gemini"] = "gemini"
-    model: str = "gemini-2.5-flash"
+    model: str = "gemini/gemini-2.5-flash"
     temperature: float = 0.3
 
 
@@ -22,8 +21,7 @@ def load_config() -> AppConfig:
     """
     return AppConfig(
         llm=LLMConfig(
-            provider=os.getenv("LLM_PROVIDER", "gemini"),
-            model=os.getenv("LLM_MODEL", "gemini-2.5-flash"),
+            model=os.getenv("LLM_MODEL", "gemini/gemini-2.5-flash"),
             temperature=float(os.getenv("LLM_TEMPERATURE", "0.3")),
         )
     )

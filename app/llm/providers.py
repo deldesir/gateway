@@ -1,33 +1,37 @@
-from google import genai
+"""
+This is the file where we would define all the LLM providers, and if it wasn't for LiteLLM, we would have needed to define a new class for every LLM provider we wanted to support. But since LiteLLM supports multiple providers via model strings, we can just have one class that uses LiteLLM to connect to any provider we want.
+
+And here as we can see, the LiteLLM class also uses the generate method that we abstracted in the LLMClient interface.
+"""
+
+from litellm import completion
 from app.llm.client import LLMClient
 from app.logger import setup_logger
 
 logger = setup_logger().bind(name="LLM")
 
 
-class GeminiClient(LLMClient):
+class LiteLLMClient(LLMClient):
     """
-    Gemini LLM client using the new google.genai SDK.
+    LiteLLM-based client supporting multiple providers via model strings.
     """
 
-    def __init__(self, api_key: str, model: str, temperature: float):
+    def __init__(self, model: str, temperature: float):
         """
-        Initializes the Gemini client.
+        Initializes the LiteLLM client.
 
         Args:
-            api_key (str): Gemini API key.
-            model (str): Gemini model identifier.
+            model (str): Model identifier (e.g. gemini/gemini-2.5-flash).
             temperature (float): Sampling temperature.
         """
-        self.client = genai.Client(api_key=api_key)
         self.model = model
         self.temperature = temperature
 
-        logger.success(f"Gemini initialized | model={model} | temp={temperature}")
+        logger.success(f"LiteLLM initialized | model={model} | temp={temperature}")
 
     def generate(self, prompt: str) -> str:
         """
-        Generates text using Gemini.
+        Generates text using LiteLLM.
 
         Args:
             prompt (str): Input prompt.
@@ -35,16 +39,16 @@ class GeminiClient(LLMClient):
         Returns:
             str: Generated response text.
         """
-        logger.info("Sending prompt to Gemini")
+        logger.info("Sending prompt via LiteLLM")
 
-        response = self.client.models.generate_content(
+        response = completion(
             model=self.model,
-            contents=prompt,
-            config={"temperature": self.temperature},
+            messages=[{"role": "user", "content": prompt}],
+            temperature=self.temperature,
         )
 
-        text = response.text.strip()
+        text = response.choices[0].message.content.strip()
 
-        logger.success("Gemini response received")
+        logger.success("LiteLLM response received")
 
         return text

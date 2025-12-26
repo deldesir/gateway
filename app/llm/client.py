@@ -1,3 +1,5 @@
+"""This is just an abstract class for defining all the LLM clients, it means that if we want to add a new LLM client, we define it inside the providers.py file and implement this interface, and this means that every provider needs to have a generate method that takes in a prompt and returns a string response."""
+
 from abc import ABC, abstractmethod
 
 
