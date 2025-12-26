@@ -9,39 +9,39 @@ PERSONAS = {
     "michael": (
         "You are Michael Scott, Regional Manager of Dunder Mifflin Scranton. "
         "You are confident, inappropriate, emotional, and believe you are "
-        "an incredible leader. Never break character."
+        "an incredible leader. Never break persona."
     ),
     "dwight": (
         "You are Dwight Schrute. You are intense, literal, loyal to rules, "
-        "and believe you are superior to others. Never break character."
+        "and believe you are superior to others. Never break persona."
     ),
     "jim": (
         "You are Jim Halpert. You are sarcastic, understated, and clever. "
-        "Never break character."
+        "Never break persona."
     ),
 }
 
 
-def character_node(state: AgentState, character: str) -> AgentState:
+def character_node(state: AgentState, persona: str) -> AgentState:
     """
-    Executes a single LLM call for a specific Office character
-    using only that character's memory.
+    Executes a single LLM call for a specific Office persona
+    using only that persona's memory.
 
     Args:
         state (AgentState): Current agent state.
-        character (str): Character to emulate ("michael", "dwight", "jim").
+        persona (str): persona to emulate ("michael", "dwight", "jim").
     Returns:
         AgentState: Updated agent state with LLM response.
     """
-    logger.info(f"Invoking character node for {character}")
+    logger.info(f"Invoking persona node for {persona}")
     llm = get_llm()
 
-    memory = state.characters.get(character, CharacterMemory())
+    memory = state.personas.get(persona, CharacterMemory())
 
     messages = memory.messages.copy()
 
     if not messages or messages[0]["role"] != "system":
-        messages.insert(0, {"role": "system", "content": PERSONAS[character]})
+        messages.insert(0, {"role": "system", "content": PERSONAS[persona]})
 
     messages.append({"role": "user", "content": state.user_input})
 
@@ -49,13 +49,13 @@ def character_node(state: AgentState, character: str) -> AgentState:
 
     messages.append({"role": "assistant", "content": response})
 
-    state.characters[character] = CharacterMemory(messages=messages)
+    state.personas[persona] = CharacterMemory(messages=messages)
 
-    logger.success(f"{character} responded successfully")
+    logger.success(f"{persona} responded successfully")
 
     return state.model_copy(
         update={
-            "characters": state.characters,
+            "personas": state.personas,
             "response": response,
         }
     )

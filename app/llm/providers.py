@@ -7,6 +7,9 @@ And here as we can see, the LiteLLM class also uses the generate method that we 
 from litellm import completion
 from app.llm.client import LLMClient
 from app.logger import setup_logger
+from typing import List, Dict
+
+Message = Dict[str, str]
 
 logger = setup_logger().bind(name="LLM")
 
@@ -29,12 +32,12 @@ class LiteLLMClient(LLMClient):
 
         logger.success(f"LiteLLM initialized | model={model} | temp={temperature}")
 
-    def generate(self, prompt: str) -> str:
+    def generate(self, messages: List[Message]) -> str:
         """
         Generates text using LiteLLM.
 
         Args:
-            prompt (str): Input prompt.
+            messages (List[Message]): Role-based chat messages.
 
         Returns:
             str: Generated response text.
@@ -43,7 +46,7 @@ class LiteLLMClient(LLMClient):
 
         response = completion(
             model=self.model,
-            messages=[{"role": "user", "content": prompt}],
+            messages=messages,
             temperature=self.temperature,
         )
 

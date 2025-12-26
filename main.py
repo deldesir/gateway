@@ -3,22 +3,31 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from app.graph.graph import build_graph
-from app.state import AgentState
+from app.graph.state import AgentState
+from app.memory.json_checkpointer import JsonCheckpointer
 from app.logger import setup_logger
-
 
 logger = setup_logger().bind(name="MAIN")
 
 
 def main():
-    logger.info("Starting the application...")
+    logger.info("Starting Office Agents backend (terminal mode)")
 
-    graph = build_graph()
+    persona = input("Choose persona (michael / dwight / jim): ").strip().lower()
+    user_input = input("Enter your message: ").strip()
 
-    final_state = graph.invoke({"user_input": "What do you think about paper sales this time? what should be the next steps?"})
+    graph = build_graph(persona)
+    store = JsonCheckpointer("memory.json")
 
-    logger.info(f"Final State: {final_state}")
-    logger.success("Application finished.")
+    thread_id = "user_1"  # later: real user/session id
+    loaded = store.load(thread_id)
+    state = AgentState(**loaded) if loaded else AgentState()
+    state.user_input = user_input
+
+    final_state = graph.invoke(state)
+    store.save(thread_id, final_state)
+
+    logger.success(f"{persona} says: {final_state['response']}")
 
 
 if __name__ == "__main__":

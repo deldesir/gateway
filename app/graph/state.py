@@ -18,5 +18,5 @@ class AgentState(BaseModel):
     """
 
     user_input: Optional[str] = None
-    characters: Dict[str, CharacterMemory] = {}
+    personas: Dict[str, CharacterMemory] = {}
     response: Optional[str] = None
