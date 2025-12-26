@@ -1,18 +1,32 @@
+import sqlite3
 from langgraph.graph import StateGraph, END
-from app.state import AgentState
-from app.graph.nodes import llm_node
+from langgraph.checkpoint.sqlite import SqliteSaver
+from app.graph.state import AgentState
+from app.graph.nodes import character_node
 from app.logger import setup_logger
 
-logger = setup_logger().bind(name='GRAPH')
+conn = sqlite3.connect("office_agents.db", check_same_thread=False)
+logger = setup_logger().bind(name="GRAPH")
 
-def build_graph() -> StateGraph:
-    logger.info("Building the graph...")
+
+def build_graph(character: str):
+    """
+    Builds a persona-based Office agent graph.
+    One graph, one user thread, character-isolated memory.
+    """
+    logger.info(f"Building graph for character: {character}")
 
     graph = StateGraph(AgentState)
-    graph.add_node("llm", llm_node)
-    graph.set_entry_point("llm")
-    graph.add_edge("llm", END)
 
-    logger.success("Graph built successfully")
+    graph.add_node("character", lambda state: character_node(state, character))
 
-    return graph.compile()
+    graph.set_entry_point("character")
+    graph.add_edge("character", END)
+
+    checkpointer = SqliteSaver(conn)
+
+    compiled = graph.compile(checkpointer=checkpointer)
+
+    logger.success("Graph compiled with SQLite checkpointing")
+
+    return compiled
