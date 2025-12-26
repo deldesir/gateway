@@ -15,7 +15,7 @@ def main():
 
     graph = build_graph()
 
-    final_state = graph.invoke({"user_input": "What is the capital of France?"})
+    final_state = graph.invoke({"user_input": "What do you think about paper sales this time? what should be the next steps?"})
 
     logger.info(f"Final State: {final_state}")
     logger.success("Application finished.")
