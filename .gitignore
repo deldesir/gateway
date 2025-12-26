@@ -12,3 +12,4 @@ wheels/
 *.db
 *.db-shm
 *.db-wal
+*.json
