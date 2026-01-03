@@ -6,6 +6,8 @@ from functools import lru_cache
 from app.config import load_config
 from app.llm.client import LLMClient
 from app.llm.providers import LiteLLMClient
+from app.llm.embedding_client import EmbeddingClient
+from app.llm.embedder import LiteLLMEmbeddingClient, LocalHFEmbeddingClient
 
 
 @lru_cache
@@ -23,3 +25,18 @@ def get_llm() -> LLMClient:
         model=llm_cfg.model,
         temperature=llm_cfg.temperature,
     )
+
+
+@lru_cache
+def get_embedder() -> EmbeddingClient:
+    """
+    Factory method for initializing the configured embedding client.
+    """
+
+    config = load_config()
+    emb_cfg = config.embeddings
+
+    if emb_cfg.provider == "local":
+        return LocalHFEmbeddingClient(model_name=emb_cfg.model)
+
+    return LiteLLMEmbeddingClient(model=emb_cfg.model)

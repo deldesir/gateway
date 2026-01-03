@@ -8,8 +8,14 @@ class LLMConfig(BaseModel):
     temperature: float = 0.3
 
 
+class EmbedderConfig(BaseModel):
+    model: str = "text-embedding-3-small"
+    provider: str = Literal["local", "remote"]
+
+
 class AppConfig(BaseModel):
     llm: LLMConfig
+    embeddings: EmbedderConfig
 
 
 def load_config() -> AppConfig:
@@ -23,5 +29,9 @@ def load_config() -> AppConfig:
         llm=LLMConfig(
             model=os.getenv("LLM_MODEL", "gemini/gemini-2.5-flash"),
             temperature=float(os.getenv("LLM_TEMPERATURE", "0.3")),
-        )
+        ),
+        embeddings=EmbedderConfig(
+            model=os.getenv("EMBEDDING_MODEL", ""),
+            provider=os.getenv("EMBEDDING_PROVIDER", "local"),
+        ),
     )

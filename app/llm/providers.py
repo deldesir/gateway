@@ -42,13 +42,25 @@ class LiteLLMClient(LLMClient):
         Returns:
             str: Generated response text.
         """
+        if not messages:
+            logger.warning("generate() called with empty messages list")
+            return
         logger.info("Sending prompt via LiteLLM")
 
-        response = completion(
-            model=self.model,
-            messages=messages,
-            temperature=self.temperature,
-        )
+        try:
+            response = completion(
+                model=self.model,
+                messages=messages,
+                temperature=self.temperature,
+            )
+        except Exception as e:
+            logger.error(
+                "LLM generation failed",
+                error=str(e),
+                model=self.model,
+                batch_size=len(messages),
+            )
+            raise
 
         text = response.choices[0].message.content.strip()
 
