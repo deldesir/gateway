@@ -30,6 +30,10 @@ def main():
 
     results = store.search(query_vector, k=5)
 
+    print(results[0])
+    print("\n")
+    print(results[1])
+
     print("\n📄 Top results:\n")
 
     for i, (distance, metadata) in enumerate(results, start=1):

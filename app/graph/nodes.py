@@ -1,5 +1,6 @@
 from app.graph.state import AgentState, CharacterMemory
 from app.llm import get_llm
+from app.rag.retriever import Retriever
 from app.config import load_config
 from app.logger import setup_logger
 

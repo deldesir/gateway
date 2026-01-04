@@ -1,3 +1,7 @@
+"""
+This is the main file that we run once in order to create the vector db and ingest all the chunks into it, provided we have the jsonl file for creating the vector db in the first place.
+"""
+
 from pathlib import Path
 from typing import List
 

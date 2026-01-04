@@ -19,4 +19,5 @@ class AgentState(BaseModel):
 
     user_input: Optional[str] = None
     personas: Dict[str, CharacterMemory] = {}
+    retrieved_context: Dict[str, List[str]] = {}
     response: Optional[str] = None
