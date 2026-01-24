@@ -1,4 +1,4 @@
-# Scranton Agent — High-Fidelity Persona Simulation Engine
+# Scranton Agents — High-Fidelity Persona Simulation Engine
 
 > **Work in Progress:** This project is currently in active development. The backend architecture is being iterated upon daily.
 
