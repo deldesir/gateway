@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from langchain_core.messages import BaseMessage
 from typing_extensions import Dict, List, Optional, TypedDict
 
 
@@ -21,3 +22,4 @@ class AgentState(BaseModel):
     personas: Dict[str, CharacterMemory] = {}
     retrieved_context: Dict[str, List[str]] = {}
     response: Optional[str] = None
+    messages: List[BaseMessage] = []

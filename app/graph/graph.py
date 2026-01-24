@@ -1,5 +1,6 @@
 from langgraph.graph import StateGraph, END
-from langgraph.prebuilt import ToolNode
+from langgraph.prebuilt import ToolNode, tools_condition
+
 from app.graph.state import AgentState
 from app.graph.nodes import character_node
 from app.graph.tools.retrieval import retrieve_context
@@ -8,35 +9,31 @@ from app.logger import setup_logger
 logger = setup_logger().bind(name="GRAPH")
 
 
-def build_graph(persona: str):
+def build_graph(character: str):
     """
-    Builds a persona-based Office agent graph.
-    One graph, one user thread, persona-isolated memory.
+    Builds a character-based Office agent graph.
+    One graph, one user thread, character-isolated memory.
     """
-    logger.info(f"Building graph for persona: {persona}")
+    logger.info(f"Building graph for character: {character}")
 
     graph = StateGraph(AgentState)
 
-    graph.add_node("persona", lambda state: character_node(state, persona))
+    graph.add_node(
+        "character",
+        lambda state: character_node(state, character),
+    )
 
     tool_node = ToolNode(tools=[retrieve_context])
-    graph.add_node("retrieval_tool", tool_node)
+    graph.add_node("tools", tool_node)
 
-    graph.set_entry_point("persona")
+    graph.set_entry_point("character")
 
     graph.add_conditional_edges(
-        "persona",
-        tool_node.condition,
-        {
-            "retrieval_tool": "retrieval_tool",
-            END: END,
-        },
+        "character",
+        tools_condition,
     )
 
-    graph.add_edge(
-        "retrieval_tool",
-        "persona",
-    )
+    graph.add_edge("tools", "character")
 
     compiled = graph.compile()
 

@@ -1,6 +1,7 @@
 __pycache__/
 *.py[oc]
 build/
+memory.json
 dist/
 wheels/
 *.egg-info
@@ -11,3 +12,4 @@ wheels/
 *.db-wal
 *.json
 data/
+*.png
