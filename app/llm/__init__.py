@@ -8,16 +8,10 @@ from app.llm.client import LLMClient
 from app.llm.providers import LiteLLMClient
 from app.llm.embedding_client import EmbeddingClient
 from app.llm.embedder import LiteLLMEmbeddingClient, LocalHFEmbeddingClient
+from typing import List, Any, Optional
 
 
-@lru_cache
-def get_llm() -> LLMClient:
-    """
-    Factory method for initializing the configured LLM client.
-
-    Returns:
-        LLMClient: Instantiated LLM client.
-    """
+def _get_base_llm() -> LiteLLMClient:
     config = load_config()
     llm_cfg = config.llm
 
@@ -27,7 +21,22 @@ def get_llm() -> LLMClient:
     )
 
 
-@lru_cache
+def get_llm() -> LiteLLMClient:
+    """
+    Returns base LLM client (no tools bound).
+    """
+    return _get_base_llm()
+
+
+def get_llm_with_tools(tools: List[Any]) -> LiteLLMClient:
+    """
+    Returns LLM client with tools configured.
+    """
+    llm = _get_base_llm()
+    llm.tools = tools
+    return llm
+
+
 def get_embedder() -> EmbeddingClient:
     """
     Factory method for initializing the configured embedding client.

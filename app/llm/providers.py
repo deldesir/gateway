@@ -7,7 +7,10 @@ And here as we can see, the LiteLLM class also uses the generate method that we 
 from litellm import completion
 from app.llm.client import LLMClient
 from app.logger import setup_logger
-from typing import List, Dict
+from typing import List, Dict, Optional
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_community.chat_models import ChatLiteLLM
+from langchain_core.messages import BaseMessage, AIMessage
 
 Message = Dict[str, str]
 
@@ -19,7 +22,7 @@ class LiteLLMClient(LLMClient):
     LiteLLM-based client supporting multiple providers via model strings.
     """
 
-    def __init__(self, model: str, temperature: float):
+    def __init__(self, model: str, temperature: float, tools: Optional[List] = None):
         """
         Initializes the LiteLLM client.
 
@@ -29,41 +32,84 @@ class LiteLLMClient(LLMClient):
         """
         self.model = model
         self.temperature = temperature
+        self.tools = tools
+        self._chat_model: BaseChatModel = ChatLiteLLM(
+            model=self.model,
+            temperature=self.temperature,
+        )
 
         logger.success(f"LiteLLM initialized | model={model} | temp={temperature}")
 
-    def generate(self, messages: List[Message]) -> str:
+    def get_chat_model(self) -> BaseChatModel:
         """
-        Generates text using LiteLLM.
+        Returns the underlying chat model (unbound).
+
+        """
+        return self._chat_model
+
+    def get_chat_model_with_tools(self) -> BaseChatModel:
+        """
+        Return a chat model instance with the provided tools bound for tool calling.
+
+        This method binds the given list of LangChain-compatible tools to the
+        underlying chat model, enabling the model to emit structured tool calls
+        during inference. The returned model can be safely used inside LangGraph
+        nodes where tool invocation is controlled via `tools_condition` and
+        `ToolNode`.
+
+        Tool binding is performed at call time (not at model initialization),
+        allowing different graphs or personas to attach different tool sets
+        without creating circular dependencies or new model instances.
 
         Args:
-            messages (List[Message]): Role-based chat messages.
+            tools (List): A list of LangChain tool definitions (e.g., functions
+                decorated with `@tool`) to be made available to the chat model.
 
         Returns:
-            str: Generated response text.
+            BaseChatModel: A chat model instance with the specified tools bound
+                and ready for tool-aware invocation.
+        """
+        if not self.tools:
+            return self._chat_model
+        return self._chat_model.bind_tools(self.tools)
+
+    def generate(self, messages: List[BaseMessage]) -> AIMessage:
+        """
+        Generates a response using ChatLiteLLM.
+
+        Args:
+            messages (List[BaseMessage]): LangChain chat messages.
+
+        Returns:
+            AIMessage: Model response (may include tool_calls).
         """
         if not messages:
             logger.warning("generate() called with empty messages list")
-            return
-        logger.info("Sending prompt via LiteLLM")
+            raise ValueError("Messages must not be empty")
+
+        logger.info("Sending prompt via ChatLiteLLM")
+
+        chat_model = (
+            self.get_chat_model_with_tools() if self.tools else self.get_chat_model()
+        )
 
         try:
-            response = completion(
-                model=self.model,
-                messages=messages,
-                temperature=self.temperature,
-            )
+            ai_message: AIMessage = chat_model.invoke(messages)
         except Exception as e:
             logger.error(
                 "LLM generation failed",
                 error=str(e),
                 model=self.model,
-                batch_size=len(messages),
+                message_count=len(messages),
             )
             raise
 
-        text = response.choices[0].message.content.strip()
+        logger.success("LLM response received")
 
-        logger.success("LiteLLM response received")
+        if getattr(ai_message, "tool_calls", None):
+            logger.info(
+                "LLM emitted tool calls",
+                tools=[tc["name"] for tc in ai_message.tool_calls],
+            )
 
-        return text
+        return ai_message

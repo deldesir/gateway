@@ -6,6 +6,7 @@ from app.graph.graph import build_graph
 from app.graph.state import AgentState
 from app.memory.json_checkpointer import JsonCheckpointer
 from app.logger import setup_logger
+from IPython.display import Image, display
 
 logger = setup_logger().bind(name="MAIN")
 
@@ -13,10 +14,10 @@ logger = setup_logger().bind(name="MAIN")
 def main():
     logger.info("Starting Office Agents backend (terminal mode)")
 
-    persona = input("Choose persona (michael / dwight / jim): ").strip().lower()
+    character = input("Choose character (michael / dwight / jim): ").strip().lower()
     user_input = input("Enter your message: ").strip()
 
-    graph = build_graph(persona)
+    graph = build_graph(character)
     store = JsonCheckpointer("memory.json")
 
     thread_id = "user_1"  # later: real user/session id
@@ -27,7 +28,7 @@ def main():
     final_state = graph.invoke(state)
     store.save(thread_id, final_state)
 
-    logger.success(f"{persona} says: {final_state['response']}")
+    logger.success(f"{character} says: {final_state['response']}")
 
 
 if __name__ == "__main__":
