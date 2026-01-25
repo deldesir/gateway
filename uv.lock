@@ -1458,6 +1458,19 @@ wheels = [
 ]
 
 [[package]]
+name = "langchain-litellm"
+version = "0.3.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "langchain-core" },
+    { name = "litellm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d0/2d/6c6abf75b0412a87474c8fe237d24b1b7a67a4923a19babb241db09adfb1/langchain_litellm-0.3.5.tar.gz", hash = "sha256:43dfbba20c71beb1a23cbf497755215748b09e0dd675dba9acf9d1ffa3b61201", size = 12724, upload-time = "2025-12-13T05:09:24.902Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a0/9f/cd01d312c22a37f80ae0239a91622fdf810e6046dc325e80195fa36c08ef/langchain_litellm-0.3.5-py3-none-any.whl", hash = "sha256:324378ac9965e4e36cb60ef98e9ede3f8886394e5054e6b3665df6e4b8015a72", size = 13489, upload-time = "2025-12-13T05:09:23.697Z" },
+]
+
+[[package]]
 name = "langchain-text-splitters"
 version = "1.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3347,6 +3360,7 @@ dependencies = [
     { name = "langchain" },
     { name = "langchain-community" },
     { name = "langchain-core" },
+    { name = "langchain-litellm" },
     { name = "langgraph" },
     { name = "langgraph-checkpoint-sqlite" },
     { name = "litellm" },
@@ -3366,6 +3380,7 @@ requires-dist = [
     { name = "langchain", specifier = ">=1.2.0" },
     { name = "langchain-community", specifier = ">=0.4.1" },
     { name = "langchain-core", specifier = ">=1.2.5" },
+    { name = "langchain-litellm", specifier = ">=0.3.5" },
     { name = "langgraph", specifier = ">=1.0.5" },
     { name = "langgraph-checkpoint-sqlite", specifier = ">=3.0.1" },
     { name = "litellm", specifier = ">=1.80.11" },

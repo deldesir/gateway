@@ -13,6 +13,7 @@ dependencies = [
     "langchain>=1.2.0",
     "langchain-community>=0.4.1",
     "langchain-core>=1.2.5",
+    "langchain-litellm>=0.3.5",
     "langgraph>=1.0.5",
     "langgraph-checkpoint-sqlite>=3.0.1",
     "litellm>=1.80.11",

@@ -9,7 +9,7 @@ from app.llm.client import LLMClient
 from app.logger import setup_logger
 from typing import List, Dict, Optional
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_community.chat_models import ChatLiteLLM
+from langchain_litellm import ChatLiteLLM
 from langchain_core.messages import BaseMessage, AIMessage
 
 Message = Dict[str, str]

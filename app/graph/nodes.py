@@ -1,8 +1,6 @@
 from app.graph.state import AgentState, CharacterMemory
 from app.llm import get_llm, get_llm_with_tools
 from app.graph.tools.retrieval import retrieve_context
-from app.rag.retriever import Retriever
-from app.config import load_config
 from app.logger import setup_logger
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, ToolMessage
 import json
@@ -134,7 +132,6 @@ def _memory_to_messages(memory_messages: list) -> list:
     Convert CharacterMemory dict messages into LangChain BaseMessage objects.
     """
     lc_messages = []
-
     for msg in memory_messages:
         role = msg["role"]
         content = msg["content"]
@@ -145,107 +142,29 @@ def _memory_to_messages(memory_messages: list) -> list:
             lc_messages.append(HumanMessage(content=content))
         elif role == "assistant":
             lc_messages.append(AIMessage(content=content))
-
     return lc_messages
 
 
-def character_node(state: AgentState, persona: str) -> AgentState:
-    logger.info(f"Invoking persona node for {persona}")
-    if state.messages and isinstance(state.messages[-1], ToolMessage):
-        raw_content = state.messages[-1].content
+def conversation_node(state: AgentState) -> AgentState:
+    """
+    First and ONLY node where tools are allowed.
+    Mirrors PhiloAgents conversation node.
+    """
+    summary = state.get("conversation_summary", "")
+    llm = get_llm_with_tools(tools=[retrieve_context])
 
-        try:
-            retrieved_chunks = json.loads(raw_content)
-        except Exception:
-            logger.error(
-                "Failed to parse retrieved context from tool",
-                persona=persona,
-                raw=raw_content,
-            )
-            retrieved_chunks = []
+    system_prompt = PERSONAS[state.persona]
 
-        state.retrieved_context[persona] = retrieved_chunks
-        logger.info(
-            "Captured retrieved context from tool",
-            persona=persona,
-            chunks=len(retrieved_chunks),
-        )
+    messages = [
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=state.user_input),
+    ]
 
-    llm = get_llm_with_tools([retrieve_context])
+    ai_msg = llm.invoke(messages)
 
-    memory = state.personas.get(persona, CharacterMemory())
-
-    system_prompt = (
-        SYSTEM_PROMPT + "\n\n persona:" + PERSONAS[persona] + "\n\n" + TOOL_INSTRUCTIONS
-    )
-
-    if not memory.messages or memory.messages[0]["role"] != "system":
-        memory.messages.insert(
-            0,
-            {
-                "role": "system",
-                "content": system_prompt,
-            },
-        )
-
-    retrieved = state.retrieved_context.get(persona)
-
-    if retrieved:
-        retrieval_block = (
-            "\n\nRelevant retrieved context (canonical facts):\n"
-            + "\n".join(f"- {chunk}" for chunk in retrieved)
-        )
-
-        memory.messages.append(
-            {
-                "role": "system",
-                "content": retrieval_block,
-            }
-        )
-
-    memory.messages.append(
-        {
-            "role": "user",
-            "content": state.user_input,
-        }
-    )
-
-    messages = _memory_to_messages(memory.messages)
-    ai_message: AIMessage = llm.generate(messages)
-
-    print("AI MESSAGE ISSSS:::", ai_message)
-    tool_calls = getattr(ai_message, "tool_calls", None)
-
-    if tool_calls:
-        logger.info(
-            "LLM requested tool call(s)",
-            persona=persona,
-            tools=[tc["name"] for tc in tool_calls],
-        )
-    else:
-        logger.info(
-            "LLM did not request any tools",
-            persona=persona,
-        )
-
-    memory.messages.append(
-        {
-            "role": "assistant",
-            "content": ai_message.content,
-        }
-    )
-
-    state.personas[persona] = memory
-
-    logger.success(f"{persona} responded successfully")
-    logger.success('CURRENT STATE', state)
     return state.model_copy(
         update={
-            "personas": state.personas,
-            "response": ai_message.content,
-            "messages": [
-                HumanMessage(content=state.user_input),
-                ai_message,
-            ],
+            "messages": state.messages + [ai_msg],
         }
     )
+
