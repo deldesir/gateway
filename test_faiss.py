@@ -9,22 +9,19 @@ EMBEDDING_DIM = 384  # MiniLM
 
 
 def main():
-    print("\n🔍 Loading vector store...")
+    print("\nLoading vector store...")
     store = VectorStore(
         index_path=VECTORSTORE_PATH,
         dim=EMBEDDING_DIM,
     )
 
-    print(f"✅ Vector store loaded | total_vectors={store.index.ntotal}")
+    print(f"Vector store loaded | total_vectors={store.index.ntotal}")
 
     embedder = get_embedder()
 
-    # ----------------------------
-    # Test query
-    # ----------------------------
     query = "Identity theft is not a joke Jim"
 
-    print(f"\n🧠 Query: {query}")
+    print(f"\nQuery: {query}")
 
     query_vector = embedder.embed([query])[0]
 
@@ -34,7 +31,7 @@ def main():
     print("\n")
     print(results[1])
 
-    print("\n📄 Top results:\n")
+    print("\nTop results:\n")
 
     for i, (distance, metadata) in enumerate(results, start=1):
         print(f"--- Result {i} ---")
