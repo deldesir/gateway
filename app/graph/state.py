@@ -1,25 +1,45 @@
-from pydantic import BaseModel
-from langchain_core.messages import BaseMessage
-from typing_extensions import Dict, List, Optional, TypedDict
+from typing import Optional, List, Dict, Any
+from langgraph.graph import MessagesState
 
 
-class Message(TypedDict):
-    role: str
-    content: str
-
-
-class CharacterMemory(BaseModel):
-    messages: List[Message] = []
-
-
-class AgentState(BaseModel):
+class AgentState(MessagesState):
     """
-    State scoped to a single user session (thread).
-    Character memories are namespaced inside this state.
+    Core agent state used across the LangGraph workflow.
+
+    This state mirrors the design principles used in PhiloAgents:
+    - Messages are append-only and managed by LangGraph.
+    - State holds semantic artifacts, not decisions.
+    - No flags, counters, or tool-usage markers are present.
+
+    Attributes:
+        persona:
+            Identifier for the active persona (e.g., "jim", "michael", "dwight").
+
+        user_input:
+            The raw user query that initiated the current graph execution.
+
+        retrieved_chunks:
+            Canonical factual text chunks retrieved from the FAISS vector store.
+
+        retrieved_context:
+            A consolidated or post-processed representation of retrieved_chunks
+            intended for prompt injection.
+
+        conversation_summary:
+            A rolling semantic summary of prior interactions for long-term
+            continuity and memory compression.
+
+        persona_memory:
+            Persona-scoped long-term memory persisted via a JSON checkpointer.
+
+        final_response:
+            The final response sent out to the user.
     """
 
-    user_input: Optional[str] = None
-    personas: Dict[str, CharacterMemory] = {}
-    retrieved_context: Dict[str, List[str]] = {}
-    response: Optional[str] = None
-    messages: List[BaseMessage] = []
+    persona: str
+    user_input: str
+    retrieved_chunks: Optional[List[str]] = None
+    context_summary: Optional[str] = None
+    conversation_summary: Optional[str] = None
+    persona_memory: Optional[Dict[str, Any]] = None
+    final_response: Optional[str] = None
