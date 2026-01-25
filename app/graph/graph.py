@@ -1,42 +1,39 @@
-from langgraph.graph import StateGraph, END
+from functools import lru_cache
+
+from langgraph.graph import START, END, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 
 from app.graph.state import AgentState
-from app.graph.nodes import character_node
-from app.graph.tools.retrieval import retrieve_context
-from app.logger import setup_logger
+from app.graph.nodes import (
+    conversation_node,
+    retrieved_context_summary_node,
+    connector_node,
+    final_response_node,
+    retriever_node,
+)
 
-logger = setup_logger().bind(name="GRAPH")
 
-
-def build_graph(character: str):
-    """
-    Builds a character-based Office agent graph.
-    One graph, one user thread, character-isolated memory.
-    """
-    logger.info(f"Building graph for character: {character}")
-
+@lru_cache(maxsize=1)
+def build_graph():
     graph = StateGraph(AgentState)
 
-    graph.add_node(
-        "character",
-        lambda state: character_node(state, character),
-    )
+    graph.add_node("conversation_node", conversation_node)
+    graph.add_node("retrieve_context", retriever_node)
+    graph.add_node("summarize_context_node", retrieved_context_summary_node)
+    graph.add_node("connector_node", connector_node)
 
-    tool_node = ToolNode(tools=[retrieve_context])
-    graph.add_node("tools", tool_node)
-
-    graph.set_entry_point("character")
+    graph.add_edge(START, "conversation_node")
 
     graph.add_conditional_edges(
-        "character",
+        "conversation_node",
         tools_condition,
+        {
+            "tools": "retrieve_context",
+            END: "connector_node",
+        },
     )
 
-    graph.add_edge("tools", "character")
+    graph.add_edge("retrieve_context", "summarize_context_node")
+    graph.add_edge("summarize_context_node", "conversation_node")
 
-    compiled = graph.compile()
-
-    logger.success("Graph compiled")
-
-    return compiled
+    return graph.compile()

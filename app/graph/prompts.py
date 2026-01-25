@@ -102,8 +102,9 @@ class ConversationPrompt:
     Prompt used in the initial conversation node.
     """
 
-    def __init__(self, persona: str):
+    def __init__(self, persona: str, summary: Optional[str] = None):
         self.persona = persona
+        self.summary = summary or ""
 
     def build(self) -> ChatPromptTemplate:
         """
@@ -111,7 +112,7 @@ class ConversationPrompt:
         """
         persona_vars = PersonaPromptRegistry.get(self.persona)
 
-        return ChatPromptTemplate.from_messages(
+        return ChatPromptTemplate(
             [
                 (
                     "system",
@@ -122,7 +123,7 @@ class ConversationPrompt:
             template_format="jinja2",
             partial_variables={
                 **persona_vars,
-                "summary": "",
+                "summary": self.summary,
             },
         )
 
@@ -141,7 +142,7 @@ class ConversationSummaryPrompt:
         """
         persona_vars = PersonaPromptRegistry.get(self.persona)
 
-        return ChatPromptTemplate.from_messages(
+        return ChatPromptTemplate(
             [
                 (
                     "system",
@@ -171,7 +172,7 @@ class ExtendConversationSummaryPrompt:
         """
         persona_vars = PersonaPromptRegistry.get(self.persona)
 
-        return ChatPromptTemplate.from_messages(
+        return ChatPromptTemplate(
             [
                 (
                     "system",
@@ -199,7 +200,7 @@ class RetrievedContextSummaryPrompt:
         """
         Construct the ChatPromptTemplate for retrieved context summarization.
         """
-        return ChatPromptTemplate.from_messages(
+        return ChatPromptTemplate(
             [
                 ("system", SystemPrompts.CONTEXT_SUMMARY),
             ],
@@ -234,7 +235,7 @@ class FinalResponsePrompt:
         summary = self.conversation_summary or ""
         context = self.retrieved_context or ""
 
-        return ChatPromptTemplate.from_messages(
+        return ChatPromptTemplate(
             [
                 (
                     "system",

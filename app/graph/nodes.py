@@ -1,170 +1,94 @@
-from app.graph.state import AgentState, CharacterMemory
-from app.llm import get_llm, get_llm_with_tools
-from app.graph.tools.retrieval import retrieve_context
+"""
+Graph node implementations for the agent system.
+
+Each node is responsible for executing a single chain and writing the resulting
+artifact back into the agent state. Nodes do not contain control flow logic or
+branching decisions, which are handled exclusively by graph edges.
+"""
 from app.logger import setup_logger
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, ToolMessage
-import json
-
+from app.graph.state import AgentState
+from langchain_core.messages import AIMessage
+from app.graph.chains import (
+    ConversationChain,
+    ConversationSummaryChain,
+    RetrievedContextSummaryChain,
+    FinalResponseChain,
+)
+from langgraph.prebuilt import ToolNode
+from app.graph.tools.retrieval import retrieve_context
 logger = setup_logger().bind(name="NODES")
-
-SYSTEM_PROMPT = """
-You are an AI character agent operating inside a stateful, multi-persona system.
-
-IMPORTANT CONTEXT ABOUT YOUR ENVIRONMENT:
-
-1. PERSONA ISOLATION
-You are currently speaking as a single persona (e.g. Jim Halpert, Michael Scott, or Dwight Schrute).
-You must stay fully in-character at all times.
-You have access ONLY to this persona’s memory.
-Other personas’ memories are strictly isolated and must never be referenced.
-
-2. MEMORY STRUCTURE
-Your long-term memory consists of past conversations for THIS persona only.
-This memory is persistent across turns and should be treated as canonical dialogue history.
-
-You may also receive a section titled:
-"Relevant retrieved context (canonical facts)"
-
-This section, if present, contains authoritative factual information retrieved from long-term canonical knowledge.
-If this section exists, you MUST use it as ground truth and MUST NOT attempt to retrieve again.
-
-3. TOOL AVAILABILITY
-You have access to ONE external tool:
-
-Tool name: retrieve_context
-
-Purpose:
-- Retrieve canonical, factual information about past events, episodes, or character history.
-- This tool exists ONLY to compensate for long-term factual recall limitations.
-
-4. WHEN TO CALL THE TOOL
-You MAY call retrieve_context ONLY IF:
-- The user asks about specific past events, episodes, timelines, or factual details
-- AND the answer is NOT already present in your memory
-- AND no retrieved context has been provided yet in this turn
-
-Examples where the tool IS appropriate:
-- “Who caused the fire?”
-- “When did you propose to Pam?”
-- “Why did Holly leave?”
-- “What happened in season 5?”
-
-Examples where the tool MUST NOT be used:
-- Casual conversation (“hey”, “what’s up?”)
-- Opinions or humor
-- Hypotheticals
-- Emotional reactions
-- Questions already answered in retrieved context
-
-5. STRICT TOOL USAGE RULE (CRITICAL)
-You are allowed to call retrieve_context AT MOST ONCE per user question.
-
-If you have already:
-- Called the tool once, OR
-- Been provided retrieved context in this turn
-
-THEN:
-- You MUST NOT call retrieve_context again
-- You MUST proceed to answer using the available information
-
-Repeated or recursive tool calls are explicitly forbidden.
-
-6. TOOL CALL FORMAT
-If you decide to call the tool, you MUST:
-- Use the user’s exact question as `user_input`
-- Use the active persona name as `persona`
-- Call the tool directly (no explanation text)
-
-7. RESPONSE BEHAVIOR
-After receiving retrieved context:
-- Incorporate it naturally into your response
-- Do NOT mention tools, retrieval, databases, or internal state
-- Respond fully in-character
-
-If no retrieval is needed:
-- Answer immediately in-character
-- Do NOT mention tools
-
-This system enforces correctness, persona consistency, and single-pass retrieval.
-Failure to follow these rules will result in incorrect execution.
-"""
+retriever_node = ToolNode([retrieve_context])
 
 
-PERSONAS = {
-    "michael": (
-        "You are Michael Scott, Regional Manager of Dunder Mifflin Scranton. "
-        "You are confident, inappropriate, emotional, and believe you are "
-        "an incredible leader. Never break persona."
-    ),
-    "dwight": (
-        "You are Dwight Schrute. You are intense, literal, loyal to rules, "
-        "and believe you are superior to others. Never break persona."
-    ),
-    "jim": (
-        "You are Jim Halpert. You are sarcastic, understated, and clever. "
-        "Never break persona."
-    ),
-}
-
-TOOL_INSTRUCTIONS = """
-You have access to a tool called `retrieve_context`. After retrieving context, stop using tools and answer the user directly.
-Only call tools once per user query.
-
-You should call this tool anytime when the user's question requires factual
-recall from past episodes, events, or character history (for example:
-who said something, why an event happened, or recalling a specific scene).
-
-Do NOT call the tool for:
-- casual conversation
-- opinions
-- jokes
-- hypotheticals
-- roleplay that does not depend on factual recall
-
-When you call the tool:
-- use the user's exact question as `user_input`
-- pass the current persona name as `persona`
-"""
-
-
-def _memory_to_messages(memory_messages: list) -> list:
+def conversation_node(state):
     """
-    Convert CharacterMemory dict messages into LangChain BaseMessage objects.
+    Execute the initial conversation chain.
+
+    This is the only node where tool calls are permitted. The resulting assistant
+    message is appended to the message history.
     """
-    lc_messages = []
-    for msg in memory_messages:
-        role = msg["role"]
-        content = msg["content"]
+    persona = state["persona"]
+    messages = state.get("messages", [])
 
-        if role == "system":
-            lc_messages.append(SystemMessage(content=content))
-        elif role == "user":
-            lc_messages.append(HumanMessage(content=content))
-        elif role == "assistant":
-            lc_messages.append(AIMessage(content=content))
-    return lc_messages
+    chain = ConversationChain(persona=persona).build()
+    ai_message: AIMessage = chain.invoke({"messages": messages})
+
+    return {
+        **state,
+        "messages": messages + [ai_message],
+    }
 
 
-def conversation_node(state: AgentState) -> AgentState:
+def retrieved_context_summary_node(state: AgentState) -> AgentState:
     """
-    First and ONLY node where tools are allowed.
-    Mirrors PhiloAgents conversation node.
+    Summarize raw retrieved chunks into a canonical factual context.
     """
-    summary = state.get("conversation_summary", "")
-    llm = get_llm_with_tools(tools=[retrieve_context])
+    retrieved_chunks = state.get("retrieved_chunks", [])
 
-    system_prompt = PERSONAS[state.persona]
+    joined_context = "\n\n".join(retrieved_chunks)
 
-    messages = [
-        SystemMessage(content=system_prompt),
-        HumanMessage(content=state.user_input),
-    ]
+    chain = RetrievedContextSummaryChain(retrieved_chunks=joined_context).build()
 
-    ai_msg = llm.invoke(messages)
+    ai_message: AIMessage = chain.invoke({})
 
-    return state.model_copy(
-        update={
-            "messages": state.messages + [ai_msg],
-        }
-    )
+    return {
+        **state,
+        "context_summary": ai_message.content,
+    }
 
+
+def final_response_node(state):
+    """
+    Terminal node that optionally summarizes the conversation history and
+    always produces the final in-character response.
+    """
+    persona = state["persona"]
+    messages = state.get("messages", [])
+
+    conversation_summary = state.get("conversation_summary")
+    logger.debug("Retrieved context: {}", state.get("retrieved_context"))
+    if len(messages) > 20:
+        summary_chain = ConversationSummaryChain(persona=persona).build()
+        summary_message = summary_chain.invoke({"messages": messages[-20:]})
+
+        conversation_summary = summary_message.content
+        messages = messages[:-20]
+
+    response_chain = FinalResponseChain(
+        persona=persona,
+        retrieved_context=state.get("retrieved_context"),
+        conversation_summary=conversation_summary,
+    ).build()
+
+    ai_message: AIMessage = response_chain.invoke({"messages": messages})
+
+    return {
+        **state,
+        "messages": messages + [ai_message],
+        "conversation_summary": conversation_summary,
+        "final_response": ai_message.content,
+    }
+
+
+def connector_node(state: AgentState) -> AgentState:
+    return state

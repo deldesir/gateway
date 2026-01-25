@@ -9,7 +9,7 @@ from app.graph.prompts import (
     RetrievedContextSummaryPrompt,
     FinalResponsePrompt,
 )
-from app.graph.tools import retrieve_context
+from app.graph.tools.retrieval import retrieve_context
 
 
 class ConversationChain:
@@ -30,41 +30,44 @@ class ConversationChain:
         return prompt | model
 
 
+# class ConversationSummaryChain:
+#     """
+#     Chain used to generate an initial summary of a conversation.
+#     """
+
+#     def __init__(self, persona: str):
+#         self.persona = persona
+
+#     def build(self) -> Runnable:
+#         """
+#         Build the runnable conversation summary chain.
+#         """
+#         model = get_llm()
+#         prompt = ConversationSummaryPrompt(self.persona).build()
+#         return prompt | model
+
+
 class ConversationSummaryChain:
-    """
-    Chain used to generate an initial summary of a conversation.
-    """
-
-    def __init__(self, persona: str):
-        self.persona = persona
-
-    def build(self) -> Runnable:
-        """
-        Build the runnable conversation summary chain.
-        """
-        model = get_llm()
-        prompt = ConversationSummaryPrompt(self.persona).build()
-        return prompt | model
-
-
-class ExtendConversationSummaryChain:
     """
     Chain used to extend an existing conversation summary.
     """
 
-    def __init__(self, persona: str, summary: str):
+    def __init__(self, persona: str, summary: Optional[str] = None):
         self.persona = persona
-        self.summary = summary
+        self.summary = summary or ""
 
     def build(self) -> Runnable:
         """
         Build the runnable extend-summary chain.
         """
         model = get_llm()
-        prompt = ExtendConversationSummaryPrompt(
-            persona=self.persona,
-            summary=self.summary,
-        ).build()
+        if len(self.summary) > 0:
+            prompt = ExtendConversationSummaryPrompt(
+                persona=self.persona,
+                summary=self.summary,
+            ).build()
+        else:
+            prompt = ConversationSummaryPrompt(persona=self.persona)
         return prompt | model
 
 
@@ -73,13 +76,16 @@ class RetrievedContextSummaryChain:
     Chain used to summarize retrieved vector database context.
     """
 
-    def build(self, retrieved_chunks: str) -> Runnable:
+    def __init__(self, retrieved_chunks: str):
+        self.retrieved_chunks = retrieved_chunks
+
+    def build(self) -> Runnable:
         """
         Build the runnable retrieved-context summary chain.
         """
         model = get_llm()
         prompt = RetrievedContextSummaryPrompt(
-            retrieved_context=retrieved_chunks
+            retrieved_context=self.retrieved_chunks
         ).build()
         return prompt | model
 

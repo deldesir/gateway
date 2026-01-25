@@ -10,33 +10,49 @@ from app.llm.providers import LiteLLMClient
 from app.llm.embedding_client import EmbeddingClient
 from app.llm.embedder import LiteLLMEmbeddingClient, LocalHFEmbeddingClient
 from typing import List, Any, Optional
+from app.logger import setup_logger
+from langchain_groq import ChatGroq
+
+logger = setup_logger().bind(name="LLM")
 
 
-def _get_base_llm() -> ChatLiteLLM:
+@lru_cache(maxsize=1)
+def _get_base_llm() -> ChatGroq:
+    """
+    Initialize and cache the base ChatGroq LLM client.
+    """
     config = load_config()
     llm_cfg = config.llm
 
-    return LiteLLMClient(
+    logger.success(
+        "ChatGroq initialized | model={} | temperature={}",
+        llm_cfg.model,
+        llm_cfg.temperature,
+    )
+
+    return ChatGroq(
         model=llm_cfg.model,
         temperature=llm_cfg.temperature,
+        api_key=llm_cfg.api_key,
     )
 
 
-def get_llm() -> ChatLiteLLM:
+def get_llm() -> ChatGroq:
     """
-    Returns base LLM client (no tools bound).
+    Return the cached base LLM client (no tools bound).
     """
     return _get_base_llm()
 
 
-def get_llm_with_tools(tools: List[Any]) -> ChatLiteLLM:
+def get_llm_with_tools(tools: List[Any]) -> ChatGroq:
     """
-    Returns LLM client with tools configured.
+    Return the cached LLM client with tools bound.
     """
     llm = _get_base_llm()
-    return llm.bind_tools(tools=tools)
+    return llm.bind_tools(tools)
 
 
+@lru_cache(maxsize=1)
 def get_embedder() -> EmbeddingClient:
     """
     Factory method for initializing the configured embedding client.

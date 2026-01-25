@@ -39,7 +39,7 @@ class AgentState(MessagesState):
     persona: str
     user_input: str
     retrieved_chunks: Optional[List[str]] = None
-    retrieved_context: Optional[str] = None
+    context_summary: Optional[str] = None
     conversation_summary: Optional[str] = None
     persona_memory: Optional[Dict[str, Any]] = None
     final_response: Optional[str] = None
