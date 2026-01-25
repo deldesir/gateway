@@ -1,18 +1,19 @@
 """
 Entry point for running the Office Agents backend in terminal mode.
 
-This script builds the LangGraph, renders its Mermaid diagram, saves the diagram
-as both Mermaid text and PNG, and executes a single agent run.
+This script builds the LangGraph, renders its Mermaid diagram, executes
+a single agent run, and persists state using a custom JSON checkpointer.
 """
 
 from pathlib import Path
-from app.logger import setup_logger
+from loguru import logger
 
 from langchain_core.messages import HumanMessage, AIMessage
-
+from app.logger import setup_logger
 from app.graph.graph import build_graph
+from app.memory.json_checkpointer import JsonCheckpointer
 
-logger = setup_logger().bind(name="LLM")
+logger = setup_logger().bind(name="MAIN")
 
 
 def render_graph(graph):
@@ -39,46 +40,40 @@ def render_graph(graph):
 
 
 def main():
-    """
-    Run the Office Agents system in terminal mode.
-    """
     logger.info("Starting Office Agents backend (terminal mode)")
 
     persona = input("Choose character (michael / dwight / jim): ").strip().lower()
     user_input = input("Enter your message: ").strip()
 
-    logger.info("Persona selected: {}", persona)
-    logger.info("User input: {}", user_input)
-
     graph = build_graph()
-    render_graph(graph)
+    store = JsonCheckpointer("memory.json")
 
-    state = {
-        "persona": persona,
-        "messages": [HumanMessage(content=user_input)],
-        "retrieved_context": None,
-        "conversation_summary": None,
-        "final_response": None,
-    }
+    thread_id = persona  # persona-scoped memory
 
-    logger.info("Invoking graph")
+    loaded = store.get(thread_id)
+    state = (
+        loaded
+        if loaded
+        else {
+            "persona": persona,
+            "messages": [],
+            "retrieved_context": None,
+            "conversation_summary": None,
+            "final_response": None,
+        }
+    )
+
+    state["messages"].append(HumanMessage(content=user_input))
+
     final_state = graph.invoke(state)
-    print("FINAL STATE IS:::", final_state)
-    logger.info("Graph execution completed")
+
+    store.put(thread_id, final_state)
 
     final_message = None
-    for msg in reversed(final_state.get("messages", [])):
+    for msg in reversed(final_state["messages"]):
         if isinstance(msg, AIMessage) and msg.content:
             final_message = msg.content
             break
-
-    if final_message is None:
-        logger.error("No final AIMessage found in state.messages")
-        logger.debug("Final state: {}", final_state)
-        print("\n[ERROR] No response generated.")
-        return
-
-    logger.success("Final response generated")
 
     print(f"\n{persona} says:\n")
     print(final_message)

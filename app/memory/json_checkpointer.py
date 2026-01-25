@@ -1,28 +1,35 @@
 import json
 import os
-from typing import Optional
-from app.graph.state import AgentState
+from typing import Optional, Dict, Any
+
 from app.memory.serializer import to_json_safe
 
 
 class JsonCheckpointer:
     """
-    Simple JSON-based checkpointer keyed by thread_id.
+    JSON-based LangGraph-compatible checkpointer keyed by thread_id.
     """
 
     def __init__(self, path: str = "memory.json"):
         self.path = path
+
         if not os.path.exists(self.path):
             with open(self.path, "w") as f:
                 json.dump({}, f)
 
-    def load(self, thread_id: str) -> Optional[dict]:
+    def get(self, thread_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Retrieve the stored state for a given thread_id.
+        """
         with open(self.path, "r") as f:
             data = json.load(f)
 
         return data.get(thread_id)
 
-    def save(self, thread_id: str, state: dict):
+    def put(self, thread_id: str, state: Dict[str, Any]) -> None:
+        """
+        Persist the state for a given thread_id.
+        """
         with open(self.path, "r") as f:
             data = json.load(f)
 
