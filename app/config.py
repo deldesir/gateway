@@ -1,6 +1,8 @@
 import os
 from pydantic import BaseModel
-from typing import Literal
+from typing import Literal, Dict
+
+LLMRole = Literal["default", "summarizer"]
 
 
 class LLMConfig(BaseModel):
@@ -15,8 +17,18 @@ class EmbedderConfig(BaseModel):
 
 
 class AppConfig(BaseModel):
-    llm: LLMConfig
+    llms: Dict[LLMRole, LLMConfig]
     embeddings: EmbedderConfig
+
+    @property
+    def llm(self) -> LLMConfig:
+        """Main chat / agent LLM"""
+        return self.llms["default"]
+
+    @property
+    def summarizer_llm(self) -> LLMConfig:
+        """Summarization-specific LLM"""
+        return self.llms["summarizer"]
 
 
 def load_config() -> AppConfig:
@@ -27,11 +39,18 @@ def load_config() -> AppConfig:
         AppConfig: Parsed application configuration.
     """
     return AppConfig(
-        llm=LLMConfig(
-            model=os.getenv("LLM_MODEL", "gemini/gemini-2.5-flash"),
-            temperature=float(os.getenv("LLM_TEMPERATURE", "0.3")),
-            api_key=os.getenv("GROQ_API_KEY", ""),
-        ),
+        llms={
+            "default": LLMConfig(
+                model=os.getenv("LLM_MODEL", ""),
+                temperature=float(os.getenv("LLM_TEMPERATURE", "0.3")),
+                api_key=os.getenv("GROQ_API_KEY", ""),
+            ),
+            "summarizer": LLMConfig(
+                model=os.getenv("LLM_MODEL_SUMMARIZE", ""),
+                temperature=float(os.getenv("LLM_TEMPERATURE", "0.1")),
+                api_key=os.getenv("GROQ_API_KEY", ""),
+            ),
+        },
         embeddings=EmbedderConfig(
             model=os.getenv("EMBEDDING_MODEL", ""),
             provider=os.getenv("EMBEDDING_PROVIDER", "local"),

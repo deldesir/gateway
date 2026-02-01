@@ -89,6 +89,3 @@ def final_response_node(state):
         "final_response": ai_message.content,
     }
 
-
-def connector_node(state: AgentState) -> AgentState:
-    return state

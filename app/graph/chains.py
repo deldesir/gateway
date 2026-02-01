@@ -1,7 +1,7 @@
 from typing import Optional
 from langchain_core.runnables import Runnable
 
-from app.llm import get_llm_with_tools, get_llm
+from app.llm import get_llm_summarizer, get_llm
 from app.graph.prompts import (
     ConversationPrompt,
     ConversationSummaryPrompt,
@@ -24,27 +24,12 @@ class ConversationChain:
         self.persona = persona
 
     def build(self) -> Runnable:
-        model = get_llm_with_tools(tools=[retrieve_context])
+        model = get_llm().bind_tools(tools=[retrieve_context])
         prompt = ConversationPrompt(self.persona).build()
 
         return prompt | model
 
 
-# class ConversationSummaryChain:
-#     """
-#     Chain used to generate an initial summary of a conversation.
-#     """
-
-#     def __init__(self, persona: str):
-#         self.persona = persona
-
-#     def build(self) -> Runnable:
-#         """
-#         Build the runnable conversation summary chain.
-#         """
-#         model = get_llm()
-#         prompt = ConversationSummaryPrompt(self.persona).build()
-#         return prompt | model
 
 
 class ConversationSummaryChain:
@@ -83,7 +68,7 @@ class RetrievedContextSummaryChain:
         """
         Build the runnable retrieved-context summary chain.
         """
-        model = get_llm()
+        model = get_llm_summarizer()
         prompt = RetrievedContextSummaryPrompt(
             retrieved_context=self.retrieved_chunks
         ).build()

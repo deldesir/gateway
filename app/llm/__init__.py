@@ -4,9 +4,6 @@ Learnt a new thing called lru_cache, here we implement this so that every other 
 
 from functools import lru_cache
 from app.config import load_config
-from app.llm.client import LLMClient
-from langchain_litellm import ChatLiteLLM
-from app.llm.providers import LiteLLMClient
 from app.llm.embedding_client import EmbeddingClient
 from app.llm.embedder import LiteLLMEmbeddingClient, LocalHFEmbeddingClient
 from typing import List, Any, Optional
@@ -17,18 +14,14 @@ logger = setup_logger().bind(name="LLM")
 
 
 @lru_cache(maxsize=1)
-def _get_base_llm() -> ChatGroq:
+def _get_chat_llm() -> ChatGroq:
     """
-    Initialize and cache the base ChatGroq LLM client.
+    Initialize and cache the primary chat LLM.
     """
     config = load_config()
     llm_cfg = config.llm
 
-    logger.success(
-        "ChatGroq initialized | model={} | temperature={}",
-        llm_cfg.model,
-        llm_cfg.temperature,
-    )
+    logger.info("Initializing primary chat LLM", model=llm_cfg.model)
 
     return ChatGroq(
         model=llm_cfg.model,
@@ -39,17 +32,39 @@ def _get_base_llm() -> ChatGroq:
 
 def get_llm() -> ChatGroq:
     """
-    Return the cached base LLM client (no tools bound).
+    Return the cached primary chat LLM client.
     """
-    return _get_base_llm()
+    logger.success(
+        "ChatGroq initialized | model= base_model",
+    )
+    return _get_chat_llm()
 
 
-def get_llm_with_tools(tools: List[Any]) -> ChatGroq:
+@lru_cache(maxsize=1)
+def _get_summarizer_llm() -> ChatGroq:
     """
-    Return the cached LLM client with tools bound.
+    Initialize and cache the summarization LLM.
     """
-    llm = _get_base_llm()
-    return llm.bind_tools(tools)
+    config = load_config()
+    llm_cfg = config.summarizer_llm
+
+    logger.info("Initializing summarizer LLM", model=llm_cfg.model)
+
+    return ChatGroq(
+        model=llm_cfg.model,
+        temperature=llm_cfg.temperature,
+        api_key=llm_cfg.api_key,
+    )
+
+
+def get_llm_summarizer() -> ChatGroq:
+    """
+    Return the cached summarizer LLM client.
+    """
+    logger.success(
+        "ChatGroq initialized | model= summarizer_model",
+    )
+    return _get_summarizer_llm()
 
 
 @lru_cache(maxsize=1)

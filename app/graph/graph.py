@@ -20,7 +20,6 @@ def build_graph():
     graph.add_node("conversation_node", conversation_node)
     graph.add_node("retrieve_context", retriever_node)
     graph.add_node("summarize_context_node", retrieved_context_summary_node)
-    graph.add_node("connector_node", connector_node)
 
     graph.add_edge(START, "conversation_node")
 
@@ -29,7 +28,7 @@ def build_graph():
         tools_condition,
         {
             "tools": "retrieve_context",
-            END: "connector_node",
+            END: END,
         },
     )
 

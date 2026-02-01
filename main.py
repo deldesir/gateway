@@ -48,7 +48,7 @@ def main():
     graph = build_graph()
     store = JsonCheckpointer("memory.json")
 
-    thread_id = persona  # persona-scoped memory
+    thread_id = persona
 
     loaded = store.get(thread_id)
     state = (
