@@ -58,7 +58,7 @@ def retrieve_context(
         active_character=persona,
         k=5,
     )
-    logger.info("first chunk", contexts)
+    logger.info(f"first chunk {contexts}")
     logger.success(f"Tool result | retrieved={len(contexts)} chunks")
 
     return contexts

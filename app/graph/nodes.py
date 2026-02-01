@@ -5,6 +5,7 @@ Each node is responsible for executing a single chain and writing the resulting
 artifact back into the agent state. Nodes do not contain control flow logic or
 branching decisions, which are handled exclusively by graph edges.
 """
+
 from app.logger import setup_logger
 from app.graph.state import AgentState
 from langchain_core.messages import AIMessage
@@ -16,26 +17,38 @@ from app.graph.chains import (
 )
 from langgraph.prebuilt import ToolNode
 from app.graph.tools.retrieval import retrieve_context
+
 logger = setup_logger().bind(name="NODES")
 retriever_node = ToolNode([retrieve_context])
 
 
+from langchain_core.messages import AIMessage, HumanMessage
+from app.graph.chains import ConversationChain
+
+
 def conversation_node(state):
     """
-    Execute the initial conversation chain.
-
-    This is the only node where tool calls are permitted. The resulting assistant
-    message is appended to the message history.
+    Execute the conversation chain and update the assistant response state.
     """
     persona = state["persona"]
     messages = state.get("messages", [])
 
+    user_input = state.get("user_input")
+    if user_input:
+        messages = messages + [HumanMessage(content=user_input)]
+        state["user_input"] = ""
+
     chain = ConversationChain(persona=persona).build()
     ai_message: AIMessage = chain.invoke({"messages": messages})
+
+    final_response = state.get("final_response")
+    if ai_message.content:
+        final_response = ai_message.content
 
     return {
         **state,
         "messages": messages + [ai_message],
+        "final_response": final_response,
     }
 
 
@@ -44,6 +57,8 @@ def retrieved_context_summary_node(state: AgentState) -> AgentState:
     Summarize raw retrieved chunks into a canonical factual context.
     """
     retrieved_chunks = state.get("retrieved_chunks", [])
+
+    print("retrieved_chunks:::", retrieved_chunks)
 
     joined_context = "\n\n".join(retrieved_chunks)
 
@@ -88,4 +103,3 @@ def final_response_node(state):
         "conversation_summary": conversation_summary,
         "final_response": ai_message.content,
     }
-

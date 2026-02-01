@@ -1,13 +1,12 @@
 from functools import lru_cache
 
 from langgraph.graph import START, END, StateGraph
-from langgraph.prebuilt import ToolNode, tools_condition
+from langgraph.prebuilt import tools_condition
 
 from app.graph.state import AgentState
 from app.graph.nodes import (
     conversation_node,
     retrieved_context_summary_node,
-    connector_node,
     final_response_node,
     retriever_node,
 )
