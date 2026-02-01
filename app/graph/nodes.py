@@ -6,6 +6,8 @@ artifact back into the agent state. Nodes do not contain control flow logic or
 branching decisions, which are handled exclusively by graph edges.
 """
 
+from typing import Dict, Any
+from langchain_core.runnables import RunnableConfig
 from app.logger import setup_logger
 from app.graph.state import AgentState
 from langchain_core.messages import AIMessage
@@ -26,9 +28,12 @@ from langchain_core.messages import AIMessage, HumanMessage
 from app.graph.chains import ConversationChain
 
 
-def conversation_node(state):
+async def conversation_node(
+    state: Dict[str, Any],
+    config: RunnableConfig,
+) -> Dict[str, Any]:
     """
-    Execute the conversation chain and update the assistant response state.
+    Execute the primary conversation chain and stream assistant output.
     """
     persona = state["persona"]
     messages = state.get("messages", [])
@@ -36,19 +41,18 @@ def conversation_node(state):
     user_input = state.get("user_input")
     if user_input:
         messages = messages + [HumanMessage(content=user_input)]
-        state["user_input"] = ""
+        state["user_input"] = None
 
     chain = ConversationChain(persona=persona).build()
-    ai_message: AIMessage = chain.invoke({"messages": messages})
 
-    final_response = state.get("final_response")
-    if ai_message.content:
-        final_response = ai_message.content
+    response = await chain.ainvoke(
+        {"messages": messages},
+        config,
+    )
 
     return {
-        **state,
-        "messages": messages + [ai_message],
-        "final_response": final_response,
+        "messages": response,
+        "final_response": response.content,
     }
 
 
@@ -57,8 +61,6 @@ def retrieved_context_summary_node(state: AgentState) -> AgentState:
     Summarize raw retrieved chunks into a canonical factual context.
     """
     retrieved_chunks = state.get("retrieved_chunks", [])
-
-    print("retrieved_chunks:::", retrieved_chunks)
 
     joined_context = "\n\n".join(retrieved_chunks)
 

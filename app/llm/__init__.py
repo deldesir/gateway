@@ -27,6 +27,7 @@ def _get_chat_llm() -> ChatGroq:
         model=llm_cfg.model,
         temperature=llm_cfg.temperature,
         api_key=llm_cfg.api_key,
+        streaming=True,
     )
 
 
