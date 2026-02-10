@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Dict, Any
 from langchain_core.runnables import Runnable
 
 from app.llm import get_llm_summarizer, get_llm
@@ -9,8 +9,7 @@ from app.graph.prompts import (
     RetrievedContextSummaryPrompt,
     FinalResponsePrompt,
 )
-from app.graph.tools.retrieval import retrieve_context
-
+from app.graph.tools import retrieve_context, fetch_dossier, start_flow
 
 class ConversationChain:
     """
@@ -20,12 +19,27 @@ class ConversationChain:
     once per graph run.
     """
 
-    def __init__(self, persona: str):
-        self.persona = persona
+    def __init__(
+        self,
+        persona_vars: Dict[str, Any],
+        trust_score: int = 50,
+        mood: str = "Neutral",
+        dossier: Optional[dict] = None,
+    ):
+        self.persona_vars = persona_vars
+        self.trust_score = trust_score
+        self.mood = mood
+        self.dossier = dossier or {}
 
     def build(self) -> Runnable:
-        model = get_llm().bind_tools(tools=[retrieve_context])
-        prompt = ConversationPrompt(self.persona).build()
+        tools = [retrieve_context, fetch_dossier, start_flow]
+        model = get_llm().bind_tools(tools=tools)
+        prompt = ConversationPrompt(
+            self.persona_vars,
+            trust_score=self.trust_score,
+            mood=self.mood,
+            dossier=self.dossier,
+        ).build()
 
         return prompt | model
 
@@ -37,8 +51,8 @@ class ConversationSummaryChain:
     Chain used to extend an existing conversation summary.
     """
 
-    def __init__(self, persona: str, summary: Optional[str] = None):
-        self.persona = persona
+    def __init__(self, persona_vars: Dict[str, Any], summary: Optional[str] = None):
+        self.persona_vars = persona_vars
         self.summary = summary or ""
 
     def build(self) -> Runnable:
@@ -48,11 +62,11 @@ class ConversationSummaryChain:
         model = get_llm()
         if len(self.summary) > 0:
             prompt = ExtendConversationSummaryPrompt(
-                persona=self.persona,
+                persona_vars=self.persona_vars,
                 summary=self.summary,
             ).build()
         else:
-            prompt = ConversationSummaryPrompt(persona=self.persona)
+            prompt = ConversationSummaryPrompt(persona_vars=self.persona_vars).build()
         return prompt | model
 
 
@@ -82,11 +96,11 @@ class FinalResponseChain:
 
     def __init__(
         self,
-        persona: str,
+        persona_vars: Dict[str, Any],
         retrieved_context: Optional[str] = None,
         conversation_summary: Optional[str] = None,
     ):
-        self.persona = persona
+        self.persona_vars = persona_vars
         self.retrieved_context = retrieved_context
         self.conversation_summary = conversation_summary
 
@@ -96,7 +110,7 @@ class FinalResponseChain:
         """
         model = get_llm()
         prompt = FinalResponsePrompt(
-            persona=self.persona,
+            persona_vars=self.persona_vars,
             retrieved_context=self.retrieved_context,
             conversation_summary=self.conversation_summary,
         ).build()

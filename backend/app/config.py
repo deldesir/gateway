@@ -1,5 +1,8 @@
 import os
 from pydantic import BaseModel
+from dotenv import load_dotenv
+
+load_dotenv() # Ensure .env is loaded for local development
 from typing import Literal, Dict
 
 LLMRole = Literal["default", "summarizer"]
@@ -43,12 +46,12 @@ def load_config() -> AppConfig:
             "default": LLMConfig(
                 model=os.getenv("LLM_MODEL", ""),
                 temperature=float(os.getenv("LLM_TEMPERATURE", "0.3")),
-                api_key=os.getenv("GROQ_API_KEY", ""),
+                api_key=os.getenv("OPENAI_API_KEY", ""),
             ),
             "summarizer": LLMConfig(
                 model=os.getenv("LLM_MODEL_SUMMARIZE", ""),
                 temperature=float(os.getenv("LLM_TEMPERATURE", "0.1")),
-                api_key=os.getenv("GROQ_API_KEY", ""),
+                api_key=os.getenv("OPENAI_API_KEY", ""),
             ),
         },
         embeddings=EmbedderConfig(

@@ -12,8 +12,7 @@ from app.graph.nodes import (
 )
 
 
-@lru_cache(maxsize=1)
-def build_graph():
+def build_graph(checkpointer=None):
     graph = StateGraph(AgentState)
 
     graph.add_node("conversation_node", conversation_node)
@@ -34,4 +33,4 @@ def build_graph():
     graph.add_edge("retrieve_context", "summarize_context_node")
     graph.add_edge("summarize_context_node", "conversation_node")
 
-    return graph.compile()
+    return graph.compile(checkpointer=checkpointer)
