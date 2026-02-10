@@ -28,6 +28,10 @@ from langchain_core.messages import AIMessage, HumanMessage
 from app.graph.chains import ConversationChain
 
 
+from app.graph.persona_logic import calculate_trust, determine_mood
+
+from app.graph.prompts import PersonaPromptRegistry
+
 async def conversation_node(
     state: Dict[str, Any],
     config: RunnableConfig,
@@ -35,15 +39,35 @@ async def conversation_node(
     """
     Execute the primary conversation chain and stream assistant output.
     """
-    persona = state["persona"]
+    persona_id = state["persona"]
     messages = state.get("messages", [])
+    
+    # Persona Engine: Load State
+    trust_score = state.get("trust_score", 50)
+    current_mood = state.get("mood", "Neutral")
+    dossier = state.get("dossier", {})
 
     user_input = state.get("user_input")
     if user_input:
-        messages = messages + [HumanMessage(content=user_input)]
+        # Deduplication: routes.py often seeds the state with the message.
+        # Only append if it's not already the last message.
+        if not messages or messages[-1].content != user_input:
+            messages = messages + [HumanMessage(content=user_input)]
         state["user_input"] = None
+        
+        # Persona Engine: Update State based on input
+        trust_score = calculate_trust(trust_score, user_input)
+        current_mood = determine_mood(trust_score, current_mood)
 
-    chain = ConversationChain(persona=persona).build()
+    # Fetch Persona Async
+    persona_vars = await PersonaPromptRegistry.get_async(persona_id)
+
+    chain = ConversationChain(
+        persona_vars=persona_vars,
+        trust_score=trust_score,
+        mood=current_mood,
+        dossier=dossier,
+    ).build()
 
     response = await chain.ainvoke(
         {"messages": messages},
@@ -53,6 +77,8 @@ async def conversation_node(
     return {
         "messages": response,
         "final_response": response.content,
+        "trust_score": trust_score,
+        "mood": current_mood,
     }
 
 
@@ -74,30 +100,33 @@ def retrieved_context_summary_node(state: AgentState) -> AgentState:
     }
 
 
-def final_response_node(state):
+async def final_response_node(state):
     """
     Terminal node that optionally summarizes the conversation history and
     always produces the final in-character response.
     """
-    persona = state["persona"]
+    persona_id = state["persona"]
     messages = state.get("messages", [])
+
+    # Fetch Persona Async
+    persona_vars = await PersonaPromptRegistry.get_async(persona_id)
 
     conversation_summary = state.get("conversation_summary")
     logger.debug("Retrieved context: {}", state.get("retrieved_context"))
     if len(messages) > 20:
-        summary_chain = ConversationSummaryChain(persona=persona).build()
-        summary_message = summary_chain.invoke({"messages": messages[-20:]})
+        summary_chain = ConversationSummaryChain(persona_vars=persona_vars).build()
+        summary_message = await summary_chain.ainvoke({"messages": messages[-20:]})
 
         conversation_summary = summary_message.content
         messages = messages[:-20]
 
     response_chain = FinalResponseChain(
-        persona=persona,
+        persona_vars=persona_vars,
         retrieved_context=state.get("retrieved_context"),
         conversation_summary=conversation_summary,
     ).build()
 
-    ai_message: AIMessage = response_chain.invoke({"messages": messages})
+    ai_message: AIMessage = await response_chain.ainvoke({"messages": messages})
 
     return {
         **state,

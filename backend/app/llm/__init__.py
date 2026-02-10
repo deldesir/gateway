@@ -8,13 +8,13 @@ from app.llm.embedding_client import EmbeddingClient
 from app.llm.embedder import LiteLLMEmbeddingClient, LocalHFEmbeddingClient
 from typing import List, Any, Optional
 from app.logger import setup_logger
-from langchain_groq import ChatGroq
+from langchain_litellm import ChatLiteLLM
 
 logger = setup_logger().bind(name="LLM")
 
 
 @lru_cache(maxsize=1)
-def _get_chat_llm() -> ChatGroq:
+def _get_chat_llm() -> ChatLiteLLM:
     """
     Initialize and cache the primary chat LLM.
     """
@@ -23,7 +23,7 @@ def _get_chat_llm() -> ChatGroq:
 
     logger.info("Initializing primary chat LLM", model=llm_cfg.model)
 
-    return ChatGroq(
+    return ChatLiteLLM(
         model=llm_cfg.model,
         temperature=llm_cfg.temperature,
         api_key=llm_cfg.api_key,
@@ -31,18 +31,18 @@ def _get_chat_llm() -> ChatGroq:
     )
 
 
-def get_llm() -> ChatGroq:
+def get_llm() -> ChatLiteLLM:
     """
     Return the cached primary chat LLM client.
     """
     logger.success(
-        "ChatGroq initialized | model= base_model",
+        "ChatLiteLLM initialized",
     )
     return _get_chat_llm()
 
 
 @lru_cache(maxsize=1)
-def _get_summarizer_llm() -> ChatGroq:
+def _get_summarizer_llm() -> ChatLiteLLM:
     """
     Initialize and cache the summarization LLM.
     """
@@ -51,19 +51,19 @@ def _get_summarizer_llm() -> ChatGroq:
 
     logger.info("Initializing summarizer LLM", model=llm_cfg.model)
 
-    return ChatGroq(
+    return ChatLiteLLM(
         model=llm_cfg.model,
         temperature=llm_cfg.temperature,
         api_key=llm_cfg.api_key,
     )
 
 
-def get_llm_summarizer() -> ChatGroq:
+def get_llm_summarizer() -> ChatLiteLLM:
     """
     Return the cached summarizer LLM client.
     """
     logger.success(
-        "ChatGroq initialized | model= summarizer_model",
+        "ChatLiteLLM initialized | model= summarizer_model",
     )
     return _get_summarizer_llm()
 

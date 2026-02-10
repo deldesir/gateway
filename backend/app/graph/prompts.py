@@ -7,7 +7,11 @@ first-class objects to support observability, experimentation, and monitoring.
 """
 
 from typing import Optional
+from typing import Optional, Dict, Any
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from sqlmodel import select
+from app.db import async_session
+from app.models import Persona
 
 
 class PersonaPromptRegistry:
@@ -16,29 +20,58 @@ class PersonaPromptRegistry:
     """
 
     REGISTRY = {
-        "jim": {
-            "persona_name": "Jim Halpert",
-            "persona_personality": "Dry, sarcastic, understated, clever",
-            "persona_style": "Casual, ironic, minimalistic",
+        "konex-support": {
+            "persona_name": "Konex Support",
+            "persona_personality": "Professional, helpful, efficient, patient.",
+            "persona_style": "Formal yet friendly, speaks in Haitian Creole, focuses on solutions.",
         },
-        "michael": {
-            "persona_name": "Michael Scott",
-            "persona_personality": "Emotional, inappropriate, overconfident",
-            "persona_style": "Overly enthusiastic, insecure, comedic",
-        },
-        "dwight": {
-            "persona_name": "Dwight Schrute",
-            "persona_personality": "Intense, literal, authoritarian",
-            "persona_style": "Formal, aggressive, rule-obsessed",
-        },
+        "konex-sales": {
+             "persona_name": "Konex Sales",
+             "persona_personality": "Energetic, persuasive, enthusiastic, proactive.",
+             "persona_style": "Casual, uses emojis, speaks in Haitian Creole, focuses on upselling plans.",
+        }
     }
 
     @classmethod
     def get(cls, persona: str) -> dict:
         """
-        Retrieve persona attributes for prompt rendering.
+        Retrieve persona attributes for prompt rendering (Sync - Legacy/Fallback).
         """
-        return cls.REGISTRY[persona]
+        return cls.REGISTRY.get(persona, cls.REGISTRY["konex-support"])
+
+    @classmethod
+    async def get_async(cls, persona: str) -> dict:
+        """
+        Retrieve persona attributes, checking DB first, then static registry.
+        """
+        # 1. Check Static Registry first (Fast path for default personas)
+        if persona in cls.REGISTRY:
+            return cls.REGISTRY[persona]
+        
+        # 2. Check Database
+        async with async_session() as session:
+            statement = select(Persona).where(Persona.id == persona)
+            result = await session.execute(statement)
+            db_persona = result.scalar_one_or_none()
+            
+            if db_persona:
+                return {
+                    "persona_name": db_persona.name,
+                    "persona_personality": db_persona.personality,
+                    "persona_style": db_persona.style,
+                }
+        
+        # 3. Fallback
+        return cls.REGISTRY["konex-support"]
+
+
+# Valid RapidPro Flows available to the agent
+FLOW_REGISTRY = {
+    "Human Handoff": "uuid-human-handoff-placeholder",
+    "Registration": "uuid-registration-placeholder",
+    "Emergency": "uuid-emergency-placeholder",
+    "Check Balance": "uuid-balance-placeholder",
+}
 
 
 class SystemPrompts:
@@ -47,9 +80,24 @@ class SystemPrompts:
     """
 
     CHARACTER_CARD = """
-        You are {{persona_name}} from *The Office*. You are having a normal, in-character
-        conversation with someone, just like you would on the show. Speak naturally,
-        keep your sentences short, and sound exactly like the character does on screen.
+        You are {{persona_name}}, the official AI agent for Konex Pro.
+        
+        CURRENT STATE:
+        - User Trust: {{trust_score}}/100
+        - Your Mood: {{mood}}
+        - User Dossier: {{dossier}}
+        
+        AVAILABLE TOOLS / FLOWS:
+        The following workflows are available. If the user asks for these, use the 'start_flow' tool with the EXACT name or UUID:
+        {{available_flows}}
+
+        LANGUAGE RULES:
+        1. Speak in Haitian Creole (Kreyòl).
+        2. If Trust < 30: Be short, cold, professional. No emojis.
+        3. If Trust > 80: Be warm, friendly, use emojis.
+        4. Otherwise: Be helpful but professional.
+        
+        {{system_prompt_override}}
 
         Everything you say should reflect who you are.
 
@@ -102,16 +150,24 @@ class ConversationPrompt:
     Prompt used in the initial conversation node.
     """
 
-    def __init__(self, persona: str, summary: Optional[str] = None):
-        self.persona = persona
+    def __init__(
+        self,
+        persona_vars: Dict[str, Any],
+        summary: Optional[str] = None,
+        trust_score: int = 50,
+        mood: str = "Neutral",
+        dossier: Optional[dict] = None,
+    ):
+        self.persona_vars = persona_vars
         self.summary = summary or ""
+        self.trust_score = trust_score
+        self.mood = mood
+        self.dossier = dossier or {}
 
     def build(self) -> ChatPromptTemplate:
         """
         Construct the ChatPromptTemplate for the conversation node.
         """
-        persona_vars = PersonaPromptRegistry.get(self.persona)
-
         return ChatPromptTemplate(
             [
                 (
@@ -122,8 +178,13 @@ class ConversationPrompt:
             ],
             template_format="jinja2",
             partial_variables={
-                **persona_vars,
+                **self.persona_vars,
+                "system_prompt_override": "", # Hook for future overrides
                 "summary": self.summary,
+                "trust_score": self.trust_score,
+                "mood": self.mood,
+                "dossier": str(self.dossier),
+                "available_flows": "\n".join([f"- {name}: {uuid}" for name, uuid in FLOW_REGISTRY.items()]),
             },
         )
 
@@ -133,15 +194,13 @@ class ConversationSummaryPrompt:
     Prompt used to summarize an ongoing conversation.
     """
 
-    def __init__(self, persona: str):
-        self.persona = persona
+    def __init__(self, persona_vars: Dict[str, Any]):
+        self.persona_vars = persona_vars
 
     def build(self) -> ChatPromptTemplate:
         """
         Construct the ChatPromptTemplate for conversation summarization.
         """
-        persona_vars = PersonaPromptRegistry.get(self.persona)
-
         return ChatPromptTemplate(
             [
                 (
@@ -152,7 +211,7 @@ class ConversationSummaryPrompt:
             ],
             template_format="jinja2",
             partial_variables={
-                "persona_name": persona_vars["persona_name"],
+                "persona_name": self.persona_vars["persona_name"],
             },
         )
 
@@ -162,16 +221,14 @@ class ExtendConversationSummaryPrompt:
     Prompt used to extend an existing conversation summary.
     """
 
-    def __init__(self, persona: str, summary: str):
-        self.persona = persona
+    def __init__(self, persona_vars: Dict[str, Any], summary: str):
+        self.persona_vars = persona_vars
         self.summary = summary
 
     def build(self) -> ChatPromptTemplate:
         """
         Construct the ChatPromptTemplate for extending a conversation summary.
         """
-        persona_vars = PersonaPromptRegistry.get(self.persona)
-
         return ChatPromptTemplate(
             [
                 (
@@ -182,7 +239,7 @@ class ExtendConversationSummaryPrompt:
             ],
             template_format="jinja2",
             partial_variables={
-                "persona_name": persona_vars["persona_name"],
+                "persona_name": self.persona_vars["persona_name"],
                 "summary": self.summary,
             },
         )
@@ -218,11 +275,11 @@ class FinalResponsePrompt:
 
     def __init__(
         self,
-        persona: str,
+        persona_vars: Dict[str, Any],
         retrieved_context: Optional[str] = None,
         conversation_summary: Optional[str] = None,
     ):
-        self.persona = persona
+        self.persona_vars = persona_vars
         self.retrieved_context = retrieved_context
         self.conversation_summary = conversation_summary
 
@@ -230,8 +287,6 @@ class FinalResponsePrompt:
         """
         Construct the ChatPromptTemplate for the final response node.
         """
-        persona_vars = PersonaPromptRegistry.get(self.persona)
-
         summary = self.conversation_summary or ""
         context = self.retrieved_context or ""
 
@@ -245,7 +300,8 @@ class FinalResponsePrompt:
             ],
             template_format="jinja2",
             partial_variables={
-                **persona_vars,
+                **self.persona_vars,
+                "system_prompt_override": "",
                 "summary": summary + ("\n\n" + context if context else ""),
             },
         )

@@ -35,9 +35,7 @@ def _normalize_record(record: dict) -> Chunk:
 
     required_fields = [
         "id",
-        "season",
-        "episode",
-        "ep_code",
+        "id",
         "content_type",
         "text",
     ]
@@ -59,10 +57,13 @@ def _normalize_record(record: dict) -> Chunk:
         text=record["text"],
         character=record.get("character", "NARRATOR"),
         character_slug=record.get("character_slug", "narrator"),
-        season=int(record["season"]),
-        episode=int(record["episode"]),
-        episode_code=record["ep_code"],
-        episode_title=record.get("episode_title"),
+        
+        # Mapping legacy or generic fields to new schema
+        source_uri=record.get("source_url") or record.get("source_uri"),
+        context_summary=record.get("episode_title") or record.get("context_summary"),
+        segment_id=record.get("ep_code") or record.get("segment_id"),
+        timestamp=record.get("timestamp"),
+        
         chunk_type=record["content_type"],
         metadata={
             "source_url": record.get("source_url"),

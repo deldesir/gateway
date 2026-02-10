@@ -19,7 +19,7 @@ def main():
 
     embedder = get_embedder()
 
-    query = "Identity theft is not a joke Jim"
+    query = "How do I register for an account?"
 
     print(f"\nQuery: {query}")
 

@@ -140,6 +140,13 @@ class VectorStore:
 
             results.append((float(dist), self.metadata[idx]))
 
-        logger.info(f"Search completed | returned={len(results)}")
-
         return results
+
+    def clear(self):
+        """
+        Clear the index and metadata.
+        """
+        self.index = faiss.IndexFlatL2(self.dim)
+        self.metadata = []
+        self._persist()
+        logger.warning(f"Vector store cleared | path={str(self.index_path)}")

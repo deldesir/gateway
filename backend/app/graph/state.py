@@ -43,3 +43,8 @@ class AgentState(MessagesState):
     conversation_summary: Optional[str] = None
     persona_memory: Optional[Dict[str, Any]] = None
     final_response: Optional[str] = None
+    
+    # Konex Persona Engine
+    dossier: Dict[str, Any]
+    trust_score: int
+    mood: str # Literal["Happy", "Neutral", "Annoyed"] - kept simple for TypedDict compatibility

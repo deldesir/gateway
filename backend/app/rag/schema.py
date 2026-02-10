@@ -22,13 +22,14 @@ class Chunk:
 
     text: str
 
-    character: str
-    character_slug: str
+    character: str = "Konex"
+    character_slug: str = "konex"
 
-    season: int
-    episode: int
-    episode_code: int
-    episode_title: Optional[str] = None
+    # Generic Source Context
+    source_uri: Optional[str] = None  # URL, filename, or unique source identifier
+    timestamp: Optional[str] = None   # For audio/video transcripts
+    segment_id: Optional[str] = None  # Granular reference (e.g. page number, slide ID)
+    context_summary: Optional[str] = None # previously episode_title
 
     chunk_type: ChunkType = "quote"
 
@@ -62,9 +63,11 @@ class Chunk:
             "text": self.text,
             "character_slug": self.character_slug,
             "chunk_type": self.chunk_type,
-            "season": self.season,
-            "episode": self.episode,
-            "episode_code": self.episode_code,
-            "episode_title": self.episode_title,
+            "character_slug": self.character_slug,
+            "chunk_type": self.chunk_type,
+            "source_uri": self.source_uri,
+            "timestamp": self.timestamp,
+            "segment_id": self.segment_id,
+            "context_summary": self.context_summary,
             **self.metadata,
         }
