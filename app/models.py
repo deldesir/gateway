@@ -2,12 +2,16 @@ from typing import Optional
 from sqlmodel import Field, SQLModel
 import uuid
 
+from sqlalchemy import Column, JSON
+from typing import List
+
 class PersonaBase(SQLModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
     name: str = Field(index=True)
     personality: str
     style: str
     system_prompt: Optional[str] = None
+    allowed_tools: List[str] = Field(default=[], sa_column=Column(JSON))
 
 class Persona(PersonaBase, table=True):
     __tablename__ = "konex_personas"
@@ -23,6 +27,7 @@ class PersonaUpdate(SQLModel):
     personality: Optional[str] = None
     style: Optional[str] = None
     system_prompt: Optional[str] = None
+    allowed_tools: Optional[List[str]] = None
 
 class KnowledgeItemBase(SQLModel):
     title: str = Field(index=True)

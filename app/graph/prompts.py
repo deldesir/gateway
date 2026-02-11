@@ -24,11 +24,13 @@ class PersonaPromptRegistry:
             "persona_name": "Konex Support",
             "persona_personality": "Professional, helpful, efficient, patient.",
             "persona_style": "Formal yet friendly, speaks in Haitian Creole, focuses on solutions.",
+            "allowed_tools": ["rapidpro_dossier", "retrieval"], 
         },
         "konex-sales": {
              "persona_name": "Konex Sales",
              "persona_personality": "Energetic, persuasive, enthusiastic, proactive.",
              "persona_style": "Casual, uses emojis, speaks in Haitian Creole, focuses on upselling plans.",
+             "allowed_tools": ["rapidpro_flow", "retrieval"],
         }
     }
 
@@ -66,10 +68,21 @@ class PersonaPromptRegistry:
                 db_persona = result.scalar_one_or_none()
                 
                 if db_persona:
+                    # Parse allowed_tools if it's a string (SQLite legacy) or rely on TypeDecorator
+                    # For safety with the TEXT migration:
+                    import json
+                    tools = db_persona.allowed_tools
+                    if isinstance(tools, str):
+                        try:
+                            tools = json.loads(tools)
+                        except:
+                            tools = []
+                            
                     base_data = {
                         "persona_name": db_persona.name,
                         "persona_personality": db_persona.personality,
                         "persona_style": db_persona.style,
+                        "allowed_tools": tools or [],
                     }
         
         # Fallback if still nothing
