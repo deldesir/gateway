@@ -151,6 +151,8 @@ async def openai_chat_completions(request: OpenAIChatRequest, raw_request: Reque
     # --- CHANNEL CONFIG LOOKUP ---
     # Check if 'model' passed is actually a Channel Phone Number (e.g. "50912345678")
     # If so, look up the assigned Persona.
+    system_prompt_override = None
+    
     try:
         from app.models import ChannelConfig, Persona
         from app.db import get_session
@@ -173,7 +175,7 @@ async def openai_chat_completions(request: OpenAIChatRequest, raw_request: Reque
                     api_logger.info(f"Channel Lookup: Mapped '{model_persona}' -> Persona '{persona_res.name}' ({persona_res.id})")
                     model_persona = persona_res.id
                     # Future: Inject system_prompt_override or knowledge_base_id into Thread State?
-                    # For now, just mapping the name ensures the Graph loads the right persona logic.
+                    system_prompt_override = channel_config.system_prompt_override
                 else:
                     api_logger.warning(f"Channel Config found for '{model_persona}' but Persona ID '{channel_config.persona_id}' is missing.")
             else:
@@ -184,13 +186,10 @@ async def openai_chat_completions(request: OpenAIChatRequest, raw_request: Reque
     except Exception as e:
         api_logger.error(f"Error looking up ChannelConfig: {e}")
     # --- END CHANNEL LOOKUP ---
-    
     # 2. Setup Session/Thread
     # We use the user_id (phone number) as the stable thread_id
     thread_id = f"whatsapp:{user_id}"
 
-    # --- ADMIN COMMAND INTERCEPTOR ---
-    # Handle commands via Modular Registry
     # --- ADMIN COMMAND INTERCEPTOR ---
     # Handle commands via Modular Registry
     # The message has been cleaned above (prefix stripped), so we can check startswith.
@@ -230,36 +229,21 @@ async def openai_chat_completions(request: OpenAIChatRequest, raw_request: Reque
                     break
         
         # 4. Database Check (If not already allowed as Superuser)
-        # We check if the user is an admin for ANY channel.
-        # Since we don't receive the channel ID in the request, we can't enforce channel-scoping strictly.
-        # Design Decision: If you are an admin (stored in DB), you are authorized.
-        
         if not is_allowed:
              async for session in get_session():
-                # Flexible match: Check if user_id (e.g. whatsapp:123) matches any admin record
-                # We could try exact match first
                 query = select(Admin).where(Admin.user_phone == user_id)
                 result = await session.exec(query)
                 admin_records = result.all()
                 
-                # If found, check permissions in ANY of their admin records
-                # This effectively gives them union of permissions across all channels they manage
                 for record in admin_records:
                     perms = json.loads(record.permissions) if record.permissions != "*" else ["*"]
                     if "*" in perms or command_root in perms:
                         is_allowed = True
                         api_logger.info(f"User {user_id} authorized via DB (Perms: {perms}).")
                         break
-                
-                # If not found by exact match, maybe try partial? (e.g. + vs no +)
-                # For now, rely on robust storage (cmd_admin cleans URNs) and robust input (routes cleans URNs)
-                # routes.py L104 reconstructs user_id as "scheme:number"
-                # cmd_admin L25 cleans to "scheme:number" (mostly whatsapp:)
-                # So exact match should work if schemes align.
-
+        
         from app.commands.registry import CommandRegistry
         
-        # KEY FIX: Prevent fallthrough to AI for known commands if auth fails
         try:
             has_cmd = CommandRegistry.has_command(command_root)
             api_logger.info(f"Command '{command_root}' exists in registry: {has_cmd}")
@@ -278,8 +262,6 @@ async def openai_chat_completions(request: OpenAIChatRequest, raw_request: Reque
                     }
         except Exception as e:
             api_logger.error(f"Error checking command registry: {e}")
-            # Fallthrough to safe behavior (AI or Error?)
-            # If registry check fails, better to let AI handle it or ignore it.
             pass
         
         if is_allowed:
@@ -287,7 +269,6 @@ async def openai_chat_completions(request: OpenAIChatRequest, raw_request: Reque
             
             # Build Context
             async with get_checkpointer() as checkpointer:
-                # Checkpointer setup usually done in build_graph, but good to ensure here if hitting DB directly
                 if hasattr(checkpointer, "setup"): await checkpointer.setup()
                 
                 ctx = CommandContext(
@@ -313,26 +294,27 @@ async def openai_chat_completions(request: OpenAIChatRequest, raw_request: Reque
                     "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
                 }
     # --- END ADMIN COMMANDS ---
+        
+        # 3. Graph Execution
+        async with get_checkpointer() as checkpointer:
+            # Initialize Postgres tables if needed (idempotent)
+            if hasattr(checkpointer, "setup"):
+                await checkpointer.setup()
     
-    # 3. Graph Execution
-    async with get_checkpointer() as checkpointer:
-        # Initialize Postgres tables if needed (idempotent)
-        if hasattr(checkpointer, "setup"):
-            await checkpointer.setup()
-
-        graph = build_graph(checkpointer=checkpointer)
-        
-        config = {"configurable": {"thread_id": thread_id}}
-        
-        # Prepare input state
-        initial_state = {
-            "persona": model_persona,
-            "user_input": last_user_message,
-            "messages": [HumanMessage(content=last_user_message)]
-        }
-
-        # Invoke
-        result = await graph.ainvoke(initial_state, config=config)
+            graph = build_graph(checkpointer=checkpointer)
+            
+            config = {"configurable": {"thread_id": thread_id}}
+            
+            # Prepare input state
+            initial_state = {
+                "persona": model_persona,
+                "user_input": last_user_message,
+                "messages": [HumanMessage(content=last_user_message)],
+                "system_prompt_override": system_prompt_override
+            }
+    
+            # Invoke
+            result = await graph.ainvoke(initial_state, config=config)
         
         # 4. Extract Response
         final_text = result.get("final_response") or "Mwen pa konprann."

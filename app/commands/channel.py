@@ -5,9 +5,9 @@ from sqlmodel import select
 
 @CommandRegistry.register("channel")
 async def cmd_channel(ctx: CommandContext) -> str:
-    """Manages channel-persona mapping. Usage: #channel <assign|list> ..."""
+    """Manages channel-persona mapping. Usage: #channel <assign|set_instruction|list> ..."""
     if not ctx.args:
-        return "⚠️ Usage: `#channel assign <phone> <persona_name>`, `#channel list`"
+        return "⚠️ Usage: `#channel assign <phone> <persona>`, `#channel set_instruction <phone> <text>`, `#channel list`"
         
     action = ctx.args[0].lower()
     
@@ -47,6 +47,28 @@ async def cmd_channel(ctx: CommandContext) -> str:
             await session.commit()
             return msg
 
+            await session.commit()
+            return msg
+
+    elif action == "set_instruction":
+        if len(ctx.args) < 3:
+            return "⚠️ Usage: `#channel set_instruction <phone> <instruction_text>`"
+            
+        phone = ctx.args[1]
+        instruction = " ".join(ctx.args[2:])
+        
+        async for session in get_session():
+            c_result = await session.exec(select(ChannelConfig).where(ChannelConfig.channel_phone == phone))
+            config = c_result.first()
+            
+            if not config:
+                 return f"❌ Channel `{phone}` not found. Assign a persona first."
+            
+            config.system_prompt_override = instruction
+            session.add(config)
+            await session.commit()
+            return f"✅ Updated instructions for `{phone}`."
+
     elif action == "list":
         async for session in get_session():
             # Join with Persona to get names
@@ -63,7 +85,8 @@ async def cmd_channel(ctx: CommandContext) -> str:
                 # Fetch persona name
                 p_res = await session.get(Persona, c.persona_id)
                 p_name = p_res.name if p_res else  f"Unknown ID: {c.persona_id}"
-                msg += f"- `{c.channel_phone}` -> **{p_name}**\n"
+                has_override = "📝" if c.system_prompt_override else ""
+                msg += f"- `{c.channel_phone}` -> **{p_name}** {has_override}\n"
             return msg
             
     return f"❌ Unknown action: {action}"
