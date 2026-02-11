@@ -14,7 +14,10 @@ except ImportError:
     AsyncPostgresSaver = None
 
 from app.api.schemas import ChatRequest, ChatResponse
+from app.api.schemas import ChatRequest, ChatResponse
 from app.graph.graph import build_graph
+from app.services.channel import resolve_persona
+from app.services.auth import check_admin_permissions
 
 router = APIRouter(prefix="", tags=["chat"])
 
@@ -149,42 +152,8 @@ async def openai_chat_completions(request: OpenAIChatRequest, raw_request: Reque
     model_persona = request.model or "konex-support"
     
     # --- CHANNEL CONFIG LOOKUP ---
-    # Check if 'model' passed is actually a Channel Phone Number (e.g. "50912345678")
-    # If so, look up the assigned Persona.
-    system_prompt_override = None
-    
-    try:
-        from app.models import ChannelConfig, Persona
-        from app.db import get_session
-        from sqlmodel import select
-
-        # We need a synchronous way to check this, OR use the async session.
-        # Since we are in an async function, we can use a new session context.
-        async for session in get_session():
-            # Check for exact match on channel_phone
-            # request.model might be "509..." or "whatsapp:509..."
-            # Let's try as-is first.
-            query = select(ChannelConfig).where(ChannelConfig.channel_phone == model_persona)
-            result = await session.exec(query)
-            channel_config = result.first()
-            
-            if channel_config:
-                # Found a channel config! Load the persona.
-                persona_res = await session.get(Persona, channel_config.persona_id)
-                if persona_res:
-                    api_logger.info(f"Channel Lookup: Mapped '{model_persona}' -> Persona '{persona_res.name}' ({persona_res.id})")
-                    model_persona = persona_res.id
-                    # Future: Inject system_prompt_override or knowledge_base_id into Thread State?
-                    system_prompt_override = channel_config.system_prompt_override
-                else:
-                    api_logger.warning(f"Channel Config found for '{model_persona}' but Persona ID '{channel_config.persona_id}' is missing.")
-            else:
-                 # Clean up potential "whatsapp:" prefix if passed in model?
-                 # Usually model is just "konex-support" or a number on WhatsApp business API mapping.
-                 pass
-            break # Only need one session iteration
-    except Exception as e:
-        api_logger.error(f"Error looking up ChannelConfig: {e}")
+    # Delegate to Service
+    model_persona, system_prompt_override = await resolve_persona(model_persona)
     # --- END CHANNEL LOOKUP ---
     # 2. Setup Session/Thread
     # We use the user_id (phone number) as the stable thread_id
@@ -194,17 +163,7 @@ async def openai_chat_completions(request: OpenAIChatRequest, raw_request: Reque
     # Handle commands via Modular Registry
     # The message has been cleaned above (prefix stripped), so we can check startswith.
     if last_user_message.strip().startswith(("/", "#")):
-        # SECURITY CHECK: Granular Admin Authorization
-        import os
-        from app.db import get_session
-        from app.models import Admin
-        from sqlmodel import select
-        import json
-
-        # 1. Start with Deny
-        is_allowed = False
-        
-        # 2. Extract Command (e.g., "#user")
+        # 1. Extract Command (e.g., "#user")
         parts = last_user_message.strip().split()
         if not parts:
             # Handle empty message after strip
@@ -212,35 +171,9 @@ async def openai_chat_completions(request: OpenAIChatRequest, raw_request: Reque
             command_root = ""
         else:
             command_root = parts[0].lower().replace("#", "").replace("/", "") # "user"
-            api_logger.info(f"Checking authorization for command '{command_root}' (User: {user_id})")
-
-        # 3. Superuser Check (Environment Variable)
-        admin_phones = os.getenv("ADMIN_PHONE", "").replace(" ", "").split(",")
-        
-        if not admin_phones or admin_phones == [""]:
-             api_logger.warning("No ADMIN_PHONE configured! Dev Mode: ALLOWED.")
-             is_allowed = True
-        else:
-            for admin in admin_phones:
-                # Debug comparison
-                if admin in user_id or (admin.replace("+", "") in user_id.replace("+", "")):
-                    is_allowed = True
-                    api_logger.info(f"User {user_id} authorized via ADMIN_PHONE.")
-                    break
-        
-        # 4. Database Check (If not already allowed as Superuser)
-        if not is_allowed:
-             async for session in get_session():
-                query = select(Admin).where(Admin.user_phone == user_id)
-                result = await session.exec(query)
-                admin_records = result.all()
-                
-                for record in admin_records:
-                    perms = json.loads(record.permissions) if record.permissions != "*" else ["*"]
-                    if "*" in perms or command_root in perms:
-                        is_allowed = True
-                        api_logger.info(f"User {user_id} authorized via DB (Perms: {perms}).")
-                        break
+            
+        # 2. Check Permissions via Service
+        is_allowed = await check_admin_permissions(user_id, command_root)
         
         from app.commands.registry import CommandRegistry
         
