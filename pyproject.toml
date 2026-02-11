@@ -1,0 +1,37 @@
+[project]
+name = "konex-backend"
+version = "0.1.0"
+description = "Konex Pro Backend - Intelligent Agentic System for IIAB"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "dotenv>=0.9.9",
+    "faiss-cpu>=1.13.2",
+    "fastapi>=0.128.0",
+    "google-genai>=1.56.0",
+    "google-generativeai>=0.8.6",
+    "ipython>=8.38.0",
+    "langchain>=1.2.0",
+    "langchain-community>=0.4.1",
+    "langchain-core>=1.2.5",
+    "langchain-groq>=1.1.1",
+    "langchain-litellm>=0.3.5",
+    "langgraph>=1.0.5",
+    "langgraph-checkpoint-sqlite>=3.0.1",
+    "langgraph-checkpoint-postgres>=2.0.0",
+    "litellm>=1.80.11",
+    "loguru>=0.7.3",
+    "pydantic>=2.12.5",
+    "python-dotenv>=1.2.1",
+    "sentence-transformers>=5.2.0",
+    "uvicorn>=0.40.0",
+    "asyncpg>=0.29.0",
+    "sqlmodel>=0.0.16",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
