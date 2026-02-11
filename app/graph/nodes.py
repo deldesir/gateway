@@ -61,6 +61,11 @@ async def conversation_node(
 
     # Fetch Persona Async
     persona_vars = await PersonaPromptRegistry.get_async(persona_id)
+    
+    # Inject Override if present
+    override = state.get("system_prompt_override")
+    if override:
+        persona_vars["system_prompt_override"] = override
 
     chain = ConversationChain(
         persona_vars=persona_vars,

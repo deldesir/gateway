@@ -2,7 +2,7 @@
 import sqlite3
 import os
 
-DB_PATH = "konex_backend.db"
+DB_PATH = "checkpoints.sqlite"
 
 def migrate():
     print(f"Checking {DB_PATH} for schema updates...")
