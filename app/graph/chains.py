@@ -11,6 +11,8 @@ from app.graph.prompts import (
 )
 from app.graph.tools import retrieve_context, fetch_dossier, start_flow
 
+from app.graph.tools.registry import ToolRegistry
+
 class ConversationChain:
     """
     Chain used for the initial conversation turn.
@@ -32,8 +34,23 @@ class ConversationChain:
         self.dossier = dossier or {}
 
     def build(self) -> Runnable:
-        tools = [retrieve_context, fetch_dossier, start_flow]
-        model = get_llm().bind_tools(tools=tools)
+        # Dynamic Tool Binding
+        allowed_tool_ids = self.persona_vars.get("allowed_tools", [])
+        
+        # Ensure we have a list (handle migration edge cases)
+        if not isinstance(allowed_tool_ids, list):
+            allowed_tool_ids = []
+            
+        tools = ToolRegistry.get_tools(allowed_tool_ids)
+        
+        # Fallback: If no tools allowed, bind nothing (or default?)
+        # Binding empty list might be fine, but some LLMs error.
+        
+        if tools:
+            model = get_llm().bind_tools(tools=tools)
+        else:
+            model = get_llm()
+            
         prompt = ConversationPrompt(
             self.persona_vars,
             trust_score=self.trust_score,
