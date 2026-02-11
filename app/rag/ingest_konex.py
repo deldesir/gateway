@@ -14,7 +14,7 @@ DATA_FILE = Path("data/konex_services.txt")
 
 def ingest_konex():
     """
-    Ingest Konex services text file into the vector store.
+    Ingest Konex services text file AND persona knowledge files into the vector store.
     """
     logger.info("Starting Konex RAG ingestion")
 
@@ -25,49 +25,48 @@ def ingest_konex():
         dim=384,  # Standard for many sentence-transformers models
     )
 
-    # 2. Read Data
-    if not DATA_FILE.exists():
-        logger.error(f"Data file not found: {DATA_FILE}")
-        return
-
-    text = DATA_FILE.read_text(encoding="utf-8")
-    
-    # 3. Simple Chunking (by empty lines / paragraphs)
-    raw_chunks = [p.strip() for p in text.split("\n\n") if p.strip()]
-    
     vectors = []
     metadatas = []
-    
-    logger.info(f"Found {len(raw_chunks)} chunks to ingest")
 
-    # 4. Create Chunks & Embed
-    for i, content in enumerate(raw_chunks):
-        chunk_id = str(uuid.uuid4())
-        
-        # Create Schema-compliant Chunk
-        chunk = Chunk(
-            id=chunk_id,
-            text=content,
-            character="Konex Guide",
-            character_slug="konex-guide",
-            chunk_type="quote",
-             # Optional fields can be omitted or explicitly None
-        )
-        
-        # Embed
-        # Note: VectorStore expects a batch, but we can do one by one or batch it.
-        # Let's batch everything for this small file.
-        
-        # We need the vector. The existing ingest.py calls embedder.embed([text])
-        # Let's assume embedder.embed takes a list of strings
-        
-        vectors_batch = embedder.embed([chunk.to_embedding_text()])
-        vector = vectors_batch[0] # Take the first one
-        
-        vectors.append(vector)
-        metadatas.append(chunk.to_vector_metadata())
+    # Helper function to process a file
+    def process_file(file_path: Path, character: str, slug: str):
+        if not file_path.exists():
+            logger.warning(f"File not found: {file_path}")
+            return
 
-    # 5. Persist
+        text = file_path.read_text(encoding="utf-8")
+        # Simple Chunking (by empty lines / paragraphs)
+        chunks = [p.strip() for p in text.split("\n\n") if p.strip()]
+        
+        logger.info(f"Processing {file_path.name} | chunks={len(chunks)} | slug={slug}")
+
+        for content in chunks:
+            chunk_id = str(uuid.uuid4())
+            chunk = Chunk(
+                id=chunk_id,
+                text=content,
+                character=character,
+                character_slug=slug,
+                chunk_type="quote",
+                metadata={"source": file_path.name}
+            )
+            
+            # Embed
+            v = embedder.embed([chunk.to_embedding_text()])[0]
+            vectors.append(v)
+            metadatas.append(chunk.to_vector_metadata())
+
+    # 2. Process Global Knowledge
+    process_file(DATA_FILE, "Konex Guide", "konex-guide")
+
+    # 3. Process Persona Knowledge (Hybrid RAG)
+    knowledge_dir = Path("data/knowledge")
+    if knowledge_dir.exists():
+        for f in knowledge_dir.glob("*.md"):
+            # slug = filename (e.g. 'support_haiti.md' -> 'support_haiti')
+            process_file(f, f.stem, f.stem)
+
+    # 4. Persist
     if vectors:
         vectorstore.add(vectors, metadatas, persist=True)
         logger.success(f"Ingested {len(vectors)} chunks into {VECTORSTORE_PATH}")

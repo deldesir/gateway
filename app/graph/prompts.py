@@ -44,25 +44,63 @@ class PersonaPromptRegistry:
         """
         Retrieve persona attributes, checking DB first, then static registry.
         """
-        # 1. Check Static Registry first (Fast path for default personas)
+        base_data = None
+        
+        # 1. Check Database first (Override registry)
+        # Note: Original code checked Registry first, but typically DB should override?
+        # Keeping original precedence: Registry (Static) -> DB (Dynamic)? 
+        # Actually, usually DB overrides static. But the original code had:
+        # if persona in REGISTRY: return REGISTRY[persona]
+        # This implies Registry is "Hardcoded/System" personas.
+        
+        # However, to be safe and consistent with logic:
+        # We need a base dictionary to start with.
+        
         if persona in cls.REGISTRY:
-            return cls.REGISTRY[persona]
+             base_data = cls.REGISTRY[persona].copy() # Copy to avoid mutating registry
         
-        # 2. Check Database
-        async with async_session() as session:
-            statement = select(Persona).where(Persona.id == persona)
-            result = await session.execute(statement)
-            db_persona = result.scalar_one_or_none()
-            
-            if db_persona:
-                return {
-                    "persona_name": db_persona.name,
-                    "persona_personality": db_persona.personality,
-                    "persona_style": db_persona.style,
-                }
+        if not base_data:
+             async with async_session() as session:
+                statement = select(Persona).where(Persona.id == persona)
+                result = await session.execute(statement)
+                db_persona = result.scalar_one_or_none()
+                
+                if db_persona:
+                    base_data = {
+                        "persona_name": db_persona.name,
+                        "persona_personality": db_persona.personality,
+                        "persona_style": db_persona.style,
+                    }
         
-        # 3. Fallback
-        return cls.REGISTRY["konex-support"]
+        # Fallback if still nothing
+        if not base_data:
+            base_data = cls.REGISTRY["konex-support"].copy()
+
+        # 3. Load Core Knowledge File (Inject into whatever base data we found)
+        knowledge_content = await cls._load_knowledge_file(persona)
+        
+        base_data["core_knowledge"] = knowledge_content
+        return base_data
+
+    @staticmethod
+    async def _load_knowledge_file(persona_slug: str) -> str:
+        """
+        Reads data/knowledge/<slug>.md if it exists.
+        """
+        from pathlib import Path
+        
+        # Use absolute path relative to project root (assuming running from root or finding via file)
+        # Better to be safe with relative path from CWD
+        path = Path(f"data/knowledge/{persona_slug}.md")
+        
+        if path.exists():
+            try:
+                # Sync read is acceptable for small config files
+                return path.read_text(encoding="utf-8")
+            except Exception as e:
+                # logger.error(f"Failed to read knowledge file: {e}")
+                return ""
+        return ""
 
 
 # Valid RapidPro Flows available to the agent
@@ -98,6 +136,10 @@ class SystemPrompts:
         4. Otherwise: Be helpful but professional.
         
         {{system_prompt_override}}
+
+        ### CORE KNOWLEDGE
+        The following is your core knowledge base. You know this information perfectly.
+        {{core_knowledge}}
 
         Everything you say should reflect who you are.
 
@@ -180,6 +222,7 @@ class ConversationPrompt:
             partial_variables={
                 **self.persona_vars,
                 "system_prompt_override": "", # Hook for future overrides
+                "core_knowledge": self.persona_vars.get("core_knowledge", ""),
                 "summary": self.summary,
                 "trust_score": self.trust_score,
                 "mood": self.mood,

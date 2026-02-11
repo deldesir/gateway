@@ -97,14 +97,24 @@ class Retriever:
 
         query_vector = self.embedder.embed([query])[0]
 
+        # Hybrid RAG: Fetch more candidates to allow for strict filtering
         recalled = self.vectorstore.search(
             query_vector=query_vector,
-            k=RECALL_K,
+            k=RECALL_K * 2, # Fetch double to ensure we have enough after filtering
         )
+
+        filtered = []
+        for distance, meta in recalled:
+             chunk_slug = meta.get("character_slug")
+             # Strict Filter: distinct slug MUST match.
+             # If chunk has no slug (None), it's considered "Global/Common" knowledge.
+             if chunk_slug and chunk_slug != active_character:
+                 continue
+             filtered.append((distance, meta))
 
         scored = [
             self._score_chunk(distance, meta, active_character)
-            for distance, meta in recalled
+            for distance, meta in filtered
         ]
 
         reranked = sorted(
