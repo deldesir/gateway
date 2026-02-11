@@ -129,11 +129,12 @@ async def openai_chat_completions(request: OpenAIChatRequest, raw_request: Reque
              api_logger.info(f"Extracted User ID from complex prefix: {user_id}")
              
         if extracted_channel:
-             api_logger.info(f"Extracted Channel ID from prefix: {extracted_channel}")
+             clean_channel = extracted_channel.lstrip("+")
+             api_logger.info(f"Extracted Channel ID from prefix: {extracted_channel} -> {clean_channel}")
              # OVERRIDE the model with the channel ID
              # This allows the downstream "Channel Config Lookup" to find the persona
              # regardless of what model was passed in the JSON body.
-             request.model = extracted_channel
+             request.model = clean_channel
         
         # Update content
         request.messages[-1]["content"] = clean_content
@@ -169,8 +170,8 @@ async def openai_chat_completions(request: OpenAIChatRequest, raw_request: Reque
                 # Found a channel config! Load the persona.
                 persona_res = await session.get(Persona, channel_config.persona_id)
                 if persona_res:
-                    api_logger.info(f"Channel Lookup: Mapped '{model_persona}' -> Persona '{persona_res.name}'")
-                    model_persona = persona_res.name
+                    api_logger.info(f"Channel Lookup: Mapped '{model_persona}' -> Persona '{persona_res.name}' ({persona_res.id})")
+                    model_persona = persona_res.id
                     # Future: Inject system_prompt_override or knowledge_base_id into Thread State?
                     # For now, just mapping the name ensures the Graph loads the right persona logic.
                 else:

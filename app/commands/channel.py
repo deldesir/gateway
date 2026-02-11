@@ -19,9 +19,15 @@ async def cmd_channel(ctx: CommandContext) -> str:
         persona_name = ctx.args[2]
         
         async for session in get_session():
-            # 1. Find Persona
+            # 1. Find Persona (Try Name first, then ID)
             p_result = await session.exec(select(Persona).where(Persona.name == persona_name))
             persona = p_result.first()
+            
+            if not persona:
+                 # Try ID
+                 p_result = await session.exec(select(Persona).where(Persona.id == persona_name))
+                 persona = p_result.first()
+                 
             if not persona:
                 return f"❌ Persona `{persona_name}` not found. Create it first with `#persona create`."
             
@@ -56,8 +62,8 @@ async def cmd_channel(ctx: CommandContext) -> str:
             for c in configs:
                 # Fetch persona name
                 p_res = await session.get(Persona, c.persona_id)
-                p_name = p_res.name if p_res else  "Unknown (Deleted?)"
-                msg += f"- `{c.channel_phone}` -> `{p_name}`\n"
+                p_name = p_res.name if p_res else  f"Unknown ID: {c.persona_id}"
+                msg += f"- `{c.channel_phone}` -> **{p_name}**\n"
             return msg
             
     return f"❌ Unknown action: {action}"
