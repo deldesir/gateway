@@ -7,7 +7,12 @@ from sqlmodel import select
 async def cmd_channel(ctx: CommandContext) -> str:
     """Manages channel-persona mapping. Usage: #channel <assign|set_instruction|list> ..."""
     if not ctx.args:
-        return "⚠️ Usage: `#channel assign <phone> <persona>`, `#channel set_instruction <phone> <text>`, `#channel list`"
+        return (
+            "⚠️ **Usage**: `#channel <action> ...`\n"
+            "- `assign <phone> <persona_id>`: Route a number to a persona.\n"
+            "- `set_instruction <phone> <text>`: Set system prompt override.\n"
+            "- `list`: Show all mappings."
+        )
         
     action = ctx.args[0].lower()
     

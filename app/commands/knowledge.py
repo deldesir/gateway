@@ -12,7 +12,12 @@ KNOWLEDGE_DIR = Path("data/knowledge")
 async def cmd_knowledge(ctx: CommandContext) -> str:
     """Manage knowledge base. Usage: #knowledge <add|read|ingest> ..."""
     if not ctx.args:
-        return "⚠️ Usage: `#knowledge add <persona> <content>`, `#knowledge read <persona>`, `#knowledge ingest`"
+        return (
+            "⚠️ **Usage**: `#knowledge <action> ...`\n"
+            "- `add <persona_id> <text>`: Add fact to persona knowledge.\n"
+            "- `read <persona_id>`: View current knowledge file.\n"
+            "- `ingest`: Force re-index of all knowledge."
+        )
         
     action = ctx.args[0].lower()
     

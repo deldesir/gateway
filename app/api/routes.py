@@ -14,7 +14,6 @@ except ImportError:
     AsyncPostgresSaver = None
 
 from app.api.schemas import ChatRequest, ChatResponse
-from app.api.schemas import ChatRequest, ChatResponse
 from app.graph.graph import build_graph
 from app.services.channel import resolve_persona
 from app.services.auth import check_admin_permissions
