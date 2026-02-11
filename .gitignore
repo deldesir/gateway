@@ -1,15 +1,37 @@
+# Python
 __pycache__/
 *.py[oc]
 build/
-memory.json
 dist/
 wheels/
 *.egg-info
 .venv
-*.env
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Database
 *.db
 *.db-shm
 *.db-wal
-*.json
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
 data/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+
+# Testing/Temp
+curl_output*.txt
+embed_test.py
+test_embedder.py
+test_faiss.py
+verify_channel_flow.py
+memory.json
 *.png

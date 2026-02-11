@@ -1,28 +1,0 @@
-Note: Unnecessary use of -X or --request, POST is already inferred.
-* Host localhost:8085 was resolved.
-* IPv6: ::1
-* IPv4: 127.0.0.1
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying [::1]:8085...
-* Immediate connect fail for ::1: Cannot assign requested address
-*   Trying 127.0.0.1:8085...
-* Connected to localhost (127.0.0.1) port 8085
-> POST /v1/chat/completions HTTP/1.1
-> Host: localhost:8085
-> User-Agent: curl/8.5.0
-> Accept: */*
-> Content-Type: application/json
-> Content-Length: 127
-> 
-} [127 bytes data]
-100   127    0     0  100   127      0    105  0:00:01  0:00:01 --:--:--   105100   127    0     0  100   127      0     57  0:00:02  0:00:02 --:--:--    57< HTTP/1.1 200 OK
-< date: Sun, 08 Feb 2026 04:19:03 GMT
-< server: uvicorn
-< content-length: 796
-< content-type: application/json
-< 
-{ [796 bytes data]
-100   923  100   796  100   127    288     45  0:00:02  0:00:02 --:--:--   333100   923  100   796  100   127    288     45  0:00:02  0:00:02 --:--:--   333
-* Connection #0 to host localhost left intact
-{"id":"chatcmpl-13522bbe-9219-492c-b304-828a2dea23a8","object":"chat.completion","created":1770524346,"model":"konex-support","choices":[{"index":0,"message":{"role":"assistant","content":"Bonjou! Mwen se Konex Support, e mwen la pou m ede w konprann sèvis nou yo pi byen. \n\nPlan Starter a se yon opsyon ki fèt espesyalman pou moun ki vle kòmanse ak yon koneksyon ki stab e ki pa koute twòp kòb. Li pèmèt ou fè aktivite de baz yo sou entènèt la tankou voye mesaj sou WhatsApp, tcheke imel ou, epi navige sou rezo sosyal yo san pwoblèm. Se yon plan ki ekonomik e ki efikas pou bezwen pèsonèl ou chak jou.\n\nÈske ou ta renmen m ba ou plis detay sou pri a oswa sou kijan ou ka aktive li?"},"finish_reason":"stop"}],"usage":{"prompt_tokens":0,"completion_tokens":0,"total_tokens":0}}
