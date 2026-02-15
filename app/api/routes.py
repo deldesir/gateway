@@ -227,29 +227,29 @@ async def openai_chat_completions(request: OpenAIChatRequest, raw_request: Reque
                 }
     # --- END ADMIN COMMANDS ---
         
-        # 3. Graph Execution
-        async with get_checkpointer() as checkpointer:
-            # Initialize Postgres tables if needed (idempotent)
-            if hasattr(checkpointer, "setup"):
-                await checkpointer.setup()
-    
-            graph = build_graph(checkpointer=checkpointer)
-            
-            config = {"configurable": {"thread_id": thread_id}}
-            
-            # Prepare input state
-            initial_state = {
-                "persona": model_persona,
-                "user_input": last_user_message,
-                "messages": [HumanMessage(content=last_user_message)],
-                "system_prompt_override": system_prompt_override
-            }
-    
-            # Invoke
-            result = await graph.ainvoke(initial_state, config=config)
+    # 3. Graph Execution
+    async with get_checkpointer() as checkpointer:
+        # Initialize Postgres tables if needed (idempotent)
+        if hasattr(checkpointer, "setup"):
+            await checkpointer.setup()
+
+        graph = build_graph(checkpointer=checkpointer)
         
-        # 4. Extract Response
-        final_text = result.get("final_response") or "Mwen pa konprann."
+        config = {"configurable": {"thread_id": thread_id}}
+        
+        # Prepare input state
+        initial_state = {
+            "persona": model_persona,
+            "user_input": last_user_message,
+            "messages": [HumanMessage(content=last_user_message)],
+            "system_prompt_override": system_prompt_override
+        }
+
+        # Invoke
+        result = await graph.ainvoke(initial_state, config=config)
+    
+    # 4. Extract Response
+    final_text = result.get("final_response") or "Mwen pa konprann."
 
     # 5. Format OpenAI Response
     return {
