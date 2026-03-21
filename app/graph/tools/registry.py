@@ -5,6 +5,13 @@ from app.logger import setup_logger
 from app.graph.tools.rapidpro import fetch_dossier, start_flow
 from app.graph.tools.retrieval import retrieve_context
 from app.graph.tools.mocks import check_stock, order_delivery, schedule_viewing
+from app.graph.tools.talkprep import (
+    list_publications,
+    list_topics,
+    import_talk,
+    develop_section,
+    talkmaster_status,
+)
 
 logger = setup_logger().bind(name="tool.registry")
 
@@ -24,6 +31,12 @@ class ToolRegistry:
         "check_stock": check_stock,
         "order_delivery": order_delivery,
         "schedule_viewing": schedule_viewing,
+        # TalkPrep tools (jwlinker + talkmaster)
+        "list_publications": list_publications,
+        "list_topics": list_topics,
+        "import_talk": import_talk,
+        "develop_section": develop_section,
+        "talkmaster_status": talkmaster_status,
     }
 
     @classmethod
