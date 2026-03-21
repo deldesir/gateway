@@ -71,8 +71,12 @@ async def _invoke_tool(tool_name: str, kwargs: Dict[str, Any], user_id: str) -> 
                 break
             # If no schema fields, extra args are dropped
 
+    # Inject user_id into kwargs so tools that accept it can use it.
+    # Tools that don't declare user_id in their schema simply ignore it.
+    kwargs.setdefault("user_id", user_id)
+
     try:
-        result = await tool_fn.ainvoke(kwargs if kwargs else {})
+        result = await tool_fn.ainvoke(kwargs if kwargs else {"user_id": user_id})
     except Exception as e:
         logger.error(f"[tools] {tool_name} raised {type(e).__name__}: {e}")
         raise HTTPException(status_code=500, detail=f"Tool '{tool_name}' failed: {e}")

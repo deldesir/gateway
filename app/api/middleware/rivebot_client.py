@@ -33,7 +33,7 @@ async def match_intent(message: str, persona: str, user_id: str = "user") -> Opt
     Returns the response string if matched, or None to fall through to AI.
     """
     try:
-        async with httpx.AsyncClient(timeout=1.0) as client:
+        async with httpx.AsyncClient(timeout=3.0) as client:
             resp = await client.post(
                 f"{RIVEBOT_URL}/match",
                 json={"message": message, "persona": persona, "user": user_id},
