@@ -7,6 +7,7 @@ branching decisions, which are handled exclusively by graph edges.
 """
 
 from typing import Dict, Any
+import asyncio
 from langchain_core.runnables import RunnableConfig
 from app.logger import setup_logger
 from app.graph.state import AgentState
@@ -87,22 +88,23 @@ async def conversation_node(
     }
 
 
-def retrieved_context_summary_node(state: AgentState) -> AgentState:
+async def retrieved_context_summary_node(state: AgentState) -> AgentState:
     """
     Summarize raw retrieved chunks into a canonical factual context.
+    Runs the LLM chain in a thread pool to avoid blocking the event loop.
     """
     retrieved_chunks = state.get("retrieved_chunks", [])
-
     joined_context = "\n\n".join(retrieved_chunks)
-
     chain = RetrievedContextSummaryChain(retrieved_chunks=joined_context).build()
 
-    ai_message: AIMessage = chain.invoke({})
+    # Run sync chain in thread pool — never block the async event loop
+    ai_message: AIMessage = await asyncio.to_thread(chain.invoke, {})
 
     return {
         **state,
         "context_summary": ai_message.content,
     }
+
 
 
 async def final_response_node(state):

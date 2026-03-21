@@ -3,6 +3,7 @@ import time
 import json
 import uuid
 import os
+import httpx
 from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Header, HTTPException, Request
@@ -55,6 +56,66 @@ async def chat(
         pass
 
     return ChatResponse(response="To be implemented with DB", session_id=session_id, persona=payload.persona)
+
+
+# ── Health Check ──────────────────────────────────────────────────────────────
+
+async def _probe_litellm() -> str:
+    """Check if the LiteLLM proxy is reachable."""
+    try:
+        base = os.getenv('OPENAI_API_BASE', 'http://localhost:4000')
+        key = os.getenv('OPENAI_API_KEY', '')
+        async with httpx.AsyncClient(timeout=2.0) as client:
+            r = await client.get(
+                f"{base}/health",
+                headers={"Authorization": f"Bearer {key}"} if key else {},
+            )
+            return "ok" if r.status_code == 200 else f"degraded ({r.status_code})"
+    except Exception:
+        return "unreachable"
+
+
+async def _probe_db() -> str:
+    """Check if the checkpointer DB is accessible."""
+    try:
+        async with get_checkpointer() as cp:
+            if hasattr(cp, "setup"):
+                await cp.setup()
+        return "ok"
+    except Exception as e:
+        return f"error: {e}"
+
+
+@router.get("/health")
+async def health():
+    """
+    Structured health check — probes litellm proxy and DB.
+    Returns 200 when operational, 503 if any critical service is down.
+    """
+    import importlib.metadata
+    try:
+        version = importlib.metadata.version("ai-gateway")
+    except Exception:
+        version = "dev"
+
+    litellm_status = await _probe_litellm()
+    db_status = await _probe_db()
+
+    status = "ok" if litellm_status == "ok" and db_status == "ok" else "degraded"
+    code = 200 if status == "ok" else 503
+
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=code,
+        content={
+            "status": status,
+            "version": version,
+            "services": {
+                "litellm": litellm_status,
+                "db": db_status,
+            },
+        },
+    )
 
 
 # --- OpenAI Adapter ---
@@ -156,7 +217,8 @@ async def openai_chat_completions(request: OpenAIChatRequest, raw_request: Reque
     # --- END CHANNEL LOOKUP ---
     # 2. Setup Session/Thread
     # We use the user_id (phone number) as the stable thread_id
-    thread_id = f"whatsapp:{user_id}"
+    # Persona-scoped thread_id — prevents cross-persona memory bleed (#3)
+    thread_id = f"whatsapp:{user_id}:{model_persona}"
 
     # --- ADMIN COMMAND INTERCEPTOR ---
     # Handle commands via Modular Registry
@@ -251,7 +313,17 @@ async def openai_chat_completions(request: OpenAIChatRequest, raw_request: Reque
     # 4. Extract Response
     final_text = result.get("final_response") or "Mwen pa konprann."
 
-    # 5. Format OpenAI Response
+    # 5. Extract real token usage from last AIMessage response_metadata
+    prompt_tokens, completion_tokens = 0, 0
+    messages = result.get("messages", [])
+    if messages:
+        last = messages[-1]
+        meta = getattr(last, "response_metadata", {}) or {}
+        usage_meta = meta.get("token_usage") or meta.get("usage") or {}
+        prompt_tokens = usage_meta.get("prompt_tokens", 0)
+        completion_tokens = usage_meta.get("completion_tokens", 0)
+
+    # 6. Format OpenAI Response
     return {
         "id": f"chatcmpl-{uuid.uuid4()}",
         "object": "chat.completion",
@@ -266,8 +338,8 @@ async def openai_chat_completions(request: OpenAIChatRequest, raw_request: Reque
             "finish_reason": "stop"
         }],
         "usage": {
-            "prompt_tokens": 0,
-            "completion_tokens": 0,
-            "total_tokens": 0
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": prompt_tokens + completion_tokens,
         }
     }

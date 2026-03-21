@@ -1,79 +1,71 @@
 """
-Learnt a new thing called lru_cache, here we implement this so that every other time we call the get_llm method, it returns the cached version of the LLM client instead of creating a new one every time. i mean i already knew about caching but this is the first time i actually got to use it in a real project, hehe.
+LLM module — factories for chat and embedding clients.
+
+Uses lru_cache for singleton semantics: each unique config combination
+produces one cached instance, avoiding repeated model loads.
 """
 
+import os
 from functools import lru_cache
+from typing import Optional
+
+from langchain_openai import ChatOpenAI
+from langchain_core.language_models.chat_models import BaseChatModel
+
 from app.config import load_config
 from app.llm.embedding_client import EmbeddingClient
 from app.llm.embedder import LiteLLMEmbeddingClient, LocalHFEmbeddingClient
-from typing import List, Any, Optional
 from app.logger import setup_logger
-from langchain_litellm import ChatLiteLLM
 
 logger = setup_logger().bind(name="LLM")
 
+_API_BASE = os.getenv("OPENAI_API_BASE", "http://localhost:4000")
+_API_KEY  = os.getenv("OPENAI_API_KEY", "sk-placeholder")
+
 
 @lru_cache(maxsize=1)
-def _get_chat_llm() -> ChatLiteLLM:
-    """
-    Initialize and cache the primary chat LLM.
-    """
+def _get_chat_llm() -> ChatOpenAI:
+    """Initialize and cache the primary chat LLM."""
     config = load_config()
     llm_cfg = config.llm
-
     logger.info("Initializing primary chat LLM", model=llm_cfg.model)
-
-    return ChatLiteLLM(
+    return ChatOpenAI(
         model=llm_cfg.model,
         temperature=llm_cfg.temperature,
-        api_key=llm_cfg.api_key,
-        streaming=True,
+        base_url=_API_BASE,
+        api_key=_API_KEY,
     )
 
 
-def get_llm() -> ChatLiteLLM:
-    """
-    Return the cached primary chat LLM client.
-    """
-    logger.success(
-        "ChatLiteLLM initialized",
-    )
+def get_llm() -> ChatOpenAI:
+    """Return the cached primary chat LLM client."""
+    logger.success("ChatOpenAI initialized")
     return _get_chat_llm()
 
 
 @lru_cache(maxsize=1)
-def _get_summarizer_llm() -> ChatLiteLLM:
-    """
-    Initialize and cache the summarization LLM.
-    """
+def _get_summarizer_llm() -> ChatOpenAI:
+    """Initialize and cache the summarization LLM."""
     config = load_config()
     llm_cfg = config.summarizer_llm
-
     logger.info("Initializing summarizer LLM", model=llm_cfg.model)
-
-    return ChatLiteLLM(
+    return ChatOpenAI(
         model=llm_cfg.model,
         temperature=llm_cfg.temperature,
-        api_key=llm_cfg.api_key,
+        base_url=_API_BASE,
+        api_key=_API_KEY,
     )
 
 
-def get_llm_summarizer() -> ChatLiteLLM:
-    """
-    Return the cached summarizer LLM client.
-    """
-    logger.success(
-        "ChatLiteLLM initialized | model= summarizer_model",
-    )
+def get_llm_summarizer() -> ChatOpenAI:
+    """Return the cached summarizer LLM client."""
+    logger.success("ChatOpenAI summarizer initialized")
     return _get_summarizer_llm()
 
 
 @lru_cache(maxsize=1)
 def get_embedder() -> EmbeddingClient:
-    """
-    Factory method for initializing the configured embedding client.
-    """
-
+    """Factory method for initializing the configured embedding client."""
     config = load_config()
     emb_cfg = config.embeddings
 

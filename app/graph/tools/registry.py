@@ -1,60 +1,71 @@
-from typing import Dict, List, Any, Callable
-from langchain_core.tools import BaseTool
+"""
+Tool registry — maps string IDs to LangChain tool callables.
 
-from app.logger import setup_logger
+All tools are registered here and assigned to personas in prompts.py.
+"""
+
 from app.graph.tools.rapidpro import fetch_dossier, start_flow
 from app.graph.tools.retrieval import retrieve_context
 from app.graph.tools.mocks import check_stock, order_delivery, schedule_viewing
 from app.graph.tools.talkprep import (
+    get_talkprep_help,
+    talkmaster_status,
+    select_active_talk,
     list_publications,
     list_topics,
     import_talk,
+    create_revision,
     develop_section,
-    talkmaster_status,
+    evaluate_talk,
+    get_evaluation_scores,
+    rehearsal_cue,
+    export_talk_summary,
+    cost_report,
 )
 
-logger = setup_logger().bind(name="tool.registry")
 
 class ToolRegistry:
-    """
-    Central registry for all available tools in the system.
-    Maps string identifiers to actual Tool objects.
-    """
-    
-    # Global map of all available tools
-    # Key: String ID used in DB (e.g., "rapidpro_dossier")
-    # Value: The LangChain tool function/object
-    _TOOLS: Dict[str, BaseTool] = {
-        "rapidpro_dossier": fetch_dossier,
-        "rapidpro_flow": start_flow,
+    _TOOLS = {
+        # Generic
+        "fetch_dossier": fetch_dossier,
+        "start_flow": start_flow,
         "retrieval": retrieve_context,
         "check_stock": check_stock,
         "order_delivery": order_delivery,
         "schedule_viewing": schedule_viewing,
-        # TalkPrep tools (jwlinker + talkmaster)
+        # TalkPrep — Stage 0: Status & Help
+        "get_talkprep_help": get_talkprep_help,
+        "talkmaster_status": talkmaster_status,
+        "select_active_talk": select_active_talk,
+        # TalkPrep — Stage 1: Import
         "list_publications": list_publications,
         "list_topics": list_topics,
         "import_talk": import_talk,
+        # TalkPrep — Stage 2: Revision
+        "create_revision": create_revision,
+        # TalkPrep — Stage 3: Development
         "develop_section": develop_section,
-        "talkmaster_status": talkmaster_status,
+        # TalkPrep — Stage 4: Evaluation
+        "evaluate_talk": evaluate_talk,
+        "get_evaluation_scores": get_evaluation_scores,
+        # TalkPrep — Stage 5: Rehearsal
+        "rehearsal_cue": rehearsal_cue,
+        # TalkPrep — Stage 6: Export
+        "export_talk_summary": export_talk_summary,
+        # Cost & reporting
+        "cost_report": cost_report,
     }
 
     @classmethod
-    def get_all_tool_names(cls) -> List[str]:
-        """List all registered tool IDs."""
-        return list(cls._TOOLS.keys())
+    def get(cls, tool_id: str):
+        if tool_id not in cls._TOOLS:
+            raise ValueError(f"Unknown tool: '{tool_id}'. Available: {list(cls._TOOLS)}")
+        return cls._TOOLS[tool_id]
 
     @classmethod
-    def get_tools(cls, tool_ids: List[str]) -> List[BaseTool]:
-        """
-        Get a list of Tool objects based on a list of IDs.
-        Silently ignores invalid IDs but logs warnings.
-        """
-        selected_tools = []
-        for tid in tool_ids:
-            tool = cls._TOOLS.get(tid)
-            if tool:
-                selected_tools.append(tool)
-            else:
-                logger.warning(f"Tool ID '{tid}' not found in registry.")
-        return selected_tools
+    def get_many(cls, tool_ids: list[str]) -> list:
+        return [cls.get(t) for t in tool_ids]
+
+    @classmethod
+    def all_ids(cls) -> list[str]:
+        return list(cls._TOOLS.keys())
