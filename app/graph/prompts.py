@@ -6,7 +6,6 @@ classes, following the PhiloAgents architecture. Prompts are treated as
 first-class objects to support observability, experimentation, and monitoring.
 """
 
-from typing import Optional
 from typing import Optional, Dict, Any
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from sqlmodel import select

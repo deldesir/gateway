@@ -25,9 +25,6 @@ logger = setup_logger().bind(name="NODES")
 retriever_node = ToolNode([retrieve_context])
 
 
-from langchain_core.messages import AIMessage, HumanMessage
-from app.graph.chains import ConversationChain
-
 
 from app.graph.persona_logic import calculate_trust, determine_mood
 
