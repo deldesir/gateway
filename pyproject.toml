@@ -28,6 +28,12 @@ dependencies = [
     "jwlinker",
     "talkmaster",
     "rapidpro-python",
+    # ── Security pins (transitive deps with known CVEs) ──
+    "aiohttp>=3.13.3",       # CVE-2025-69223..69230
+    "urllib3>=2.6.3",        # CVE-2026-21441
+    "protobuf>=5.29.6",     # CVE-2026-0994
+    "langsmith>=0.6.3",     # CVE-2026-25528
+    "filelock>=3.20.3",     # CVE-2026-22701
 ]
 
 [tool.uv.sources]
