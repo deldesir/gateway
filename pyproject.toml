@@ -37,8 +37,8 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-jwlinker = { path = "/root/bm/jwlinker", editable = true }
-talkmaster = { path = "/root/bm/talkmaster_v1.4", editable = true }
+jwlinker = { path = "/opt/iiab/jwlinker", editable = true }
+talkmaster = { path = "/opt/iiab/talkmaster", editable = true }
 
 [build-system]
 requires = ["setuptools>=61.0"]
