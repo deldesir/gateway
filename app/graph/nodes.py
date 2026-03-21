@@ -11,18 +11,16 @@ import asyncio
 from langchain_core.runnables import RunnableConfig
 from app.logger import setup_logger
 from app.graph.state import AgentState
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from app.graph.chains import (
     ConversationChain,
     ConversationSummaryChain,
     RetrievedContextSummaryChain,
     FinalResponseChain,
 )
-from langgraph.prebuilt import ToolNode
 from app.graph.tools.retrieval import retrieve_context
 
 logger = setup_logger().bind(name="NODES")
-retriever_node = ToolNode([retrieve_context])
 
 
 

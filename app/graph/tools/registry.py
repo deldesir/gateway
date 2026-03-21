@@ -69,3 +69,27 @@ class ToolRegistry:
     @classmethod
     def all_ids(cls) -> list[str]:
         return list(cls._TOOLS.keys())
+
+    @classmethod
+    def get_tools(cls, tool_ids: list[str]) -> list:
+        """Return tool instances for a list of IDs, silently skipping unknowns.
+
+        Used by ConversationChain to bind persona-specific tools to the LLM.
+        Unknown IDs are skipped (logged) rather than raising, so a misconfigured
+        persona doesn't break the whole conversation.
+        """
+        result = []
+        for tid in tool_ids:
+            if tid in cls._TOOLS:
+                result.append(cls._TOOLS[tid])
+            else:
+                import logging
+                logging.getLogger(__name__).warning(
+                    f"[ToolRegistry] Unknown tool ID '{tid}' in persona config — skipping."
+                )
+        return result
+
+    @classmethod
+    def all_tools(cls) -> list:
+        """Return all registered tool instances (used for the universal ToolNode)."""
+        return list(cls._TOOLS.values())
