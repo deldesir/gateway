@@ -188,6 +188,15 @@ async def openai_chat_completions(
     final_text = result.get("final_response") or "Mwen pa konprann."
     prompt_tokens, completion_tokens = _extract_usage(result)
 
+    # ── 5.5 Advance RiveBot topic if a stage-completing tool ran ──────────────
+    from app.api.middleware.rivebot_client import (
+        detect_stage_completing_tool,
+        advance_topic_if_needed,
+    )
+    stage_tool = detect_stage_completing_tool(result)
+    if stage_tool:
+        await advance_topic_if_needed(stage_tool, model_persona, user_id)
+
     return _openai_response(
         model_persona, final_text, prompt_tokens, completion_tokens
     )
