@@ -159,12 +159,16 @@ async def openai_chat_completions(
                 )
 
     # ── 4.5 Deterministic intent router (zero tokens) ────────────────────────
-    from app.api.middleware.intent_router import IntentRouter
-    intent_response = await IntentRouter.dispatch(last_user_message, model_persona, user_id)
-    if intent_response is not None:
-        return _openai_response(
-            model_persona, intent_response, id_prefix="chatcmpl-intent"
-        )
+    from app.api.middleware.rivebot_client import match_intent
+    try:
+        intent_response = await match_intent(last_user_message, model_persona, user_id)
+        if intent_response is not None:
+            return _openai_response(
+                model_persona, intent_response, id_prefix="chatcmpl-rs"
+            )
+    except Exception as e:
+        logger.error(f"Rivebot match error: {e}")
+        # On error, safely fall through to LangGraph
 
     # ── 5. LangGraph invocation ───────────────────────────────────────────────
     async with get_checkpointer() as cp:
