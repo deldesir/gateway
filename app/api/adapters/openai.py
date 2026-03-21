@@ -158,6 +158,14 @@ async def openai_chat_completions(
                     model_persona, admin_response, id_prefix="chatcmpl-admin"
                 )
 
+    # ── 4.5 Deterministic intent router (zero tokens) ────────────────────────
+    from app.api.middleware.intent_router import IntentRouter
+    intent_response = await IntentRouter.dispatch(last_user_message, model_persona, user_id)
+    if intent_response is not None:
+        return _openai_response(
+            model_persona, intent_response, id_prefix="chatcmpl-intent"
+        )
+
     # ── 5. LangGraph invocation ───────────────────────────────────────────────
     async with get_checkpointer() as cp:
         if hasattr(cp, "setup"):

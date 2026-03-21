@@ -29,6 +29,81 @@ def _get_talkmaster_session():
     return get_session(engine), engine
 
 
+# ── Stage Gates (deterministic, zero AI) ─────────────────────────────
+
+def _gate_talk_exists(session, talk_id: int) -> str | None:
+    """Gate: talk must exist. Return error string or None."""
+    from talkmaster.database import Talk
+    if not session.query(Talk).filter_by(id=talk_id).first():
+        return (
+            f"⛔ Talk ID `{talk_id}` not found.\n"
+            "Run `talkmaster_status` to see imported talks, "
+            "or `list_publications` → `import_talk` to get started."
+        )
+    return None
+
+
+def _gate_revision_exists(session, revision_name: str) -> str | None:
+    """Gate: revision must exist. Return error string or None."""
+    from talkmaster.database import Revision
+    if not session.query(Revision).filter_by(version_name=revision_name).first():
+        return (
+            f"⛔ Revision `{revision_name}` not found.\n"
+            "Create one first: `create_revision <talk_id> <version_name> <audience>`"
+        )
+    return None
+
+
+def _gate_section_developed(session, revision_name: str) -> str | None:
+    """Gate: at least one section must be developed before evaluation."""
+    from talkmaster.database import Revision, StructureNode
+    rev = session.query(Revision).filter_by(version_name=revision_name).first()
+    if not rev:
+        return _gate_revision_exists(session, revision_name)
+    developed = (
+        session.query(StructureNode)
+        .filter_by(revision_id=rev.id, content_is_developed=True)
+        .count()
+    )
+    if developed == 0:
+        return (
+            f"⛔ No sections have been developed yet for `{revision_name}`.\n"
+            "Develop at least one section before evaluating:\n"
+            "`develop_section <revision_name> <section_title>`"
+        )
+    return None
+
+
+def _gate_evaluation_done(session, revision_name: str) -> str | None:
+    """Gate: evaluation must have been run before rehearsal/export."""
+    from talkmaster.database import Revision, EvaluationScore
+    rev = session.query(Revision).filter_by(version_name=revision_name).first()
+    if not rev:
+        return _gate_revision_exists(session, revision_name)
+    count = session.query(EvaluationScore).filter_by(revision_id=rev.id).count()
+    if count == 0:
+        return (
+            f"⛔ No evaluation scores found for `{revision_name}`.\n"
+            "Run evaluation first: `evaluate_talk <revision_name>`"
+        )
+    return None
+
+
+def _gate_rehearsal_done(session, revision_name: str) -> str | None:
+    """Gate: at least one rehearsal session must exist before export."""
+    from talkmaster.database import Revision, RehearsalRecord
+    rev = session.query(Revision).filter_by(version_name=revision_name).first()
+    if not rev:
+        return _gate_revision_exists(session, revision_name)
+    count = session.query(RehearsalRecord).filter_by(revision_id=rev.id).count()
+    if count == 0:
+        return (
+            f"⛔ Complete at least one rehearsal session before exporting.\n"
+            "Start rehearsal: `rehearsal_cue <revision_name>`"
+        )
+    return None
+
+
 # ── Stage 0: Status & Help ───────────────────────────────────────────
 
 @tool
@@ -253,9 +328,10 @@ async def create_revision(
         from talkmaster.repositories import create_talk_structure
         session, engine = _get_talkmaster_session()
         try:
-            talk = session.query(Talk).filter_by(id=talk_id).first()
-            if not talk:
-                return f"Talk ID {talk_id} not found. Run `talkmaster_status`."
+            # ── Stage gate: talk must exist ───────────────────────────────
+            gate = _gate_talk_exists(session, talk_id)
+            if gate:
+                return gate
 
             # Check for duplicate version name
             existing = session.query(Revision).filter_by(
@@ -314,6 +390,11 @@ async def develop_section(revision_name: str, section_title: str) -> str:
         from talkmaster.siyuan import generation
         session, engine = _get_talkmaster_session()
         try:
+            # ── Stage gate: revision must exist ──────────────────────────
+            gate = _gate_revision_exists(session, revision_name)
+            if gate:
+                return gate
+
             result = generation.develop_section(
                 version_name=revision_name,
                 db=session,
@@ -352,6 +433,11 @@ async def evaluate_talk(revision_name: str) -> str:
         from talkmaster.siyuan import generation
         session, engine = _get_talkmaster_session()
         try:
+            # ── Stage gate: must have developed at least one section ──────
+            gate = _gate_section_developed(session, revision_name)
+            if gate:
+                return gate
+
             rev = session.query(Revision).filter_by(version_name=revision_name).first()
             if not rev:
                 return f"Revision '{revision_name}' not found."
@@ -458,6 +544,11 @@ async def rehearsal_cue(revision_name: str) -> str:
 
         session, engine = _get_talkmaster_session()
         try:
+            # ── Stage gate: evaluation must have been done ────────────────
+            gate = _gate_evaluation_done(session, revision_name)
+            if gate:
+                return gate
+
             rev = session.query(Revision).filter_by(version_name=revision_name).first()
             if not rev:
                 return f"Revision '{revision_name}' not found."
@@ -530,6 +621,11 @@ async def export_talk_summary(revision_name: str) -> str:
         from talkmaster.siyuan import generation
         session, engine = _get_talkmaster_session()
         try:
+            # ── Stage gate: must have rehearsed at least once ─────────────
+            gate = _gate_rehearsal_done(session, revision_name)
+            if gate:
+                return gate
+
             result = generation.assemble_manuscript(
                 version_name=revision_name,
                 db=session,
