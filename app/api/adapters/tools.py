@@ -44,7 +44,14 @@ async def _invoke_tool(tool_name: str, kwargs: Dict[str, Any], user_id: str) -> 
     except ValueError:
         raise HTTPException(status_code=404, detail=f"Unknown tool: '{tool_name}'")
 
-    # Map positional args to field names using the tool's schema
+    # Map positional args to field names using the tool's schema.
+    # The LAST field acts as a catch-all: any remaining tokens are joined
+    # with spaces so that multi-word values (like talk themes or section
+    # titles) are not silently truncated.
+    #
+    # Example: _args=["s-34", "Courage", "Faith", "in", "times"]
+    #   field_names = [pub_code, topic_name, theme]
+    #   → {pub_code="s-34", topic_name="Courage", theme="Faith in times"}
     if "_args" in kwargs:
         pos_args: list = kwargs.pop("_args")
         schema = getattr(tool_fn, "args_schema", None)
@@ -55,9 +62,14 @@ async def _invoke_tool(tool_name: str, kwargs: Dict[str, Any], user_id: str) -> 
         else:
             field_names = []
         for i, val in enumerate(pos_args):
-            if i < len(field_names):
+            if i < len(field_names) - 1:
+                # All but the last field: one positional arg each
                 kwargs.setdefault(field_names[i], val)
-            # Extra positional args are dropped silently
+            elif i == len(field_names) - 1:
+                # Last field: join this and all remaining tokens
+                kwargs.setdefault(field_names[i], " ".join(pos_args[i:]))
+                break
+            # If no schema fields, extra args are dropped
 
     try:
         result = await tool_fn.ainvoke(kwargs if kwargs else {})
