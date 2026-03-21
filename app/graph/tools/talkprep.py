@@ -333,6 +333,8 @@ async def create_revision(
             if gate:
                 return gate
 
+            talk = session.query(Talk).filter_by(id=talk_id).first()
+
             # Check for duplicate version name
             existing = session.query(Revision).filter_by(
                 talk_id=talk_id, version_name=version_name

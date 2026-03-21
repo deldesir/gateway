@@ -89,6 +89,8 @@ async def retrieved_context_summary_node(state: AgentState) -> AgentState:
     Runs the LLM chain in a thread pool to avoid blocking the event loop.
     """
     retrieved_chunks = state.get("retrieved_chunks", [])
+    if not retrieved_chunks:
+        return state
     joined_context = "\n\n".join(retrieved_chunks)
     chain = RetrievedContextSummaryChain(retrieved_chunks=joined_context).build()
 

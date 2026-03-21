@@ -43,7 +43,8 @@ class AgentState(MessagesState):
     conversation_summary: Optional[str] = None
     persona_memory: Optional[Dict[str, Any]] = None
     final_response: Optional[str] = None
-    
+    system_prompt_override: Optional[str] = None
+
     # Konex Persona Engine
     dossier: Dict[str, Any]
     trust_score: int
