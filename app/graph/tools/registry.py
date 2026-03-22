@@ -21,6 +21,8 @@ from app.graph.tools.talkprep import (
     rehearsal_cue,
     export_talk_summary,
     cost_report,
+    generate_anki_deck,
+    push_to_siyuan,
 )
 
 
@@ -54,6 +56,9 @@ class ToolRegistry:
         "export_talk_summary": export_talk_summary,
         # Cost & reporting
         "cost_report": cost_report,
+        # JWLinker integration
+        "generate_anki_deck": generate_anki_deck,
+        "push_to_siyuan": push_to_siyuan,
     }
 
     @classmethod

@@ -677,3 +677,134 @@ async def cost_report() -> str:
     except Exception as e:
         logger.error(f"cost_report failed: {e}")
         return f"Error fetching usage: {e}"
+
+
+# ── JWLinker Integration ─────────────────────────────────────────────
+
+def _get_jwlinker_cards(pub_code: str, topic_name: Optional[str] = None,
+                        language: str = "Haitian", locale: str = "CR"):
+    """Fetch parsed cards from jwlinker DB for a given publication.
+
+    Returns a list of AnkiCard objects. Reuses jwlinker's existing
+    get_cards_for_generate() pipeline with a synthetic args namespace.
+    """
+    from types import SimpleNamespace
+    from jwlinker.commands.db import get_cards_for_generate
+
+    args = SimpleNamespace(
+        pub=pub_code,
+        lang_id=None,
+        language=language,
+        locale=locale,
+        format=None,
+        category=None,
+        topic=topic_name,
+        verbose=False,
+        stories_as_cards=False,
+    )
+    return get_cards_for_generate(args)
+
+
+@tool
+async def generate_anki_deck(pub_code: str, topic_name: Optional[str] = None) -> str:
+    """Generate an Anki flashcard deck (.apkg) from a JW publication in the database.
+
+    The deck is saved to /tmp and the file path is returned. If no topic is
+    specified, all topics for the publication are included.
+
+    Args:
+        pub_code: Publication code (e.g., 's34', 'lmd', 'scl').
+        topic_name: Optional topic name filter (partial match OK).
+
+    Returns:
+        Path to the generated .apkg file, or an error message.
+    """
+    def _sync():
+        from jwlinker.exporters.anki import AnkiExporter
+        from jwlinker.core.linker import Linker
+
+        cards = _get_jwlinker_cards(pub_code, topic_name)
+        if not cards:
+            return f"⚠️ No cards found for publication '{pub_code}'" + (
+                f" topic '{topic_name}'" if topic_name else ""
+            ) + ". Run `jwlinker extract-jwpub` on the server first."
+
+        linker = Linker(language="Haitian", locale="CR")
+        deck_name = f"JW Study: {pub_code}"
+        if topic_name:
+            deck_name += f" — {topic_name}"
+        exporter = AnkiExporter(root_deck_name=deck_name)
+        exporter.add_cards(cards, linker, {})
+
+        output_path = f"/tmp/jwlinker_{pub_code}{'_' + topic_name.replace(' ', '_') if topic_name else ''}.apkg"
+        exporter.export(output_path)
+
+        return (
+            f"✅ *Anki deck generated!*\n"
+            f"• Cards: {len(cards)}\n"
+            f"• File: `{output_path}`\n"
+            f"• Deck: {deck_name}"
+        )
+
+    try:
+        return await asyncio.to_thread(_sync)
+    except Exception as e:
+        logger.error(f"generate_anki_deck failed: {e}")
+        return f"Error generating Anki deck: {e}"
+
+
+@tool
+async def push_to_siyuan(pub_code: str, topic_name: Optional[str] = None) -> str:
+    """Push JW publication content to SiYuan as a structured document tree.
+
+    Creates a two-level tree (sections → lessons) with scripture links and
+    spaced-repetition flashcards. Requires SIYUAN_NOTEBOOK_ID env var.
+
+    Args:
+        pub_code: Publication code (e.g., 's34', 'lmd', 'scl').
+        topic_name: Optional topic name filter (partial match OK).
+
+    Returns:
+        SiYuan root document ID, or an error message.
+    """
+    def _sync():
+        import re
+        from jwlinker.exporters.siyuan import SiYuanExporter
+
+        notebook_id = os.getenv("SIYUAN_NOTEBOOK_ID")
+        if not notebook_id:
+            return "⚠️ SIYUAN_NOTEBOOK_ID not set. Configure it in the .env file."
+
+        cards = _get_jwlinker_cards(pub_code, topic_name)
+        if not cards:
+            return f"⚠️ No cards found for publication '{pub_code}'" + (
+                f" topic '{topic_name}'" if topic_name else ""
+            ) + ". Run `jwlinker extract-jwpub` on the server first."
+
+        # Format pub code for display (s34 → S-34)
+        m = re.match(r'^([a-zA-Z]+)(\d+)$', pub_code)
+        display_code = f"{m.group(1).upper()}-{m.group(2)}" if m else pub_code.upper()
+        root_name = f"{display_code}_CR"
+
+        exporter = SiYuanExporter(
+            notebook_id=notebook_id,
+            root_name=root_name,
+            language="Haitian",
+            locale="CR",
+        )
+        exporter.add_cards(cards)
+        root_id = exporter.export(replace=False)
+
+        return (
+            f"✅ *Pushed to SiYuan!*\n"
+            f"• Cards: {len(cards)}\n"
+            f"• Root doc: `{root_id}`\n"
+            f"• Notebook: `{notebook_id}`\n\n"
+            f"Open SiYuan to view the document tree."
+        )
+
+    try:
+        return await asyncio.to_thread(_sync)
+    except Exception as e:
+        logger.error(f"push_to_siyuan failed: {e}")
+        return f"Error pushing to SiYuan: {e}"
