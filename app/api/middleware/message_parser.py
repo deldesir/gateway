@@ -28,17 +28,25 @@ class ParsedMessage:
     content: str              # cleaned message, prefix stripped
     user_id: Optional[str]   # e.g. "whatsapp:+12345"
     channel_id: Optional[str] # e.g. "5678" (maps to a persona)
+    attachments: list = None   # e.g. ["application/octet-stream:https://…/file.jwpub"]
+
+    def __post_init__(self):
+        if self.attachments is None:
+            self.attachments = []
 
 
-def parse_rapidpro_message(raw: str, user_hint: Optional[str] = None) -> ParsedMessage:
+def parse_rapidpro_message(raw: str, user_hint: Optional[str] = None,
+                           attachments: list = None) -> ParsedMessage:
     """Extract URN, channel, and clean content from a RapidPro message.
 
     Args:
         raw: Raw message content from RapidPro.
         user_hint: Explicit user ID from the ``user`` JSON field (may be None).
+        attachments: List of attachment strings in RapidPro format
+                     (``content_type:url``).
 
     Returns:
-        ParsedMessage with content, user_id, and channel_id.
+        ParsedMessage with content, user_id, channel_id, and attachments.
     """
     user_id = user_hint
     channel_id = None
@@ -59,4 +67,9 @@ def parse_rapidpro_message(raw: str, user_hint: Optional[str] = None) -> ParsedM
         if m.group("channel"):
             channel_id = m.group("channel").lstrip("+")
 
-    return ParsedMessage(content=content, user_id=user_id, channel_id=channel_id)
+    return ParsedMessage(
+        content=content,
+        user_id=user_id,
+        channel_id=channel_id,
+        attachments=attachments or [],
+    )

@@ -24,6 +24,7 @@ from app.graph.tools.talkprep import (
     generate_anki_deck,
     push_to_siyuan,
 )
+from app.graph.tools.upload import upload_jwpub
 
 
 class ToolRegistry:
@@ -59,6 +60,8 @@ class ToolRegistry:
         # JWLinker integration
         "generate_anki_deck": generate_anki_deck,
         "push_to_siyuan": push_to_siyuan,
+        # File upload
+        "upload_jwpub": upload_jwpub,
     }
 
     @classmethod

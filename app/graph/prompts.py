@@ -44,6 +44,8 @@ class PersonaPromptRegistry:
                  "rehearsal_cue",
                  "export_talk_summary",
                  "cost_report",
+                 "generate_anki_deck", "push_to_siyuan",
+                 "upload_jwpub",
                  "retrieval",
              ],
         }

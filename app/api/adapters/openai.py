@@ -98,7 +98,10 @@ async def openai_chat_completions(
     raw_content = request.messages[-1]["content"]
 
     # ── 1. Parse RapidPro message prefix ─────────────────────────────────────
-    parsed = parse_rapidpro_message(raw_content, user_hint=request.user)
+    # RapidPro may include attachments in the last message or as a top-level field.
+    raw_attachments = request.messages[-1].get("attachments", [])
+    parsed = parse_rapidpro_message(raw_content, user_hint=request.user,
+                                    attachments=raw_attachments)
     api_logger.info(
         f"Parsed | user={parsed.user_id} | channel={parsed.channel_id}"
         f" | content='{parsed.content[:60]}'"
@@ -117,6 +120,18 @@ async def openai_chat_completions(
 
     user_id = parsed.user_id
     last_user_message = parsed.content
+
+    # ── 1.5  Inject attachment context ────────────────────────────────────────
+    if parsed.attachments:
+        att_lines = []
+        for att in parsed.attachments:
+            # RapidPro format: "content_type:url"
+            parts = att.split(":", 1) if isinstance(att, str) else []
+            if len(parts) == 2:
+                att_lines.append(f"[Attachment: {parts[0]} at {parts[1]}]")
+            else:
+                att_lines.append(f"[Attachment: {att}]")
+        last_user_message = last_user_message + "\n" + "\n".join(att_lines)
 
     # ── 2. Resolve persona from channel config ────────────────────────────────
     model_persona, system_prompt_override = await resolve_persona(
