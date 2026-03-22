@@ -11,6 +11,8 @@ from . import channel
 from . import knowledge
 from . import cost
 from . import status
+from . import reload
+from . import health
 
 # Expose Registry and Context
 __all__ = ["CommandRegistry", "CommandContext"]
