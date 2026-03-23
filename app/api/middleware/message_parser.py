@@ -21,6 +21,13 @@ _URN_PREFIX = re.compile(
     r"(?:\s*>\s*(?P<channel>\+?\d+))?"
     r"\) says:\s+"
 )
+# Colon-separated format: "scheme:urn:channel: message"
+# e.g. "whatsapp:50942614949:50937145893: Hello"
+_COLON_PREFIX = re.compile(
+    r"^(?P<scheme>tel|whatsapp|telegram):"
+    r"(?P<urn>\+?\d+):"
+    r"(?P<channel>\+?\d+):\s*"
+)
 
 
 @dataclass
@@ -52,13 +59,27 @@ def parse_rapidpro_message(raw: str, user_hint: Optional[str] = None,
     channel_id = None
     content = raw
 
-    # 1. Try the simple URN pattern first (e.g. in bare messages)
+    # 1. Try colon-separated format: "whatsapp:NUM:CHANNEL: message"
+    m = _COLON_PREFIX.match(raw)
+    if m:
+        content = _COLON_PREFIX.sub("", raw, count=1)
+        if not user_id:
+            user_id = f"{m.group('scheme')}:{m.group('urn')}"
+        channel_id = m.group("channel")
+        return ParsedMessage(
+            content=content,
+            user_id=user_id,
+            channel_id=channel_id,
+            attachments=attachments or [],
+        )
+
+    # 2. Try the simple URN pattern first (e.g. in bare messages)
     if not user_id:
         m = _URN_SIMPLE.search(raw)
         if m:
             user_id = f"{m.group(1)}:{m.group(2)}"
 
-    # 2. Try the full RapidPro prefix pattern
+    # 3. Try the full RapidPro prefix pattern
     m = _URN_PREFIX.search(raw)
     if m:
         content = _URN_PREFIX.sub("", raw, count=1)
