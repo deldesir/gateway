@@ -57,6 +57,14 @@ _SEED_DATA = [
             "upload_jwpub", "retrieval",
         ],
     },
+    {
+        "slug": "assistant",
+        "name": "Assistant",
+        "personality": "Friendly, casual, human.",
+        "style": "Short, natural, warm — like texting a friend. Speaks Haitian Creole and English.",
+        "language": "ht,en",
+        "allowed_tools": ["retrieval"],
+    },
 ]
 
 

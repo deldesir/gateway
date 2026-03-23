@@ -79,7 +79,8 @@ async def set_var(
                 json={"persona": persona, "user": user_id, "var": var, "value": value},
             )
             if resp.status_code == 200:
-                logger.info("[rivebot] " + persona + ":" + user_id + " — set " + var + "=" + value)
+                _msg = "[rivebot] " + persona + ":" + user_id + " — set " + var + "=" + value
+                logger.opt(depth=0).info(_msg.replace("{", "{{").replace("}", "}}"))
             else:
                 logger.warning(f"[rivebot] set-var returned {resp.status_code}: {resp.text[:80]}")
     except Exception as e:
@@ -101,7 +102,8 @@ async def set_vars(
             )
             if resp.status_code == 200:
                 keys = ", ".join(k + "=" + v for k, v in variables.items())
-                logger.info("[rivebot] " + persona + ":" + user_id + " — set " + keys)
+                _msg = "[rivebot] " + persona + ":" + user_id + " — set " + keys
+                logger.opt(depth=0).info(_msg.replace("{", "{{").replace("}", "}}"))
             else:
                 logger.warning(f"[rivebot] set-vars returned {resp.status_code}: {resp.text[:80]}")
     except Exception as e:
