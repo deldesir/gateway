@@ -126,17 +126,35 @@ async def openai_chat_completions(
     user_id = parsed.user_id
     last_user_message = parsed.content
 
-    # ── 1.5  Inject attachment context ────────────────────────────────────────
+    # ── 1.5  Attachment handling ────────────────────────────────────────────
     if parsed.attachments:
+        # Deterministic .jwpub intercept — zero AI tokens
+        for att in parsed.attachments:
+            att_str = att if isinstance(att, str) else str(att)
+            if ".jwpub" in att_str.lower():
+                # Extract URL from RapidPro format "content_type:url"
+                url = att_str.split(":", 1)[1] if ":" in att_str else att_str
+                api_logger.info(f"JWPUB detected — routing to upload_jwpub (AI-free)")
+                try:
+                    from app.graph.tools.upload import upload_jwpub
+                    result = await upload_jwpub.ainvoke({"media_url": url})
+                except Exception as e:
+                    result = f"❌ Error processing .jwpub file: {e}"
+                return _openai_response(
+                    parsed.channel_id or "assistant", result,
+                    id_prefix="chatcmpl-jwpub",
+                )
+
+        # Non-jwpub attachments: inject context for AI
         att_lines = []
         for att in parsed.attachments:
-            # RapidPro format: "content_type:url"
             parts = att.split(":", 1) if isinstance(att, str) else []
             if len(parts) == 2:
                 att_lines.append(f"[Attachment: {parts[0]} at {parts[1]}]")
             else:
                 att_lines.append(f"[Attachment: {att}]")
         last_user_message = last_user_message + "\n" + "\n".join(att_lines)
+
 
     # ── 2. Resolve persona from user preference or channel config ─────────────
     # User preference (from previous persona switch) takes priority
