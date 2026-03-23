@@ -100,7 +100,7 @@ async def set_vars(
                 json={"persona": persona, "user": user_id, "vars": variables},
             )
             if resp.status_code == 200:
-                keys = ", ".join(f"{k}={v}" for k, v in variables.items())
+                keys = ", ".join(k + "=" + v for k, v in variables.items())
                 logger.info("[rivebot] " + persona + ":" + user_id + " — set " + keys)
             else:
                 logger.warning(f"[rivebot] set-vars returned {resp.status_code}: {resp.text[:80]}")

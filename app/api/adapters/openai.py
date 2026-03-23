@@ -27,6 +27,10 @@ from app.services.channel import resolve_persona, DEFAULT_PERSONA
 router = APIRouter(tags=["chat"])
 api_logger = logger.bind(name="API")
 
+# In-memory cache: user_id → preferred persona slug
+# Set when {{persona_switch}} fires, checked before channel default.
+_user_persona: Dict[str, str] = {}
+
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
@@ -134,10 +138,16 @@ async def openai_chat_completions(
                 att_lines.append(f"[Attachment: {att}]")
         last_user_message = last_user_message + "\n" + "\n".join(att_lines)
 
-    # ── 2. Resolve persona from channel config ────────────────────────────────
-    model_persona, system_prompt_override = await resolve_persona(
-        request.model or DEFAULT_PERSONA
-    )
+    # ── 2. Resolve persona from user preference or channel config ─────────────
+    # User preference (from previous persona switch) takes priority
+    preferred = _user_persona.get(user_id)
+    if preferred:
+        model_persona, system_prompt_override = await resolve_persona(preferred)
+        api_logger.info(f"Using preferred persona for {user_id}: {model_persona}")
+    else:
+        model_persona, system_prompt_override = await resolve_persona(
+            request.model or DEFAULT_PERSONA
+        )
 
     # ── 3. Build persona-scoped thread ID ─────────────────────────────────────
     thread_id = f"whatsapp:{user_id}:{model_persona}"
@@ -225,18 +235,22 @@ async def openai_chat_completions(
         # Persona switch: re-route to new persona
         if rivebot_context.get("switch_persona"):
             new_slug = rivebot_context["switch_persona"]
+            _user_persona[user_id] = new_slug  # Persist preference
             model_persona = new_slug
             thread_id = f"whatsapp:{user_id}:{new_slug}"
-            api_logger.info(f"Persona switch: {user_id} → {new_slug}")
+            api_logger.info(f"Persona switch: {user_id} → {new_slug} (preference saved)")
 
-            # Carry user state to the new persona's engine
+            # Carry user state to the new persona's engine (batch)
+            carry_vars = {}
             for var in ("onboarded", "lang", "name", "welcomed"):
                 val = rivebot_context.get(var)
                 if val and val != "undefined":
-                    try:
-                        await set_var(new_slug, user_id, var, str(val))
-                    except Exception:
-                        pass
+                    carry_vars[var] = str(val)
+            if carry_vars:
+                try:
+                    await set_vars(new_slug, user_id, carry_vars)
+                except Exception:
+                    pass
 
             # Send a greeting via the new persona
             try:
