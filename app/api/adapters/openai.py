@@ -175,15 +175,17 @@ async def openai_chat_completions(
                 )
 
     # ── 4.5 Deterministic intent router (zero tokens) ────────────────────────
-    from app.api.middleware.rivebot_client import match_intent, set_var
+    from app.api.middleware.rivebot_client import match_intent, set_var, set_vars
     rivebot_context = {}
     try:
         # Inject WhatsApp contact name if available (skips onboarding name question)
         if parsed.contact_name:
             try:
-                await set_var(model_persona, user_id, "name", parsed.contact_name)
-                await set_var(model_persona, user_id, "onboarded", "true")
-                await set_var(model_persona, user_id, "welcomed", "true")
+                await set_vars(model_persona, user_id, {
+                    "name": parsed.contact_name,
+                    "onboarded": "true",
+                    "welcomed": "true",
+                })
             except Exception:
                 pass  # non-critical: onboarding will ask for name instead
 
@@ -200,20 +202,21 @@ async def openai_chat_completions(
                 # Pick emoji based on what the user said
                 _msg = last_user_message.strip().lower()
                 _reaction_map = {
-                    "ok": "👍", "okay": "👍", "yes": "👍", "yep": "👍",
-                    "no": "👌", "nah": "👌", "nope": "👌",
+                    "ok": "👍🏾", "okay": "👍🏾", "yes": "👍🏾", "yep": "👍🏾",
+                    "no": "👌🏾", "nah": "👌🏾", "nope": "👌🏾",
                     "lol": "😁", "haha": "😁", "😂": "😁",
                     "cool": "😊", "nice": "😊", "great": "😊",
-                    "thanks": "😊", "thank you": "😊", "thx": "😊",
+                    "thanks": "🙏🏾", "thank you": "🙏🏾", "thx": "🙏🏾",
                     "bye": "👋🏾", "later": "👋🏾", "ciao": "👋🏾",
                     "wow": "😉", "oh": "😉",
                 }
-                emoji = _reaction_map.get(_msg, "👍")
+                emoji = _reaction_map.get(_msg, "👍🏾")
                 try:
-                    from app.api.middleware.wuzapi_client import send_reaction
+                    from app.api.middleware.wuzapi_client import send_reaction, mark_as_read
                     await send_reaction(phone, parsed.external_msg_id, emoji)
+                    await mark_as_read(phone, parsed.external_msg_id)
                 except Exception as e:
-                    api_logger.debug(f"WuzAPI reaction failed (non-critical): {e}")
+                    api_logger.debug(f"WuzAPI reaction/read failed (non-critical): {e}")
 
             # Return {{noreply}} sentinel — RapidPro flow must check for this
             # and skip sending. This avoids blank WhatsApp messages.
@@ -251,6 +254,23 @@ async def openai_chat_completions(
             )
 
         if intent_response is not None:
+            # Best-effort: react to greetings/thanks even when sending a text reply
+            if parsed.external_msg_id and parsed.user_id:
+                _msg = last_user_message.strip().lower()
+                _greeting_reactions = {
+                    "hello": "👋🏾", "hi": "👋🏾", "hey": "👋🏾",
+                    "bonjou": "👋🏾", "salut": "👋🏾", "alo": "👋🏾",
+                    "thanks": "🙏🏾", "thank you": "🙏🏾", "mesi": "🙏🏾", "merci": "🙏🏾",
+                    "bye": "👋🏾", "orevwa": "👋🏾", "kenbe": "👋🏾",
+                }
+                react_emoji = _greeting_reactions.get(_msg)
+                if react_emoji:
+                    phone = parsed.user_id.split(":")[-1].lstrip("+")
+                    try:
+                        from app.api.middleware.wuzapi_client import send_reaction
+                        await send_reaction(phone, parsed.external_msg_id, react_emoji)
+                    except Exception:
+                        pass
             return _openai_response(
                 model_persona, intent_response, id_prefix="chatcmpl-rs"
             )

@@ -86,6 +86,28 @@ async def set_var(
         logger.warning(f"[rivebot] set-var failed (non-blocking): {e}")
 
 
+async def set_vars(
+    persona: str, user_id: str, variables: dict[str, str]
+) -> None:
+    """Batch-set multiple RiveScript user variables in one call.
+
+    Single HTTP round-trip instead of N sequential /set-var calls.
+    """
+    try:
+        async with httpx.AsyncClient(timeout=2.0) as client:
+            resp = await client.post(
+                f"{RIVEBOT_URL}/set-vars",
+                json={"persona": persona, "user": user_id, "vars": variables},
+            )
+            if resp.status_code == 200:
+                keys = ", ".join(f"{k}={v}" for k, v in variables.items())
+                logger.info("[rivebot] " + persona + ":" + user_id + " — set " + keys)
+            else:
+                logger.warning(f"[rivebot] set-vars returned {resp.status_code}: {resp.text[:80]}")
+    except Exception as e:
+        logger.warning(f"[rivebot] set-vars failed (non-blocking): {e}")
+
+
 async def advance_topic_if_needed(tool_name: str, persona: str, user_id: str) -> None:
     """
     If tool_name completes a workflow stage, advance the user's RiveScript topic.
