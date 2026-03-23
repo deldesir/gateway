@@ -19,7 +19,10 @@ except ImportError:
     AsyncPostgresSaver = None  # type: ignore[assignment]
 
 DB_PATH = os.getenv("SQLITE_DB_PATH", "checkpoints.sqlite")
-POSTGRES_URI = os.getenv("POSTGRES_URI")
+_RAW_PG_URI = os.getenv("POSTGRES_URI")
+# Strip SQLAlchemy driver suffix (e.g. "+asyncpg") so LangGraph's psycopg
+# connector gets a plain "postgresql://..." string it can parse.
+POSTGRES_URI = _RAW_PG_URI.replace("+asyncpg", "") if _RAW_PG_URI else None
 
 
 @asynccontextmanager
