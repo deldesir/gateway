@@ -5,7 +5,7 @@ from app.api.personas import router as personas_router
 from app.api.knowledge import router as knowledge_router
 from app.api.downloads import router as downloads_router
 from app.db import init_db
-from app.db.seed import seed_personas
+from app.seed import seed_personas
 import app.models  # Register SQLModel tables
 import app.commands  # Register commands
 

@@ -55,9 +55,6 @@ async def cmd_channel(ctx: CommandContext) -> str:
             await session.commit()
             return msg
 
-            await session.commit()
-            return msg
-
     elif action == "set_instruction":
         if len(ctx.args) < 3:
             return "⚠️ Usage: `#channel set_instruction <phone> <instruction_text>`"

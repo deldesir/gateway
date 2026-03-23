@@ -192,6 +192,16 @@ async def openai_chat_completions(
             model_persona = new_slug
             thread_id = f"whatsapp:{user_id}:{new_slug}"
             api_logger.info(f"Persona switch: {user_id} → {new_slug}")
+
+            # Carry user state to the new persona's engine
+            for var in ("onboarded", "lang", "name", "welcomed"):
+                val = rivebot_context.get(var)
+                if val and val != "undefined":
+                    try:
+                        await set_var(new_slug, user_id, var, str(val))
+                    except Exception:
+                        pass
+
             # Send a greeting via the new persona
             try:
                 greet_resp, _ = await match_intent("bonjou", new_slug, user_id)

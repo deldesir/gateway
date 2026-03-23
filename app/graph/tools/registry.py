@@ -25,6 +25,7 @@ from app.graph.tools.talkprep import (
     push_to_siyuan,
 )
 from app.graph.tools.upload import upload_jwpub
+from app.graph.tools.forms import submit_form
 
 
 class ToolRegistry:
@@ -62,6 +63,8 @@ class ToolRegistry:
         "push_to_siyuan": push_to_siyuan,
         # File upload
         "upload_jwpub": upload_jwpub,
+        # Forms
+        "submit_form": submit_form,
     }
 
     @classmethod

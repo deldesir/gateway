@@ -23,7 +23,39 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
+async def _run_migrations(conn):
+    """Add new columns to existing tables if they don't exist.
+
+    SQLite doesn't support IF NOT EXISTS for ALTER TABLE ADD COLUMN,
+    so we catch the 'duplicate column' error and move on.
+    """
+    from sqlalchemy import text
+
+    migrations = [
+        # Persona: add slug column
+        "ALTER TABLE konex_personas ADD COLUMN slug VARCHAR",
+        # Persona: add language column with default
+        "ALTER TABLE konex_personas ADD COLUMN language VARCHAR DEFAULT 'ht'",
+    ]
+
+    for sql in migrations:
+        try:
+            await conn.execute(text(sql))
+        except Exception:
+            pass  # Column already exists
+
+    # Backfill: set slug = name for any rows where slug is NULL
+    try:
+        await conn.execute(
+            text("UPDATE konex_personas SET slug = name WHERE slug IS NULL")
+        )
+    except Exception:
+        pass
+
+
 async def init_db():
     async with engine.begin() as conn:
-        # await conn.run_sync(SQLModel.metadata.drop_all)
+        # Create any new tables
         await conn.run_sync(SQLModel.metadata.create_all)
+        # Migrate existing tables (add new columns)
+        await _run_migrations(conn)
