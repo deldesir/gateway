@@ -86,14 +86,14 @@ def parse_rapidpro_message(raw: str, user_hint: Optional[str] = None,
 
     # 2. Try the simple URN pattern first (e.g. in bare messages)
     if not user_id:
-        m = _URN_SIMPLE.search(raw)
+        m = _URN_SIMPLE.search(content)
         if m:
             user_id = f"{m.group(1)}:{m.group(2)}"
 
     # 3. Try the full RapidPro prefix pattern
-    m = _URN_PREFIX.search(raw)
+    m = _URN_PREFIX.search(content)
     if m:
-        content = _URN_PREFIX.sub("", raw, count=1)
+        content = _URN_PREFIX.sub("", content, count=1)
         if not user_id and m.group("urn"):
             user_id = m.group("urn")
         if m.group("channel"):
