@@ -84,6 +84,7 @@ def _extract_usage(result: dict) -> tuple[int, int]:
 # ── Endpoint ──────────────────────────────────────────────────────────────────
 
 @router.post("/v1/chat/completions")
+@router.post("/chat/completions")
 async def openai_chat_completions(
     request: OpenAIChatRequest,
     raw_request: Request,
@@ -174,9 +175,17 @@ async def openai_chat_completions(
                 )
 
     # ── 4.5 Deterministic intent router (zero tokens) ────────────────────────
-    from app.api.middleware.rivebot_client import match_intent
+    from app.api.middleware.rivebot_client import match_intent, set_var
+    rivebot_context = {}
     try:
-        intent_response = await match_intent(last_user_message, model_persona, user_id)
+        intent_response, rivebot_context = await match_intent(
+            last_user_message, model_persona, user_id
+        )
+        # NoAI silence: 3rd+ fallback → send nothing to the user
+        if rivebot_context.get("silent"):
+            api_logger.info(f"NoAI silence for {user_id} — suppressing response")
+            return _openai_response(model_persona, "", id_prefix="chatcmpl-silent")
+
         if intent_response is not None:
             return _openai_response(
                 model_persona, intent_response, id_prefix="chatcmpl-rs"
@@ -186,22 +195,47 @@ async def openai_chat_completions(
         # On error, safely fall through to LangGraph
 
     # ── 5. LangGraph invocation ───────────────────────────────────────────────
-    async with get_checkpointer() as cp:
-        if hasattr(cp, "setup"):
-            await cp.setup()
-        graph = build_graph(checkpointer=cp)
-        result = await graph.ainvoke(
-            {
-                "persona": model_persona,
-                "user_input": last_user_message,
-                "messages": [HumanMessage(content=last_user_message)],
-                "system_prompt_override": system_prompt_override,
-            },
-            config={"configurable": {"thread_id": thread_id}},
-        )
+    try:
+        async with get_checkpointer() as cp:
+            if hasattr(cp, "setup"):
+                await cp.setup()
+            graph = build_graph(checkpointer=cp)
+            result = await graph.ainvoke(
+                {
+                    "persona": model_persona,
+                    "user_input": last_user_message,
+                    "messages": [HumanMessage(content=last_user_message)],
+                    "system_prompt_override": system_prompt_override,
+                    "rivebot_context": rivebot_context,
+                },
+                config={"configurable": {"thread_id": thread_id}},
+            )
+    except Exception as e:
+        # ── AI failure: auto-enable noai mode ─────────────────────────────────
+        api_logger.error(f"LangGraph failed for {user_id}: {e}")
+        await set_var(model_persona, user_id, "noai", "true")
+
+        # Return the first noai message directly (don't wait for next match)
+        lang = rivebot_context.get("lang", "ht")
+        if lang == "en":
+            noai_msg = (
+                "⚠️ Our AI service is temporarily unavailable. We're working on it. "
+                "In the meantime, type *help* to see what I can do for you."
+            )
+        else:
+            noai_msg = (
+                "⚠️ Sèvis AI nou an pa disponib pou kounye a. N ap travay sou sa. "
+                "Antretan, tape *help* pou wè sa m ka fè pou ou."
+            )
+        return _openai_response(model_persona, noai_msg, id_prefix="chatcmpl-noai")
 
     final_text = result.get("final_response") or "Mwen pa konprann."
     prompt_tokens, completion_tokens = _extract_usage(result)
+
+    # ── 5.1 AI succeeded: clear noai if it was previously set ─────────────────
+    if rivebot_context.get("noai"):
+        await set_var(model_persona, user_id, "noai", "false")
+        api_logger.info(f"AI recovered for {user_id} — cleared noai flag")
 
     # ── 5.5 Advance RiveBot topic if a stage-completing tool ran ──────────────
     from app.api.middleware.rivebot_client import (

@@ -13,6 +13,8 @@ from . import cost
 from . import status
 from . import reload
 from . import health
+from . import noai
+from . import broadcast
 
 # Expose Registry and Context
 __all__ = ["CommandRegistry", "CommandContext"]

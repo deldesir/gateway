@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from app.api.routes import router as chat_router
 from app.api.personas import router as personas_router
 from app.api.knowledge import router as knowledge_router
+from app.api.downloads import router as downloads_router
 from app.db import init_db
 import app.models  # Register SQLModel tables
 import app.commands  # Register commands
@@ -29,6 +30,7 @@ def create_app() -> FastAPI:
     app.include_router(chat_router)
     app.include_router(personas_router, prefix="/v1", tags=["personas"])
     app.include_router(knowledge_router, prefix="/v1/knowledge", tags=["knowledge"])
+    app.include_router(downloads_router)
     return app
 
 

@@ -53,7 +53,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.128.0" },
     { name = "filelock", specifier = ">=3.20.3" },
     { name = "httpx", specifier = ">=0.27.0" },
-    { name = "jwlinker", editable = "/root/bm/jwlinker" },
+    { name = "jwlinker", editable = "/opt/iiab/jwlinker" },
     { name = "langchain", specifier = ">=1.2.0" },
     { name = "langchain-community", specifier = ">=0.4.1" },
     { name = "langchain-core", specifier = ">=1.2.5" },
@@ -70,7 +70,7 @@ requires-dist = [
     { name = "rapidpro-python" },
     { name = "sentence-transformers", specifier = ">=3.0.0" },
     { name = "sqlmodel", specifier = ">=0.0.16" },
-    { name = "talkmaster", editable = "/root/bm/talkmaster_v1.4" },
+    { name = "talkmaster", editable = "/opt/iiab/talkmaster" },
     { name = "urllib3", specifier = ">=2.6.3" },
     { name = "uvicorn", specifier = ">=0.40.0" },
 ]
@@ -1494,7 +1494,7 @@ wheels = [
 [[package]]
 name = "jwlinker"
 version = "1.1.0"
-source = { editable = "/root/bm/jwlinker" }
+source = { editable = "/opt/iiab/jwlinker" }
 dependencies = [
     { name = "beautifulsoup4" },
     { name = "cryptography" },
@@ -4164,7 +4164,7 @@ wheels = [
 [[package]]
 name = "talkmaster"
 version = "2.0.0"
-source = { editable = "/root/bm/talkmaster_v1.4" }
+source = { editable = "/opt/iiab/talkmaster" }
 dependencies = [
     { name = "alembic" },
     { name = "fastapi" },

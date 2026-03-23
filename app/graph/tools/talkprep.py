@@ -18,6 +18,12 @@ logger = setup_logger().bind(name="tool.talkprep")
 JWLINKER_DB_PATH: Optional[str] = os.getenv("JWLINKER_DB_PATH") or None
 
 
+def _siyuan_doc_url(doc_id: str) -> str:
+    """Build a clickable SiYuan URL for a document ID."""
+    base = os.getenv("SIYUAN_PUBLIC_URL", "http://localhost:6806")
+    return f"{base}/stage/build/desktop/?id={doc_id}"
+
+
 # ── Helpers ─────────────────────────────────────────────────────────
 
 def _get_talkmaster_session():
@@ -131,8 +137,12 @@ async def get_talkprep_help() -> str:
         "• `rehearsal_cue <revision>` — get delivery coaching cues\n\n"
         "*Stage 6 — Export*\n"
         "• `export_talk_summary <revision>` — assemble final manuscript\n\n"
+        "*Study Tools*\n"
+        "• `generate_anki_deck <pub_code>` — create Anki flashcards\n"
+        "• `push_to_siyuan <pub_code>` — export to SiYuan notebook\n\n"
         "• `talkmaster_status` — view all imported talks\n"
         "• `cost_report` — view LLM token usage for this session\n"
+        "• Upload a `.jwpub` file as a WhatsApp attachment to import publications\n"
     )
 
 
@@ -575,7 +585,7 @@ async def rehearsal_cue(revision_name: str) -> str:
             )
 
             response = completion(
-                model=os.getenv("LLM_MODEL", "openai/custom_ai"),
+                model=os.getenv("LLM_MODEL", "custom_ai"),
                 messages=[{"role": "user", "content": prompt}],
                 api_base=os.getenv("OPENAI_API_BASE", "http://localhost:4000"),
                 api_key=os.getenv("OPENAI_API_KEY", ""),
@@ -634,11 +644,14 @@ async def export_talk_summary(revision_name: str) -> str:
                 source="ai",
             )
             if result:
+                siyuan_url = _siyuan_doc_url(result)
                 return (
                     f"✅ *Manuscript assembled for '{revision_name}'*\n"
-                    f"SiYuan doc ID: `{result}`\n\n"
-                    f"Your AI-developed manuscript is ready. "
-                    f"Open SiYuan to review and finalize."
+                    f"• View in SiYuan: {siyuan_url}\n\n"
+                    f"Your AI-developed manuscript is ready.\n\n"
+                    f"📌 *Next steps:*\n"
+                    f"• `generate_anki_deck` — create flashcards for memorization\n"
+                    f"• `push_to_siyuan` — export study materials to SiYuan"
                 )
             return f"⚠️ Could not assemble manuscript for '{revision_name}'."
         finally:
@@ -709,15 +722,16 @@ def _get_jwlinker_cards(pub_code: str, topic_name: Optional[str] = None,
 async def generate_anki_deck(pub_code: str, topic_name: Optional[str] = None) -> str:
     """Generate an Anki flashcard deck (.apkg) from a JW publication in the database.
 
-    The deck is saved to /tmp and the file path is returned. If no topic is
-    specified, all topics for the publication are included.
+    The deck is saved and a download URL is returned so the user can
+    fetch the .apkg file directly. If no topic is specified, all topics
+    for the publication are included.
 
     Args:
         pub_code: Publication code (e.g., 's34', 'lmd', 'scl').
         topic_name: Optional topic name filter (partial match OK).
 
     Returns:
-        Path to the generated .apkg file, or an error message.
+        Download URL for the generated .apkg file, or an error message.
     """
     def _sync():
         from jwlinker.exporters.anki import AnkiExporter
@@ -736,14 +750,21 @@ async def generate_anki_deck(pub_code: str, topic_name: Optional[str] = None) ->
         exporter = AnkiExporter(root_deck_name=deck_name)
         exporter.add_cards(cards, linker, {})
 
-        output_path = f"/tmp/jwlinker_{pub_code}{'_' + topic_name.replace(' ', '_') if topic_name else ''}.apkg"
+        filename = f"jwlinker_{pub_code}{'_' + topic_name.replace(' ', '_') if topic_name else ''}.apkg"
+        output_path = f"/tmp/{filename}"
         exporter.export(output_path)
+
+        # Build download URL using gateway base
+        gateway_base = os.getenv("GATEWAY_PUBLIC_URL", "http://localhost:8086")
+        download_url = f"{gateway_base}/downloads/{filename}"
 
         return (
             f"✅ *Anki deck generated!*\n"
             f"• Cards: {len(cards)}\n"
-            f"• File: `{output_path}`\n"
-            f"• Deck: {deck_name}"
+            f"• Deck: {deck_name}\n"
+            f"• Download: {download_url}\n\n"
+            f"Open the link to download the .apkg file, "
+            f"then import it into Anki."
         )
 
     try:
@@ -795,12 +816,12 @@ async def push_to_siyuan(pub_code: str, topic_name: Optional[str] = None) -> str
         exporter.add_cards(cards)
         root_id = exporter.export(replace=False)
 
+        siyuan_url = _siyuan_doc_url(root_id)
         return (
             f"✅ *Pushed to SiYuan!*\n"
             f"• Cards: {len(cards)}\n"
-            f"• Root doc: `{root_id}`\n"
-            f"• Notebook: `{notebook_id}`\n\n"
-            f"Open SiYuan to view the document tree."
+            f"• View: {siyuan_url}\n\n"
+            f"Tap the link to open the document tree in SiYuan."
         )
 
     try:

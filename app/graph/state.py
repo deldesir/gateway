@@ -44,6 +44,7 @@ class AgentState(MessagesState):
     persona_memory: Optional[Dict[str, Any]] = None
     final_response: Optional[str] = None
     system_prompt_override: Optional[str] = None
+    rivebot_context: Optional[Dict[str, Any]] = None  # lang, topic, history from RiveBot
 
     # Konex Persona Engine
     dossier: Dict[str, Any]
