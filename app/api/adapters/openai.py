@@ -183,8 +183,21 @@ async def openai_chat_completions(
         )
         # NoAI silence: 3rd+ fallback → send nothing to the user
         if rivebot_context.get("silent"):
-            api_logger.info(f"NoAI silence for {user_id} — suppressing response")
-            return _openai_response(model_persona, "", id_prefix="chatcmpl-silent")
+            api_logger.info(f"Silent trigger for {user_id} — returning {{noreply}}")
+
+            # Best-effort: send 👍 reaction via WuzAPI if we have a message ID
+            msg_id = request.messages[-1].get("message_id") or request.messages[-1].get("id")
+            if msg_id and parsed.user_id:
+                phone = parsed.user_id.split(":")[-1].lstrip("+")
+                try:
+                    from app.api.middleware.wuzapi_client import send_reaction
+                    await send_reaction(phone, msg_id, "👍")
+                except Exception as e:
+                    api_logger.debug(f"WuzAPI reaction failed (non-critical): {e}")
+
+            # Return {{noreply}} sentinel — RapidPro flow must check for this
+            # and skip sending. This avoids blank WhatsApp messages.
+            return _openai_response(model_persona, "{{noreply}}", id_prefix="chatcmpl-silent")
 
         # Persona switch: re-route to new persona
         if rivebot_context.get("switch_persona"):
