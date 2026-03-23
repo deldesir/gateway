@@ -30,6 +30,9 @@ _COLON_PREFIX = re.compile(
 )
 # Suffix injected by the RapidPro flow: [msg_id:WHATSAPP_MSG_ID]
 _MSG_ID_SUFFIX = re.compile(r"\s*\[msg_id:([^\]]+)\]\s*$")
+# Attachments injected by call_llm expression: [Attachments: type:url, type:url]
+_ATTACHMENTS_BLOCK = re.compile(r"\s*\[Attachments:\s*([^\]]+)\]\s*$", re.IGNORECASE)
+
 
 
 @dataclass
@@ -70,6 +73,14 @@ def parse_rapidpro_message(raw: str, user_hint: Optional[str] = None,
         external_msg_id = mid_match.group(1).strip()
         content = _MSG_ID_SUFFIX.sub("", content).rstrip()
 
+    # 0.5 Extract [Attachments: url1, url2] block embedded by call_llm expression
+    inline_attachments = []
+    att_match = _ATTACHMENTS_BLOCK.search(content)
+    if att_match:
+        inline_attachments = [a.strip() for a in att_match.group(1).split(",") if a.strip()]
+        content = _ATTACHMENTS_BLOCK.sub("", content).rstrip()
+    merged_attachments = inline_attachments + (attachments or [])
+
     # 1. Try colon-separated format: "whatsapp:NUM:CHANNEL: message"
     m = _COLON_PREFIX.match(content)
     if m:
@@ -81,7 +92,7 @@ def parse_rapidpro_message(raw: str, user_hint: Optional[str] = None,
             content=content,
             user_id=user_id,
             channel_id=channel_id,
-            attachments=attachments or [],
+            attachments=merged_attachments,
             external_msg_id=external_msg_id,
         )
 
@@ -109,7 +120,7 @@ def parse_rapidpro_message(raw: str, user_hint: Optional[str] = None,
         content=content,
         user_id=user_id,
         channel_id=channel_id,
-        attachments=attachments or [],
+        attachments=merged_attachments,
         external_msg_id=external_msg_id,
         contact_name=contact_name,
     )
