@@ -16,7 +16,7 @@ from typing import Optional
 # RapidPro URN prefix: "Name (urn > channel) says: content"
 _URN_SIMPLE = re.compile(r"(tel|whatsapp|telegram):(\+?\d+)")
 _URN_PREFIX = re.compile(
-    r"^.*?\("
+    r"^(?P<contact_name>[^(]+?)\s*\("
     r"(?P<urn>(?:(?:tel|whatsapp|telegram):)?\+?\d+)"
     r"(?:\s*>\s*(?P<channel>\+?\d+))?"
     r"\) says:\s+"
@@ -39,6 +39,7 @@ class ParsedMessage:
     channel_id: Optional[str] # e.g. "5678" (maps to a persona)
     attachments: list = None   # e.g. ["application/octet-stream:https://…/file.jwpub"]
     external_msg_id: Optional[str] = None  # WhatsApp message ID for reactions
+    contact_name: Optional[str] = None     # WhatsApp contact name from RapidPro
 
     def __post_init__(self):
         if self.attachments is None:
@@ -90,6 +91,8 @@ def parse_rapidpro_message(raw: str, user_hint: Optional[str] = None,
         if m:
             user_id = f"{m.group(1)}:{m.group(2)}"
 
+    contact_name = None
+
     # 3. Try the full RapidPro prefix pattern
     m = _URN_PREFIX.search(content)
     if m:
@@ -98,6 +101,9 @@ def parse_rapidpro_message(raw: str, user_hint: Optional[str] = None,
             user_id = m.group("urn")
         if m.group("channel"):
             channel_id = m.group("channel").lstrip("+")
+        name = m.group("contact_name").strip()
+        if name and not name.startswith(("whatsapp", "tel", "telegram")):
+            contact_name = name
 
     return ParsedMessage(
         content=content,
@@ -105,4 +111,5 @@ def parse_rapidpro_message(raw: str, user_hint: Optional[str] = None,
         channel_id=channel_id,
         attachments=attachments or [],
         external_msg_id=external_msg_id,
+        contact_name=contact_name,
     )

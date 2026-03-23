@@ -178,6 +178,15 @@ async def openai_chat_completions(
     from app.api.middleware.rivebot_client import match_intent, set_var
     rivebot_context = {}
     try:
+        # Inject WhatsApp contact name if available (skips onboarding name question)
+        if parsed.contact_name:
+            try:
+                await set_var(model_persona, user_id, "name", parsed.contact_name)
+                await set_var(model_persona, user_id, "onboarded", "true")
+                await set_var(model_persona, user_id, "welcomed", "true")
+            except Exception:
+                pass  # non-critical: onboarding will ask for name instead
+
         intent_response, rivebot_context = await match_intent(
             last_user_message, model_persona, user_id
         )
