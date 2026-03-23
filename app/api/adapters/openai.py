@@ -185,12 +185,24 @@ async def openai_chat_completions(
         if rivebot_context.get("silent"):
             api_logger.info(f"Silent trigger for {user_id} — returning {{noreply}}")
 
-            # Best-effort: send 👍 reaction via WuzAPI if we have a message ID
+            # Best-effort: send context-aware reaction via WuzAPI
             if parsed.external_msg_id and parsed.user_id:
                 phone = parsed.user_id.split(":")[-1].lstrip("+")
+                # Pick emoji based on what the user said
+                _msg = last_user_message.strip().lower()
+                _reaction_map = {
+                    "ok": "👍", "okay": "👍", "yes": "👍", "yep": "👍",
+                    "no": "👌", "nah": "👌", "nope": "👌",
+                    "lol": "😁", "haha": "😁", "😂": "😁",
+                    "cool": "😊", "nice": "😊", "great": "😊",
+                    "thanks": "😊", "thank you": "😊", "thx": "😊",
+                    "bye": "👋🏾", "later": "👋🏾", "ciao": "👋🏾",
+                    "wow": "😉", "oh": "😉",
+                }
+                emoji = _reaction_map.get(_msg, "👍")
                 try:
                     from app.api.middleware.wuzapi_client import send_reaction
-                    await send_reaction(phone, parsed.external_msg_id, "👍")
+                    await send_reaction(phone, parsed.external_msg_id, emoji)
                 except Exception as e:
                     api_logger.debug(f"WuzAPI reaction failed (non-critical): {e}")
 
