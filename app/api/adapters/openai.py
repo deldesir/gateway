@@ -22,7 +22,7 @@ from app.api.middleware.message_parser import parse_rapidpro_message
 from app.graph.graph import build_graph
 from app.logger import logger
 from app.services.auth import check_admin_permissions
-from app.services.channel import resolve_persona
+from app.services.channel import resolve_persona, DEFAULT_PERSONA
 
 router = APIRouter(tags=["chat"])
 api_logger = logger.bind(name="API")
@@ -136,7 +136,7 @@ async def openai_chat_completions(
 
     # ── 2. Resolve persona from channel config ────────────────────────────────
     model_persona, system_prompt_override = await resolve_persona(
-        request.model or "konex-support"
+        request.model or DEFAULT_PERSONA
     )
 
     # ── 3. Build persona-scoped thread ID ─────────────────────────────────────
@@ -185,6 +185,27 @@ async def openai_chat_completions(
         if rivebot_context.get("silent"):
             api_logger.info(f"NoAI silence for {user_id} — suppressing response")
             return _openai_response(model_persona, "", id_prefix="chatcmpl-silent")
+
+        # Persona switch: re-route to new persona
+        if rivebot_context.get("switch_persona"):
+            new_slug = rivebot_context["switch_persona"]
+            model_persona = new_slug
+            thread_id = f"whatsapp:{user_id}:{new_slug}"
+            api_logger.info(f"Persona switch: {user_id} → {new_slug}")
+            # Send a greeting via the new persona
+            try:
+                greet_resp, _ = await match_intent("bonjou", new_slug, user_id)
+                if greet_resp:
+                    return _openai_response(
+                        new_slug, f"🔄 {greet_resp}", id_prefix="chatcmpl-switch"
+                    )
+            except Exception:
+                pass
+            return _openai_response(
+                new_slug,
+                "🔄 Pase nan " + new_slug.replace("-", " ").title() + ". Kijan m ka ede w?",
+                id_prefix="chatcmpl-switch",
+            )
 
         if intent_response is not None:
             return _openai_response(

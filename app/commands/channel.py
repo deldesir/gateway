@@ -24,12 +24,15 @@ async def cmd_channel(ctx: CommandContext) -> str:
         persona_name = ctx.args[2]
         
         async for session in get_session():
-            # 1. Find Persona (Try Name first, then ID)
-            p_result = await session.exec(select(Persona).where(Persona.name == persona_name))
+            # 1. Find Persona (Slug → Name → ID)
+            p_result = await session.exec(select(Persona).where(Persona.slug == persona_name))
             persona = p_result.first()
+
+            if not persona:
+                p_result = await session.exec(select(Persona).where(Persona.name == persona_name))
+                persona = p_result.first()
             
             if not persona:
-                 # Try ID
                  p_result = await session.exec(select(Persona).where(Persona.id == persona_name))
                  persona = p_result.first()
                  

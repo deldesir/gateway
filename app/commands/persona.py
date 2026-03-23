@@ -40,14 +40,15 @@ async def cmd_persona(ctx: CommandContext) -> str:
                 return f"❌ Persona `{name}` already exists. Use another name or delete it first."
                 
             new_persona = Persona(
+                slug=name,
                 name=name,
                 style=style,
                 personality=instruction,
-                system_prompt=instruction # Using personality as system prompt for now
+                system_prompt=instruction
             )
             session.add(new_persona)
             await session.commit()
-            return f"✅ Persona `{name}` created.\nStyle: {style}\nPrompt: {instruction[:50]}..."
+            return f"✅ Persona `{name}` created.\nSlug: {name}\nStyle: {style}\nPrompt: {instruction[:50]}..."
 
     elif action == "list":
         async for session in get_session():
@@ -65,7 +66,7 @@ async def cmd_persona(ctx: CommandContext) -> str:
                     try: tools = json.loads(tools)
                     except: tools = []
                     
-                msg += f"- **{p.name}** [`{p.id}`]: {len(tools)} tools\n"
+                msg += f"- **{p.name}** (`{p.slug}`): {len(tools)} tools\n"
             return msg
 
 
@@ -74,12 +75,13 @@ async def cmd_persona(ctx: CommandContext) -> str:
         name = " ".join(ctx.args[1:])
         
         async for session in get_session():
-            # Search by Name (as per command) OR ID if possible, but Name is safer for user input
-            # Note: get_persona_by_name uses Persona.name
-            result = await session.exec(select(Persona).where(Persona.name == name))
+            # Search by Slug → Name → ID
+            result = await session.exec(select(Persona).where(Persona.slug == name))
             p = result.first()
             if not p:
-                # Try ID fallback
+                result = await session.exec(select(Persona).where(Persona.name == name))
+                p = result.first()
+            if not p:
                 result = await session.exec(select(Persona).where(Persona.id == name))
                 p = result.first()
             

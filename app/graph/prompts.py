@@ -16,99 +16,85 @@ from app.models import Persona
 class PersonaPromptRegistry:
     """
     Registry for persona-specific attributes used to construct character cards.
+
+    Single source of truth: the Persona DB table (seeded on first boot by
+    app/db/seed.py). The static _FALLBACK dict is used ONLY if the DB is
+    unreachable — it should never be the primary path.
     """
 
-    REGISTRY = {
+    # Last-resort fallback — matches the seed data in seed.py.
+    # Only used if DB query fails (e.g., during testing or DB outage).
+    _FALLBACK = {
         "konex-support": {
             "persona_name": "Konex Support",
             "persona_personality": "Professional, helpful, efficient, patient.",
             "persona_style": "Formal yet friendly, speaks in Haitian Creole, focuses on solutions.",
-            "allowed_tools": ["fetch_dossier", "retrieval"], 
+            "allowed_tools": ["fetch_dossier", "retrieval"],
         },
-        "konex-sales": {
-             "persona_name": "Konex Sales",
-             "persona_personality": "Energetic, persuasive, enthusiastic, proactive.",
-             "persona_style": "Casual, uses emojis, speaks in Haitian Creole, focuses on upselling plans.",
-             "allowed_tools": ["start_flow", "retrieval"],
-        },
-        "talkprep": {
-             "persona_name": "TalkPrep Coach",
-             "persona_personality": "Knowledgeable, encouraging, methodical, patient JW public speaking coach. Proactively guides speakers through each preparation stage.",
-             "persona_style": "Professional yet warm. Uses the 53-point S-38 rubric. Speaks the user's language (Haitian Creole, French, or English). On first interaction always calls get_talkprep_help to orient the user.",
-             "allowed_tools": [
-                 "get_talkprep_help", "talkmaster_status", "select_active_talk",
-                 "list_publications", "list_topics", "import_talk",
-                 "create_revision",
-                 "develop_section",
-                 "evaluate_talk", "get_evaluation_scores",
-                 "rehearsal_cue",
-                 "export_talk_summary",
-                 "cost_report",
-                 "generate_anki_deck", "push_to_siyuan",
-                 "upload_jwpub",
-                 "retrieval",
-             ],
-        }
     }
+
+    @classmethod
+    def _db_to_dict(cls, p) -> dict:
+        """Convert a Persona DB record to the dict format expected by prompts."""
+        import json
+        tools = p.allowed_tools or []
+        if isinstance(tools, str):
+            try:
+                tools = json.loads(tools)
+            except Exception:
+                tools = []
+        return {
+            "persona_name": p.name,
+            "persona_personality": p.personality,
+            "persona_style": p.style,
+            "allowed_tools": tools,
+        }
 
     @classmethod
     def get(cls, persona: str) -> dict:
         """
-        Retrieve persona attributes for prompt rendering (Sync - Legacy/Fallback).
+        Synchronous fallback — used only in contexts where async is impossible.
+        Returns the static fallback if persona not found.
         """
-        return cls.REGISTRY.get(persona, cls.REGISTRY["konex-support"])
+        return cls._FALLBACK.get(persona, cls._FALLBACK["konex-support"])
 
     @classmethod
     async def get_async(cls, persona: str) -> dict:
         """
-        Retrieve persona attributes, checking DB first, then static registry.
+        Primary lookup: DB by slug → DB by id → static fallback.
         """
+        import os
         base_data = None
-        
-        # 1. Check Database first (Override registry)
-        # Note: Original code checked Registry first, but typically DB should override?
-        # Keeping original precedence: Registry (Static) -> DB (Dynamic)? 
-        # Actually, usually DB overrides static. But the original code had:
-        # if persona in REGISTRY: return REGISTRY[persona]
-        # This implies Registry is "Hardcoded/System" personas.
-        
-        # However, to be safe and consistent with logic:
-        # We need a base dictionary to start with.
-        
-        if persona in cls.REGISTRY:
-             base_data = cls.REGISTRY[persona].copy() # Copy to avoid mutating registry
-        
-        if not base_data:
-             async with async_session() as session:
-                statement = select(Persona).where(Persona.id == persona)
-                result = await session.execute(statement)
-                db_persona = result.scalar_one_or_none()
-                
-                if db_persona:
-                    # Parse allowed_tools if it's a string (SQLite legacy) or rely on TypeDecorator
-                    # For safety with the TEXT migration:
-                    import json
-                    tools = db_persona.allowed_tools
-                    if isinstance(tools, str):
-                        try:
-                            tools = json.loads(tools)
-                        except:
-                            tools = []
-                            
-                    base_data = {
-                        "persona_name": db_persona.name,
-                        "persona_personality": db_persona.personality,
-                        "persona_style": db_persona.style,
-                        "allowed_tools": tools or [],
-                    }
-        
-        # Fallback if still nothing
-        if not base_data:
-            base_data = cls.REGISTRY["konex-support"].copy()
 
-        # 3. Load Core Knowledge File (Inject into whatever base data we found)
+        try:
+            async with async_session() as session:
+                # 1. Try slug match (primary)
+                result = await session.execute(
+                    select(Persona).where(Persona.slug == persona)
+                )
+                db_persona = result.scalar_one_or_none()
+
+                # 2. Try ID match (for UUID-based lookups from ChannelConfig)
+                if not db_persona:
+                    result = await session.execute(
+                        select(Persona).where(Persona.id == persona)
+                    )
+                    db_persona = result.scalar_one_or_none()
+
+                if db_persona:
+                    base_data = cls._db_to_dict(db_persona)
+        except Exception:
+            pass  # Fall through to static fallback
+
+        # 3. Static fallback
+        if not base_data:
+            default_slug = os.getenv("DEFAULT_PERSONA", "konex-support")
+            base_data = cls._FALLBACK.get(persona,
+                        cls._FALLBACK.get(default_slug,
+                        cls._FALLBACK["konex-support"])).copy()
+
+        # 4. Load core knowledge file
         knowledge_content = await cls._load_knowledge_file(persona)
-        
         base_data["core_knowledge"] = knowledge_content
         return base_data
 
@@ -118,17 +104,13 @@ class PersonaPromptRegistry:
         Reads data/knowledge/<slug>.md if it exists.
         """
         from pathlib import Path
-        
-        # Use absolute path relative to project root (assuming running from root or finding via file)
-        # Better to be safe with relative path from CWD
+
         path = Path(f"data/knowledge/{persona_slug}.md")
-        
+
         if path.exists():
             try:
-                # Sync read is acceptable for small config files
                 return path.read_text(encoding="utf-8")
-            except Exception as e:
-                # logger.error(f"Failed to read knowledge file: {e}")
+            except Exception:
                 return ""
         return ""
 

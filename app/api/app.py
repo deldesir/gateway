@@ -5,14 +5,16 @@ from app.api.personas import router as personas_router
 from app.api.knowledge import router as knowledge_router
 from app.api.downloads import router as downloads_router
 from app.db import init_db
+from app.db.seed import seed_personas
 import app.models  # Register SQLModel tables
 import app.commands  # Register commands
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Initialize DB
+    # Startup: Initialize DB, then seed default personas
     await init_db()
+    await seed_personas()
     yield
     # Shutdown: Cleanup if needed
 

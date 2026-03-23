@@ -7,9 +7,11 @@ from typing import List
 
 class PersonaBase(SQLModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
-    name: str = Field(index=True)
+    slug: str = Field(index=True, unique=True)  # machine-friendly: "konex-support"
+    name: str = Field(index=True)                # human-friendly: "Konex Support"
     personality: str
     style: str
+    language: str = Field(default="ht")           # default lang for this persona
     system_prompt: Optional[str] = None
     allowed_tools: List[str] = Field(default=[], sa_column=Column(JSON))
 
@@ -23,9 +25,11 @@ class PersonaRead(PersonaBase):
     pass
 
 class PersonaUpdate(SQLModel):
+    slug: Optional[str] = None
     name: Optional[str] = None
     personality: Optional[str] = None
     style: Optional[str] = None
+    language: Optional[str] = None
     system_prompt: Optional[str] = None
     allowed_tools: Optional[List[str]] = None
 

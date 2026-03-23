@@ -1,4 +1,5 @@
 from typing import List, Annotated, Dict
+import os
 from langgraph.prebuilt import InjectedState
 
 from langchain.tools import tool
@@ -35,7 +36,7 @@ def retrieve_context(
       List[str]:
         Canonical memory excerpts.
     """
-    persona = state.get("persona", "konex-support")
+    persona = state.get("persona", os.environ.get("DEFAULT_PERSONA", "konex-support"))
     logger.info(f"Tool called | retrieve_context | persona={persona}")
 
     retriever = get_retriever()
