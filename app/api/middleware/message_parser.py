@@ -28,6 +28,8 @@ _COLON_PREFIX = re.compile(
     r"(?P<urn>\+?\d+):"
     r"(?P<channel>\+?\d+):\s*"
 )
+# Suffix injected by the RapidPro flow: [msg_id:WHATSAPP_MSG_ID]
+_MSG_ID_SUFFIX = re.compile(r"\s*\[msg_id:([^\]]+)\]\s*$")
 
 
 @dataclass
@@ -36,6 +38,7 @@ class ParsedMessage:
     user_id: Optional[str]   # e.g. "whatsapp:+12345"
     channel_id: Optional[str] # e.g. "5678" (maps to a persona)
     attachments: list = None   # e.g. ["application/octet-stream:https://…/file.jwpub"]
+    external_msg_id: Optional[str] = None  # WhatsApp message ID for reactions
 
     def __post_init__(self):
         if self.attachments is None:
@@ -58,11 +61,18 @@ def parse_rapidpro_message(raw: str, user_hint: Optional[str] = None,
     user_id = user_hint
     channel_id = None
     content = raw
+    external_msg_id = None
+
+    # 0. Strip [msg_id:...] suffix (injected by flow for WuzAPI reactions)
+    mid_match = _MSG_ID_SUFFIX.search(content)
+    if mid_match:
+        external_msg_id = mid_match.group(1).strip()
+        content = _MSG_ID_SUFFIX.sub("", content).rstrip()
 
     # 1. Try colon-separated format: "whatsapp:NUM:CHANNEL: message"
-    m = _COLON_PREFIX.match(raw)
+    m = _COLON_PREFIX.match(content)
     if m:
-        content = _COLON_PREFIX.sub("", raw, count=1)
+        content = _COLON_PREFIX.sub("", content, count=1)
         if not user_id:
             user_id = f"{m.group('scheme')}:{m.group('urn')}"
         channel_id = m.group("channel")
@@ -71,6 +81,7 @@ def parse_rapidpro_message(raw: str, user_hint: Optional[str] = None,
             user_id=user_id,
             channel_id=channel_id,
             attachments=attachments or [],
+            external_msg_id=external_msg_id,
         )
 
     # 2. Try the simple URN pattern first (e.g. in bare messages)
@@ -93,4 +104,5 @@ def parse_rapidpro_message(raw: str, user_hint: Optional[str] = None,
         user_id=user_id,
         channel_id=channel_id,
         attachments=attachments or [],
+        external_msg_id=external_msg_id,
     )
