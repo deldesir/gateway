@@ -15,7 +15,7 @@ from app.logger import logger
 
 api_logger = logger.bind(name="ChannelService")
 
-DEFAULT_PERSONA = os.getenv("DEFAULT_PERSONA", "konex-support")
+DEFAULT_PERSONA = os.getenv("DEFAULT_PERSONA", "assistant")
 
 
 async def resolve_persona(channel_or_slug: str) -> tuple[str, str | None]:
