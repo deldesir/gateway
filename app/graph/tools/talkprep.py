@@ -182,7 +182,7 @@ async def talkmaster_status() -> str:
 
 
 @tool
-async def select_active_talk(talk_id: int) -> str:
+async def select_active_talk(talk_id: str) -> str:
     """Select a talk as the active context for subsequent operations.
 
     Args:
@@ -191,24 +191,31 @@ async def select_active_talk(talk_id: int) -> str:
     Returns:
         Confirmation with talk name and available revisions.
     """
+    # Coerce to int (rive passes string)
+    try:
+        talk_id_int = int(str(talk_id).strip())
+    except (ValueError, TypeError):
+        return f"\u26d4 '{talk_id}' is not a valid talk ID. Use a number from `talkmaster_status`."
+
     def _sync():
         from talkmaster.database import Talk, Revision
         session, engine = _get_talkmaster_session()
         try:
-            talk = session.query(Talk).filter_by(id=talk_id).first()
+            talk = session.query(Talk).filter_by(id=talk_id_int).first()
             if not talk:
-                return f"Talk ID {talk_id} not found. Run `talkmaster_status` to see available talks."
-            revs = session.query(Revision).filter_by(talk_id=talk_id).all()
+                return f"Talk ID {talk_id_int} not found. Run `talkmaster_status` to see available talks."
+            revs = session.query(Revision).filter_by(talk_id=talk_id_int).all()
             rev_info = (
                 ", ".join(r.version_name for r in revs)
-                if revs else "none — create one with `create_revision`"
+                if revs else "none \u2014 create one with `create_revision`"
             )
             return (
-                f"✅ Active talk set:\n"
-                f"• ID: {talk.id}\n"
-                f"• Name: {talk.name}\n"
-                f"• Theme: {talk.theme}\n"
-                f"• Revisions: {rev_info}"
+                f"\u2705 Active talk set:\n"
+                f"\u2022 ID: {talk.id}\n"
+                f"\u2022 Name: {talk.name}\n"
+                f"\u2022 Theme: {talk.theme}\n"
+                f"\u2022 Revisions: {rev_info}"
+                f"\n{{{{set:active_talk_id:{talk.id}}}}}"
             )
         finally:
             session.close()
@@ -249,23 +256,32 @@ async def list_publications() -> str:
 
 
 @tool
-async def list_topics(pub_code: str) -> str:
+async def list_topics(pub_code: str, active_pub: Optional[str] = None) -> str:
     """List all topics (talk outlines) for a given publication code.
 
     Args:
         pub_code: Publication code, e.g. 's-34', 'lmd', 'scl'.
+        active_pub: Auto-injected from context (not user-facing).
 
     Returns:
         Formatted list of available topics with categories.
     """
+    # Use active_pub as fallback if pub_code looks empty
+    effective_pub = pub_code.strip() if pub_code and pub_code.strip() else (active_pub or "")
+    if not effective_pub:
+        return "\u26a0\ufe0f Please specify a publication code: `list topics s34`"
+
     def _sync():
         from talkmaster.bridge import list_jwlinker_topics
-        topics = list_jwlinker_topics(pub_code, db_path=JWLINKER_DB_PATH)
+        topics = list_jwlinker_topics(effective_pub, db_path=JWLINKER_DB_PATH)
         if not topics:
-            return f"No topics found for '{pub_code}'. Check the code with `list_publications`."
-        lines = [f"• *{t['name']}* — category: {t['category']}" for t in topics[:30]]
+            return f"No topics found for '{effective_pub}'. Check the code with `list_publications`."
+        lines = [f"\u2022 *{t['name']}* \u2014 category: {t['category']}" for t in topics[:30]]
         suffix = f"\n_(showing first 30 of {len(topics)})_" if len(topics) > 30 else ""
-        return f"📋 *Topics in '{pub_code}':*\n" + "\n".join(lines) + suffix
+        return (
+            f"📋 *Topics in '{effective_pub}':*\n" + "\n".join(lines) + suffix
+            + f"\n{{{{set:active_pub:{effective_pub}}}}}"
+        )
 
     try:
         return await asyncio.to_thread(_sync)
@@ -275,37 +291,50 @@ async def list_topics(pub_code: str) -> str:
 
 
 @tool
-async def import_talk(pub_code: str, topic_name: str, theme: str, language: str = "en") -> str:
+async def import_talk(topic_query: str, active_pub: Optional[str] = None) -> str:
     """Import a talk outline from a JW Library publication into talkmaster.
 
     Args:
-        pub_code: Publication code (e.g., 's-34', 'lmd').
-        topic_name: Exact or partial topic name to search for.
-        theme: Theme or title for this talk preparation session.
-        language: Language code (e.g., 'en', 'fr', 'cr').
+        topic_query: Topic name or number to search for.
+            Can be the full topic name, a partial match, or "No 26"-style.
+            The pub_code is auto-inferred from the last listed/uploaded publication.
+        active_pub: Auto-injected from context (not user-facing).
 
     Returns:
         Confirmation with imported talk details and its new ID.
     """
     def _sync():
         from talkmaster.bridge import import_from_jwlinker, save_imported_talk
+
+        pub_code = active_pub or ""
+        if not pub_code:
+            return (
+                "\u26a0\ufe0f No active publication. First run:\n"
+                "\u2022 `list topics s34` to browse a publication, or\n"
+                "\u2022 Upload a .jwpub file"
+            )
+
+        # Use the entire topic_query as the topic name search
+        theme = topic_query  # default theme = topic name
         talk = import_from_jwlinker(
             pub_code=pub_code,
-            topic_name=topic_name,
+            topic_name=topic_query,
             talk_theme=theme,
-            language=language,
-            db_path=JWLINKER_DB_PATH,
+            language="en",
+            jwlinker_db_path=JWLINKER_DB_PATH,
         )
         talk_id = save_imported_talk(talk)
         sections = len(talk.outline)
         points = sum(len(s.discussion_points) for s in talk.outline)
         return (
-            f"✅ *Talk imported successfully!*\n"
-            f"• ID: `{talk_id}` _(use this to create revisions)_\n"
-            f"• Name: {talk.talk_metadata.name}\n"
-            f"• Theme: {theme}\n"
-            f"• Sections: {sections} | Points: {points}\n\n"
-            f"Next: `create_revision {talk_id} version-1 <audience>`"
+            f"\u2705 *Talk imported successfully!*\n"
+            f"\u2022 ID: `{talk_id}` _(use this to create revisions)_\n"
+            f"\u2022 Name: {talk.talk_metadata.name}\n"
+            f"\u2022 Theme: {theme}\n"
+            f"\u2022 Sections: {sections} | Points: {points}\n\n"
+            f"Next: `create revision v1 <audience>`\n"
+            f"{{{{set:active_talk_id:{talk_id}}}}}"
+            f"{{{{set:active_pub:{pub_code}}}}}"
         )
 
     try:
@@ -319,38 +348,48 @@ async def import_talk(pub_code: str, topic_name: str, theme: str, language: str 
 
 @tool
 async def create_revision(
-    talk_id: int,
     version_name: str,
     audience_description: str = "General congregation audience",
+    active_talk_id: Optional[str] = None,
 ) -> str:
     """Create a new revision of a talk with an audience persona and golden thread.
 
     Args:
-        talk_id: ID of the imported talk (from talkmaster_status or import_talk).
-        version_name: Unique name for this revision (e.g., 'version-1', 'young-adults').
-        audience_description: Description of the target audience for this revision.
+        version_name: Unique name for this revision (e.g., 'v1', 'young-adults').
+        audience_description: Description of the target audience.
+        active_talk_id: Auto-injected from context (not user-facing).
 
     Returns:
         Confirmation with revision details and next steps.
     """
+    # Infer talk_id from active context
+    talk_id = None
+    if active_talk_id:
+        try:
+            talk_id = int(active_talk_id)
+        except (ValueError, TypeError):
+            pass
+    if talk_id is None:
+        return (
+            "\u26a0\ufe0f No active talk. First run:\n"
+            "\u2022 `import talk <topic>` to import a talk, or\n"
+            "\u2022 `use talk <id>` to select an existing talk"
+        )
+
     def _sync():
         from talkmaster.database import Talk, Revision, AudiencePersona
-        from talkmaster.repositories import create_talk_structure
         session, engine = _get_talkmaster_session()
         try:
-            # ── Stage gate: talk must exist ───────────────────────────────
             gate = _gate_talk_exists(session, talk_id)
             if gate:
                 return gate
 
             talk = session.query(Talk).filter_by(id=talk_id).first()
-
-            # Check for duplicate version name
             existing = session.query(Revision).filter_by(
                 talk_id=talk_id, version_name=version_name
             ).first()
             if existing:
-                return f"Revision '{version_name}' already exists for this talk. Choose a different name."
+                return f"Revision '{version_name}' already exists. Choose a different name."
 
             persona = AudiencePersona(
                 talk_id=talk_id,
@@ -368,11 +407,12 @@ async def create_revision(
             session.commit()
 
             return (
-                f"✅ *Revision '{version_name}' created!*\n"
-                f"• Talk: {talk.name}\n"
-                f"• Audience: {audience_description}\n\n"
-                f"Next: develop each section with\n"
-                f"`develop_section {version_name} <section_title>`"
+                f"\u2705 *Revision '{version_name}' created!*\n"
+                f"\u2022 Talk: {talk.name}\n"
+                f"\u2022 Audience: {audience_description}\n\n"
+                f"Next: develop sections with\n"
+                f"`develop section <section_title>`\n"
+                f"{{{{set:active_revision:{version_name}}}}}"
             )
         finally:
             session.close()
@@ -388,21 +428,27 @@ async def create_revision(
 # ── Stage 3: Section Development ────────────────────────────────────
 
 @tool
-async def develop_section(revision_name: str, section_title: str) -> str:
+async def develop_section(section_title: str, active_revision: Optional[str] = None) -> str:
     """AI-develop a single section of a talk revision.
 
     Args:
-        revision_name: Name of the active revision (e.g., 'version-1').
         section_title: Title of the section to develop (partial match OK).
+        active_revision: Auto-injected from context (not user-facing).
 
     Returns:
         Confirmation or status of the developed section.
     """
+    revision_name = active_revision or ""
+    if not revision_name:
+        return (
+            "\u26a0\ufe0f No active revision. First run:\n"
+            "\u2022 `create revision v1 <audience>`"
+        )
+
     def _sync():
         from talkmaster.siyuan import generation
         session, engine = _get_talkmaster_session()
         try:
-            # ── Stage gate: revision must exist ──────────────────────────
             gate = _gate_revision_exists(session, revision_name)
             if gate:
                 return gate
@@ -413,10 +459,9 @@ async def develop_section(revision_name: str, section_title: str) -> str:
                 section_title=section_title,
             )
             if result:
-                # Truncate for WhatsApp readability
-                preview = result[:400] + "…" if len(result) > 400 else result
-                return f"✅ *Section '{section_title}' developed:*\n\n_{preview}_"
-            return f"⚠️ Could not develop '{section_title}'. Check the section title."
+                preview = result[:400] + "\u2026" if len(result) > 400 else result
+                return f"\u2705 *Section '{section_title}' developed:*\n\n_{preview}_"
+            return f"\u26a0\ufe0f Could not develop '{section_title}'. Check the section title."
         finally:
             session.close()
             engine.dispose()
@@ -431,33 +476,40 @@ async def develop_section(revision_name: str, section_title: str) -> str:
 # ── Stage 4: Evaluation ──────────────────────────────────────────────
 
 @tool
-async def evaluate_talk(revision_name: str) -> str:
+async def evaluate_talk(active_revision: Optional[str] = None, revision_name: Optional[str] = None) -> str:
     """Evaluate a talk revision against the 53-point S-38 rubric.
 
     Args:
-        revision_name: Name of the revision to evaluate.
+        active_revision: Auto-injected from context.
+        revision_name: Explicit override (from AI/direct call).
 
     Returns:
         Trigger confirmation — scores available via get_evaluation_scores.
     """
+    rev_name = revision_name or active_revision or ""
+    if not rev_name:
+        return (
+            "\u26a0\ufe0f No active revision. First run:\n"
+            "\u2022 `create revision v1 <audience>`"
+        )
+
     def _sync():
         from talkmaster.database import Revision
         from talkmaster.siyuan import generation
         session, engine = _get_talkmaster_session()
         try:
-            # ── Stage gate: must have developed at least one section ──────
-            gate = _gate_section_developed(session, revision_name)
+            gate = _gate_section_developed(session, rev_name)
             if gate:
                 return gate
 
-            rev = session.query(Revision).filter_by(version_name=revision_name).first()
+            rev = session.query(Revision).filter_by(version_name=rev_name).first()
             if not rev:
-                return f"Revision '{revision_name}' not found."
-            result = generation.review_cohesion(version_name=revision_name, db=session)
+                return f"Revision '{rev_name}' not found."
+            result = generation.review_cohesion(version_name=rev_name, db=session)
             return (
-                f"✅ *Evaluation started for '{revision_name}'*\n"
-                f"S-38 rubric analysis running…\n"
-                f"Use `get_evaluation_scores {revision_name}` to view results."
+                f"\u2705 *Evaluation started for '{rev_name}'*\n"
+                f"S-38 rubric analysis running\u2026\n"
+                f"Use `scores` to view results."
             )
         finally:
             session.close()
@@ -471,22 +523,26 @@ async def evaluate_talk(revision_name: str) -> str:
 
 
 @tool
-async def get_evaluation_scores(revision_name: str) -> str:
+async def get_evaluation_scores(active_revision: Optional[str] = None, revision_name: Optional[str] = None) -> str:
     """Get S-38 rubric evaluation scores for a talk revision.
 
     Args:
-        revision_name: Name of the revision to get scores for.
+        active_revision: Auto-injected from context.
+        revision_name: Explicit override.
 
     Returns:
         Scores broken down by S-38 category with coaching tips.
     """
+    rev_name = revision_name or active_revision or ""
+    if not rev_name:
+        return "\u26a0\ufe0f No active revision. Specify a revision name or set one first."
     def _sync():
         from talkmaster.database import Revision, EvaluationScore, EvaluationPoint
         session, engine = _get_talkmaster_session()
         try:
-            rev = session.query(Revision).filter_by(version_name=revision_name).first()
+            rev = session.query(Revision).filter_by(version_name=rev_name).first()
             if not rev:
-                return f"Revision '{revision_name}' not found."
+                return f"Revision '{rev_name}' not found."
 
             scores = (
                 session.query(EvaluationScore)
@@ -496,8 +552,8 @@ async def get_evaluation_scores(revision_name: str) -> str:
             )
             if not scores:
                 return (
-                    f"No scores yet for '{revision_name}'.\n"
-                    f"Run `evaluate_talk {revision_name}` first."
+                    f"No scores yet for '{rev_name}'.\n"
+                    f"Run `evaluate talk` first."
                 )
 
             # Group by category
@@ -506,7 +562,7 @@ async def get_evaluation_scores(revision_name: str) -> str:
                 cat = s.evaluation_point.category
                 by_cat.setdefault(cat, []).append(s.score)
 
-            lines = [f"📊 *Scores for '{revision_name}':*"]
+            lines = [f"📊 *Scores for '{rev_name}':*"]
             total, count = 0, 0
             for cat, cat_scores in sorted(by_cat.items()):
                 avg = sum(cat_scores) / len(cat_scores)
@@ -540,15 +596,22 @@ async def get_evaluation_scores(revision_name: str) -> str:
 # ── Stage 5: Rehearsal ───────────────────────────────────────────────
 
 @tool
-async def rehearsal_cue(revision_name: str) -> str:
+async def rehearsal_cue(active_revision: Optional[str] = None, revision_name: Optional[str] = None) -> str:
     """Generate AI delivery coaching cues for rehearsal of a talk revision.
 
     Args:
-        revision_name: Name of the revision to rehearse.
+        active_revision: Auto-injected from context.
+        revision_name: Explicit override.
 
     Returns:
         Personalized delivery cues: pacing, pauses, emphasis, eye contact.
     """
+    rev_name = revision_name or active_revision or ""
+    if not rev_name:
+        return (
+            "\u26a0\ufe0f No active revision. First run:\n"
+            "\u2022 `create revision v1 <audience>`"
+        )
     def _sync():
         from talkmaster.database import Revision, RehearsalRecord
         from talkmaster.llm import completion
@@ -557,13 +620,13 @@ async def rehearsal_cue(revision_name: str) -> str:
         session, engine = _get_talkmaster_session()
         try:
             # ── Stage gate: evaluation must have been done ────────────────
-            gate = _gate_evaluation_done(session, revision_name)
+            gate = _gate_evaluation_done(session, rev_name)
             if gate:
                 return gate
 
-            rev = session.query(Revision).filter_by(version_name=revision_name).first()
+            rev = session.query(Revision).filter_by(version_name=rev_name).first()
             if not rev:
-                return f"Revision '{revision_name}' not found."
+                return f"Revision '{rev_name}' not found."
 
             # Pull rehearsal count for progression
             rehearsal_count = (
@@ -574,7 +637,7 @@ async def rehearsal_cue(revision_name: str) -> str:
 
             prompt = (
                 f"You are a JW public speaking coach. The speaker is doing rehearsal "
-                f"#{rehearsal_count + 1} of their talk revision '{revision_name}'.\n\n"
+                f"#{rehearsal_count + 1} of their talk revision '{rev_name}'.\n\n"
                 f"Give 5 short, actionable delivery coaching tips covering:\n"
                 f"1. Opening — how to establish eye contact immediately\n"
                 f"2. Pacing — when to slow down for impact\n"
@@ -603,7 +666,7 @@ async def rehearsal_cue(revision_name: str) -> str:
             session.commit()
 
             return (
-                f"🎤 *Rehearsal #{rehearsal_count + 1} cues for '{revision_name}':*\n\n"
+                f"🎤 *Rehearsal #{rehearsal_count + 1} cues for '{rev_name}':*\n\n"
                 f"{cues}"
             )
         finally:
@@ -620,40 +683,47 @@ async def rehearsal_cue(revision_name: str) -> str:
 # ── Stage 6: Export ──────────────────────────────────────────────────
 
 @tool
-async def export_talk_summary(revision_name: str) -> str:
+async def export_talk_summary(active_revision: Optional[str] = None, revision_name: Optional[str] = None) -> str:
     """Assemble and export the final talk manuscript summary.
 
     Args:
-        revision_name: Name of the revision to export.
+        active_revision: Auto-injected from context.
+        revision_name: Explicit override.
 
     Returns:
         A condensed version of the full manuscript for review.
     """
+    rev_name = revision_name or active_revision or ""
+    if not rev_name:
+        return (
+            "\u26a0\ufe0f No active revision. First run:\n"
+            "\u2022 `create revision v1 <audience>`"
+        )
     def _sync():
         from talkmaster.siyuan import generation
         session, engine = _get_talkmaster_session()
         try:
             # ── Stage gate: must have rehearsed at least once ─────────────
-            gate = _gate_rehearsal_done(session, revision_name)
+            gate = _gate_rehearsal_done(session, rev_name)
             if gate:
                 return gate
 
             result = generation.assemble_manuscript(
-                version_name=revision_name,
+                version_name=rev_name,
                 db=session,
                 source="ai",
             )
             if result:
                 siyuan_url = _siyuan_doc_url(result)
                 return (
-                    f"✅ *Manuscript assembled for '{revision_name}'*\n"
+                    f"\u2705 *Manuscript assembled for '{rev_name}'*\n"
                     f"• View in SiYuan: {siyuan_url}\n\n"
                     f"Your AI-developed manuscript is ready.\n\n"
                     f"📌 *Next steps:*\n"
                     f"• `generate_anki_deck` — create flashcards for memorization\n"
                     f"• `push_to_siyuan` — export study materials to SiYuan"
                 )
-            return f"⚠️ Could not assemble manuscript for '{revision_name}'."
+            return f"\u26a0\ufe0f Could not assemble manuscript for '{rev_name}'."
         finally:
             session.close()
             engine.dispose()

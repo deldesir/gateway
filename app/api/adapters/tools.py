@@ -27,7 +27,8 @@ from app.graph.tools.registry import ToolRegistry
 router = APIRouter(tags=["tools"])
 
 
-async def _invoke_tool(tool_name: str, kwargs: Dict[str, Any], user_id: str) -> str:
+async def _invoke_tool(tool_name: str, kwargs: Dict[str, Any], user_id: str,
+                       context: Optional[Dict[str, str]] = None) -> str:
     """Resolve and invoke a registered tool. Returns the string result.
 
     Positional args support: if kwargs contains '_args' (a list of strings),
@@ -75,6 +76,11 @@ async def _invoke_tool(tool_name: str, kwargs: Dict[str, Any], user_id: str) -> 
     # Tools that don't declare user_id in their schema simply ignore it.
     kwargs.setdefault("user_id", user_id)
 
+    # Inject active context from macro_bridge headers
+    if context:
+        for key, val in context.items():
+            kwargs.setdefault(key, val)
+
     try:
         result = await tool_fn.ainvoke(kwargs if kwargs else {"user_id": user_id})
     except Exception as e:
@@ -89,16 +95,20 @@ async def call_tool_post(
     tool_name: str,
     request: Request,
     x_user_id: Optional[str] = Header(None, alias="X-User-Id"),
+    x_active_pub: Optional[str] = Header(None, alias="X-Active-Pub"),
+    x_active_talk_id: Optional[str] = Header(None, alias="X-Active-Talk-Id"),
+    x_active_revision: Optional[str] = Header(None, alias="X-Active-Revision"),
 ) -> dict:
     """
     Invoke a tool by name, passing JSON body kwargs.
     Called by RiveBot macro_bridge for tools that need arguments.
-
-    Example:
-        POST /v1/tools/import_talk
-        {"pub_code": "s-34", "topic_name": "Courage", "theme": "Faith"}
     """
     user_id = x_user_id or "rivebot"
+    context = {}
+    if x_active_pub: context["active_pub"] = x_active_pub
+    if x_active_talk_id: context["active_talk_id"] = x_active_talk_id
+    if x_active_revision: context["active_revision"] = x_active_revision
+
     try:
         body = await request.json()
         if not isinstance(body, dict):
@@ -106,8 +116,8 @@ async def call_tool_post(
     except Exception:
         body = {}
 
-    logger.info(f"[tools] POST {tool_name} | user={user_id} | kwargs={list(body.keys())}")
-    result = await _invoke_tool(tool_name, body, user_id)
+    logger.info(f"[tools] POST {tool_name} | user={user_id} | kwargs={list(body.keys())} | ctx={context}")
+    result = await _invoke_tool(tool_name, body, user_id, context)
     return {"result": result}
 
 
@@ -115,16 +125,20 @@ async def call_tool_post(
 async def call_tool_get(
     tool_name: str,
     x_user_id: Optional[str] = Header(None, alias="X-User-Id"),
+    x_active_pub: Optional[str] = Header(None, alias="X-Active-Pub"),
+    x_active_talk_id: Optional[str] = Header(None, alias="X-Active-Talk-Id"),
+    x_active_revision: Optional[str] = Header(None, alias="X-Active-Revision"),
 ) -> dict:
     """
     Invoke a no-argument tool by name.
     Called by RiveBot macro_bridge for simple status/list tools.
-
-    Example:
-        GET /v1/tools/talkmaster_status
-        GET /v1/tools/list_publications
     """
     user_id = x_user_id or "rivebot"
-    logger.info(f"[tools] GET {tool_name} | user={user_id}")
-    result = await _invoke_tool(tool_name, {}, user_id)
+    context = {}
+    if x_active_pub: context["active_pub"] = x_active_pub
+    if x_active_talk_id: context["active_talk_id"] = x_active_talk_id
+    if x_active_revision: context["active_revision"] = x_active_revision
+
+    logger.info(f"[tools] GET {tool_name} | user={user_id} | ctx={context}")
+    result = await _invoke_tool(tool_name, {}, user_id, context)
     return {"result": result}
