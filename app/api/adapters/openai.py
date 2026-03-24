@@ -128,22 +128,39 @@ async def openai_chat_completions(
 
     # ── 1.5  Attachment handling ────────────────────────────────────────────
     if parsed.attachments:
-        # Deterministic .jwpub intercept — zero AI tokens
+        # Check if any attachment or the message text mentions .jwpub
+        is_jwpub = ".jwpub" in last_user_message.lower()
+        jwpub_url = None
+
         for att in parsed.attachments:
             att_str = att if isinstance(att, str) else str(att)
+            # Check attachment URL/name for .jwpub
             if ".jwpub" in att_str.lower():
-                # Extract URL from RapidPro format "content_type:url"
-                url = att_str.split(":", 1)[1] if ":" in att_str else att_str
-                api_logger.info(f"JWPUB detected — routing to upload_jwpub (AI-free)")
-                try:
-                    from app.graph.tools.upload import upload_jwpub
-                    result = await upload_jwpub.ainvoke({"media_url": url})
-                except Exception as e:
-                    result = f"❌ Error processing .jwpub file: {e}"
-                return _openai_response(
-                    parsed.channel_id or "assistant", result,
-                    id_prefix="chatcmpl-jwpub",
-                )
+                is_jwpub = True
+            # Extract URL from "content_type:http://..." format
+            if is_jwpub and jwpub_url is None:
+                # Find the URL portion (starts with http)
+                http_idx = att_str.find("http")
+                if http_idx >= 0:
+                    jwpub_url = att_str[http_idx:]
+                elif ":" in att_str:
+                    # Fallback: split on first colon after mime type
+                    parts = att_str.split(":", maxsplit=2)
+                    jwpub_url = ":".join(parts[1:]) if len(parts) > 1 else att_str
+                else:
+                    jwpub_url = att_str
+
+        if is_jwpub and jwpub_url:
+            api_logger.info(f"JWPUB detected — routing to upload_jwpub (AI-free): {jwpub_url}")
+            try:
+                from app.graph.tools.upload import upload_jwpub
+                result = await upload_jwpub.ainvoke({"media_url": jwpub_url})
+            except Exception as e:
+                result = f"❌ Error processing .jwpub file: {e}"
+            return _openai_response(
+                parsed.channel_id or "assistant", result,
+                id_prefix="chatcmpl-jwpub",
+            )
 
         # Non-jwpub attachments: inject context for AI
         att_lines = []
