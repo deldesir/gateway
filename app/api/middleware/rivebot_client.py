@@ -41,7 +41,7 @@ async def match_intent(
                     May contain "silent": True when noai 3rd+ fallback triggers.
     """
     try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
+        async with httpx.AsyncClient(timeout=15.0) as client:
             resp = await client.post(
                 f"{RIVEBOT_URL}/match",
                 json={"message": message, "persona": persona, "user": user_id},

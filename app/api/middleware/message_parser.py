@@ -40,7 +40,7 @@ class ParsedMessage:
     content: str              # cleaned message, prefix stripped
     user_id: Optional[str]   # e.g. "whatsapp:+12345"
     channel_id: Optional[str] # e.g. "5678" (maps to a persona)
-    attachments: list = None   # e.g. ["application/octet-stream:https://…/file.jwpub"]
+    attachments: list = None   # e.g. ["application/octet-stream:https://…/file.zip"]
     external_msg_id: Optional[str] = None  # WhatsApp message ID for reactions
     contact_name: Optional[str] = None     # WhatsApp contact name from RapidPro
 
