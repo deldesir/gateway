@@ -157,8 +157,13 @@ async def openai_chat_completions(
                 result = await upload_jwpub.ainvoke({"media_url": jwpub_url})
             except Exception as e:
                 result = f"❌ Error processing .jwpub file: {e}"
+
+            # Auto-switch to talkprep persona after successful jwpub upload
+            _user_persona[user_id] = "talkprep"
+            api_logger.info(f"Auto-switched {user_id} to talkprep persona after jwpub upload")
+
             return _openai_response(
-                parsed.channel_id or "assistant", result,
+                "talkprep", result,
                 id_prefix="chatcmpl-jwpub",
             )
 
