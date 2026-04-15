@@ -3,7 +3,7 @@ name = "ai-gateway"
 version = "0.3.0"
 description = "AI Gateway - Unified agentic backend for IIAB"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "dotenv>=0.9.9",
     "faiss-cpu>=1.13.2",
@@ -16,7 +16,7 @@ dependencies = [
     "langgraph>=1.0.5",
     "langgraph-checkpoint-sqlite>=3.0.1",
     "langgraph-checkpoint-postgres>=2.0.0",
-    "litellm>=1.80.11",
+    "litellm>=1.80.11,!=1.82.8",
     "loguru>=0.7.3",
     "pydantic>=2.12.5",
     "python-dotenv>=1.2.1",
@@ -28,17 +28,31 @@ dependencies = [
     "jwlinker",
     "talkmaster",
     "rapidpro-python",
+    # V2 — Hermes Agent + MemPalace (in-process, not services)
+    "hermes-agent",
+    "mempalace",
+    "tenacity>=9.0.0",
     # ── Security pins (transitive deps with known CVEs) ──
     "aiohttp>=3.13.3",       # CVE-2025-69223..69230
     "urllib3>=2.6.3",        # CVE-2026-21441
-    "protobuf>=5.29.6",     # CVE-2026-0994
+    "protobuf>=5.29.6,<7",   # CVE-2026-0994; capped <7 (breaks chromadb's opentelemetry-proto)
     "langsmith>=0.6.3",     # CVE-2026-25528
     "filelock>=3.20.3",     # CVE-2026-22701
+    "opentelemetry-proto>=1.30.0",
+    "opentelemetry-exporter-otlp-proto-grpc>=1.30.0",
 ]
 
 [tool.uv.sources]
 jwlinker = { path = "/opt/iiab/jwlinker", editable = true }
 talkmaster = { path = "/opt/iiab/talkmaster", editable = true }
+hermes-agent = { path = "/opt/iiab/hermes-agent", editable = true }
+mempalace = { path = "/opt/iiab/mempalace", editable = true }
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [build-system]
 requires = ["setuptools>=61.0"]
