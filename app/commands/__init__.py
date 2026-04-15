@@ -8,7 +8,7 @@ from . import content
 from . import admin
 from . import persona
 from . import channel
-from . import knowledge
+
 from . import cost
 from . import status
 from . import reload

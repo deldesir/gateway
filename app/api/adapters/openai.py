@@ -13,13 +13,10 @@ import time
 import uuid
 from typing import Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException, Request
-from langchain_core.messages import HumanMessage
+from fastapi import APIRouter, HTTPException, Request, BackgroundTasks
 from pydantic import BaseModel
 
-from app.api.middleware.checkpointer import get_checkpointer
 from app.api.middleware.message_parser import parse_rapidpro_message
-from app.graph.graph import build_graph
 from app.logger import logger
 from app.services.auth import check_admin_permissions
 from app.services.channel import resolve_persona, DEFAULT_PERSONA
@@ -92,6 +89,7 @@ def _extract_usage(result: dict) -> tuple[int, int]:
 async def openai_chat_completions(
     request: OpenAIChatRequest,
     raw_request: Request,
+    background_tasks: BackgroundTasks,
 ) -> dict:
     """OpenAI-compatible chat endpoint consumed by RapidPro's AI LLM config."""
     api_logger.info(f"Incoming request | model={request.model} | user={request.user}")
@@ -206,18 +204,16 @@ async def openai_chat_completions(
                 return _openai_response(model_persona, "🚫 Permission Denied.", id_prefix="chatcmpl-deny")
 
         if is_allowed:
-            async with get_checkpointer() as cp:
-                if hasattr(cp, "setup"):
-                    await cp.setup()
-                ctx = CommandContext(
-                    user_id=user_id,
-                    thread_id=thread_id,
-                    persona=model_persona,
-                    args=[],
-                    checkpointer=cp,
-                    raw_message=last_user_message,
-                )
-                admin_response = await CommandRegistry.execute(last_user_message, ctx)
+            from app.commands.registry import CommandRegistry, CommandContext
+            ctx = CommandContext(
+                user_id=user_id,
+                thread_id=thread_id,
+                persona=model_persona,
+                args=[],
+                checkpointer=None,  # V1 checkpointer disabled in V2
+                raw_message=last_user_message,
+            )
+            admin_response = await CommandRegistry.execute(last_user_message, ctx)
 
             if admin_response:
                 return _openai_response(
@@ -332,25 +328,24 @@ async def openai_chat_completions(
         logger.error(f"Rivebot match error: {e}")
         # On error, safely fall through to LangGraph
 
-    # ── 5. LangGraph invocation ───────────────────────────────────────────────
+    # ── 5. Hermes Agent invocation ───────────────────────────────────────────────
     try:
-        async with get_checkpointer() as cp:
-            if hasattr(cp, "setup"):
-                await cp.setup()
-            graph = build_graph(checkpointer=cp)
-            result = await graph.ainvoke(
-                {
-                    "persona": model_persona,
-                    "user_input": last_user_message,
-                    "messages": [HumanMessage(content=last_user_message)],
-                    "system_prompt_override": system_prompt_override,
-                    "rivebot_context": rivebot_context,
-                },
-                config={"configurable": {"thread_id": thread_id}},
-            )
+        # Resolve persona properties
+        from app.graph.prompts import PersonaPromptRegistry
+        persona_vars = await PersonaPromptRegistry.get_async(model_persona)
+
+        from app.hermes.engine import invoke_hermes
+        final_text = await invoke_hermes(
+            urn=user_id,
+            persona=model_persona,
+            message=last_user_message,
+            system_prompt=system_prompt_override,
+            rivebot_context=rivebot_context,
+            persona_vars=persona_vars,
+        )
     except Exception as e:
         # ── AI failure: auto-enable noai mode ─────────────────────────────────
-        api_logger.error(f"LangGraph failed for {user_id}: {e}")
+        api_logger.error(f"Hermes failed for {user_id}: {e}")
         await set_var(model_persona, user_id, "noai", "true")
 
         # Return the first noai message directly (don't wait for next match)
@@ -367,22 +362,33 @@ async def openai_chat_completions(
             )
         return _openai_response(model_persona, noai_msg, id_prefix="chatcmpl-noai")
 
-    final_text = result.get("final_response") or "Mwen pa konprann."
-    prompt_tokens, completion_tokens = _extract_usage(result)
-
     # ── 5.1 AI succeeded: clear noai if it was previously set ─────────────────
     if rivebot_context.get("noai"):
         await set_var(model_persona, user_id, "noai", "false")
         api_logger.info(f"AI recovered for {user_id} — cleared noai flag")
 
+    # ── 5.2 Persistence ──────────────────────────────────────────────────
+    if not getattr(final_text, "skip_persistence", False):
+        from app.hooks.palace_writer import persist_turn_to_palace
+        background_tasks.add_task(
+            persist_turn_to_palace,
+            urn=user_id,
+            persona=model_persona,
+            user_message=last_user_message,
+            assistant_response=final_text
+        )
+
     # ── 5.5 Advance RiveBot topic if a stage-completing tool ran ──────────────
-    from app.api.middleware.rivebot_client import (
-        detect_stage_completing_tool,
-        advance_topic_if_needed,
-    )
-    stage_tool = detect_stage_completing_tool(result)
-    if stage_tool:
-        await advance_topic_if_needed(stage_tool, model_persona, user_id)
+    from app.api.middleware.rivebot_client import advance_topic_if_needed
+    # Note: detect_stage_completing_tool was tied to LangGraph state structure,
+    # leaving it disabled in V2 until a Hermes equivalent is written if needed.
+    # stage_tool = detect_stage_completing_tool(result)
+    # if stage_tool:
+    #     await advance_topic_if_needed(stage_tool, model_persona, user_id)
+
+    # Since Hermes returns just text, we don't have token counts easily accessible yet.
+    # Set them to 0 or extract them later if Hermes adds usage tracking.
+    prompt_tokens, completion_tokens = 0, 0
 
     return _openai_response(
         model_persona, final_text, prompt_tokens, completion_tokens

@@ -136,18 +136,4 @@ async def advance_topic_if_needed(tool_name: str, persona: str, user_id: str) ->
         logger.warning(f"[rivebot] set-topic failed (non-blocking): {e}")
 
 
-def detect_stage_completing_tool(result: dict) -> Optional[str]:
-    """
-    Inspect a LangGraph result dict for tool messages and return the name
-    of the last stage-completing tool that was called, or None.
 
-    LangGraph stores tool call results as ToolMessage objects in result["messages"].
-    Each ToolMessage has a .name attribute with the tool function name.
-    """
-    from langchain_core.messages import ToolMessage
-    messages = result.get("messages", [])
-    # Walk backwards to find the last stage-completing tool
-    for msg in reversed(messages):
-        if isinstance(msg, ToolMessage) and msg.name in STAGE_TRANSITIONS:
-            return msg.name
-    return None

@@ -9,10 +9,7 @@ import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Header, HTTPException
-from langchain_core.messages import HumanMessage
-
 from app.api.schemas import ChatRequest, ChatResponse
-from app.api.middleware.checkpointer import get_checkpointer
 from app.api.health import router as health_router
 from app.api.adapters.openai import router as openai_router
 from app.api.adapters.tools import router as tools_router

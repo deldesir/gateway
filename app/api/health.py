@@ -11,8 +11,6 @@ import httpx
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
-from app.api.middleware.checkpointer import get_checkpointer
-
 router = APIRouter(tags=["observability"])
 
 _LITELLM_BASE = os.getenv("OPENAI_API_BASE", "http://localhost:4000")
@@ -30,12 +28,14 @@ async def _probe_litellm() -> str:
         return "unreachable"
 
 
+from sqlalchemy import text
+from app.db import async_session
+
 async def _probe_db() -> str:
-    """Check if the checkpointer DB is accessible."""
+    """Check if the main DB is accessible."""
     try:
-        async with get_checkpointer() as cp:
-            if hasattr(cp, "setup"):
-                await cp.setup()
+        async with async_session() as session:
+            await session.execute(text("SELECT 1"))
         return "ok"
     except Exception as e:
         return f"error: {e}"

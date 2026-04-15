@@ -1,14 +1,13 @@
+import json
 from typing import Optional
-from langchain_core.tools import tool
 
-@tool
-def check_stock(item_name: str) -> str:
+def check_stock(args: dict, **kwargs) -> str:
     """
     Check if an item is in stock at the Hardware Store.
-    
-    Args:
-        item_name (str): The name of the item (e.g., 'Cement', 'Hammer').
     """
+    item_name = args.get("item_name", "")
+    if not item_name: return json.dumps({"error": "No item_name provided"})
+    
     # Mock inventory
     inventory = {
         "cement": "500 bags available. Price: 850 HTG.",
@@ -19,29 +18,39 @@ def check_stock(item_name: str) -> str:
     key = item_name.lower()
     for k, v in inventory.items():
         if k in key:
-            return v
+            return json.dumps({"item": item_name, "status": v})
             
-    return f"Status for '{item_name}': In stock (General inventory)."
+    return json.dumps({"item": item_name, "status": f"Status for '{item_name}': In stock (General inventory)."})
 
-@tool
-def order_delivery(item_name: str, address: str, phone: str) -> str:
+
+def order_delivery(args: dict, **kwargs) -> str:
     """
     Schedule a delivery for hardware supplies.
-    
-    Args:
-        item_name (str): Items to deliver.
-        address (str): Delivery address.
-        phone (str): Contact number.
     """
-    return f"Delivery confirmed for '{item_name}' to {address}. Driver will call {phone}."
+    item_name = args.get("item_name", "")
+    address = args.get("address", "")
+    phone = args.get("phone", "")
+    
+    if not item_name or not address or not phone:
+        return json.dumps({"error": "Missing item_name, address, or phone"})
 
-@tool
-def schedule_viewing(property_id: str, date: str) -> str:
+    return json.dumps({
+        "status": "success",
+        "message": f"Delivery confirmed for '{item_name}' to {address}. Driver will call {phone}."
+    })
+
+
+def schedule_viewing(args: dict, **kwargs) -> str:
     """
     Schedule a request to view a real estate property.
-    
-    Args:
-        property_id (str): The ID of the property (e.g., 'APT-101').
-        date (str): Preferred date/time.
     """
-    return f"Viewing request received for {property_id} on {date}. An agent will confirm shortly."
+    property_id = args.get("property_id", "")
+    date = args.get("date", "")
+    
+    if not property_id or not date:
+        return json.dumps({"error": "Missing property_id or date"})
+        
+    return json.dumps({
+        "status": "success",
+        "message": f"Viewing request received for {property_id} on {date}. An agent will confirm shortly."
+    })

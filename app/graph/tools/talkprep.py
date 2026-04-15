@@ -9,7 +9,6 @@ import asyncio
 import os
 from typing import Optional
 
-from langchain_core.tools import tool
 from app.logger import setup_logger
 
 logger = setup_logger().bind(name="tool.talkprep")
@@ -112,8 +111,7 @@ def _gate_rehearsal_done(session, revision_name: str) -> str | None:
 
 # ── Stage 0: Status & Help ───────────────────────────────────────────
 
-@tool
-async def get_talkprep_help() -> str:
+def get_talkprep_help(args: dict, **kwargs) -> str:
     """Return an onboarding guide for new TalkPrep users.
 
     Returns:
@@ -146,8 +144,7 @@ async def get_talkprep_help() -> str:
     )
 
 
-@tool
-async def talkmaster_status() -> str:
+def talkmaster_status(args: dict, **kwargs) -> str:
     """Check the current talkmaster status: imported talks, revisions.
 
     Returns:
@@ -175,14 +172,15 @@ async def talkmaster_status() -> str:
             engine.dispose()
 
     try:
-        return await asyncio.to_thread(_sync)
+        return _sync()
     except Exception as e:
         logger.error(f"talkmaster_status failed: {e}")
         return f"Error checking status: {e}"
 
 
-@tool
-async def select_active_talk(talk_id: str) -> str:
+def select_active_talk(args: dict, **kwargs) -> str:
+    talk_id = args.get("talk_id")
+
     """Select a talk as the active context for subsequent operations.
 
     Args:
@@ -222,7 +220,7 @@ async def select_active_talk(talk_id: str) -> str:
             engine.dispose()
 
     try:
-        return await asyncio.to_thread(_sync)
+        return _sync()
     except Exception as e:
         logger.error(f"select_active_talk failed: {e}")
         return f"Error selecting talk: {e}"
@@ -230,8 +228,7 @@ async def select_active_talk(talk_id: str) -> str:
 
 # ── Stage 1: Import ──────────────────────────────────────────────────
 
-@tool
-async def list_publications() -> str:
+def list_publications(args: dict, **kwargs) -> str:
     """List all available JW publications in the jwlinker database.
 
     Returns:
@@ -249,14 +246,16 @@ async def list_publications() -> str:
         return "📚 *Available publications:*\n" + "\n".join(lines)
 
     try:
-        return await asyncio.to_thread(_sync)
+        return _sync()
     except Exception as e:
         logger.error(f"list_publications failed: {e}")
         return f"Error listing publications: {e}"
 
 
-@tool
-async def list_topics(pub_code: str, active_pub: Optional[str] = None) -> str:
+def list_topics(args: dict, **kwargs) -> str:
+    pub_code = args.get("pub_code")
+    active_pub = args.get("active_pub")
+
     """List all topics (talk outlines) for a given publication code.
 
     Args:
@@ -284,14 +283,16 @@ async def list_topics(pub_code: str, active_pub: Optional[str] = None) -> str:
         )
 
     try:
-        return await asyncio.to_thread(_sync)
+        return _sync()
     except Exception as e:
         logger.error(f"list_topics failed: {e}")
         return f"Error listing topics: {e}"
 
 
-@tool
-async def import_talk(topic_query: str, active_pub: Optional[str] = None) -> str:
+def import_talk(args: dict, **kwargs) -> str:
+    topic_query = args.get("topic_query")
+    active_pub = args.get("active_pub")
+
     """Import a talk outline from a JW Library publication into talkmaster.
 
     Args:
@@ -338,7 +339,7 @@ async def import_talk(topic_query: str, active_pub: Optional[str] = None) -> str
         )
 
     try:
-        return await asyncio.to_thread(_sync)
+        return _sync()
     except Exception as e:
         logger.error(f"import_talk failed: {e}")
         return f"Error importing talk: {e}"
@@ -346,12 +347,10 @@ async def import_talk(topic_query: str, active_pub: Optional[str] = None) -> str
 
 # ── Stage 2: Revision ────────────────────────────────────────────────
 
-@tool
-async def create_revision(
-    version_name: str,
-    audience_description: str = "General congregation audience",
-    active_talk_id: Optional[str] = None,
-) -> str:
+def create_revision(args: dict, **kwargs) -> str:
+    version_name = args.get("version_name", "")
+    audience_description = args.get("audience_description", "General congregation audience")
+    active_talk_id = args.get("active_talk_id")
     """Create a new revision of a talk with an audience persona and golden thread.
 
     Args:
@@ -419,7 +418,7 @@ async def create_revision(
             engine.dispose()
 
     try:
-        return await asyncio.to_thread(_sync)
+        return _sync()
     except Exception as e:
         logger.error(f"create_revision failed: {e}")
         return f"Error creating revision: {e}"
@@ -427,8 +426,10 @@ async def create_revision(
 
 # ── Stage 3: Section Development ────────────────────────────────────
 
-@tool
-async def develop_section(section_title: str, active_revision: Optional[str] = None) -> str:
+def develop_section(args: dict, **kwargs) -> str:
+    section_title = args.get("section_title")
+    active_revision = args.get("active_revision")
+
     """AI-develop a single section of a talk revision.
 
     Args:
@@ -467,7 +468,7 @@ async def develop_section(section_title: str, active_revision: Optional[str] = N
             engine.dispose()
 
     try:
-        return await asyncio.to_thread(_sync)
+        return _sync()
     except Exception as e:
         logger.error(f"develop_section failed: {e}")
         return f"Error developing section: {e}"
@@ -475,8 +476,10 @@ async def develop_section(section_title: str, active_revision: Optional[str] = N
 
 # ── Stage 4: Evaluation ──────────────────────────────────────────────
 
-@tool
-async def evaluate_talk(active_revision: Optional[str] = None, revision_name: Optional[str] = None) -> str:
+def evaluate_talk(args: dict, **kwargs) -> str:
+    active_revision = args.get("active_revision")
+    revision_name = args.get("revision_name")
+
     """Evaluate a talk revision against the 53-point S-38 rubric.
 
     Args:
@@ -516,14 +519,16 @@ async def evaluate_talk(active_revision: Optional[str] = None, revision_name: Op
             engine.dispose()
 
     try:
-        return await asyncio.to_thread(_sync)
+        return _sync()
     except Exception as e:
         logger.error(f"evaluate_talk failed: {e}")
         return f"Error evaluating talk: {e}"
 
 
-@tool
-async def get_evaluation_scores(active_revision: Optional[str] = None, revision_name: Optional[str] = None) -> str:
+def get_evaluation_scores(args: dict, **kwargs) -> str:
+    active_revision = args.get("active_revision")
+    revision_name = args.get("revision_name")
+
     """Get S-38 rubric evaluation scores for a talk revision.
 
     Args:
@@ -587,7 +592,7 @@ async def get_evaluation_scores(active_revision: Optional[str] = None, revision_
             engine.dispose()
 
     try:
-        return await asyncio.to_thread(_sync)
+        return _sync()
     except Exception as e:
         logger.error(f"get_evaluation_scores failed: {e}")
         return f"Error fetching scores: {e}"
@@ -595,8 +600,10 @@ async def get_evaluation_scores(active_revision: Optional[str] = None, revision_
 
 # ── Stage 5: Rehearsal ───────────────────────────────────────────────
 
-@tool
-async def rehearsal_cue(active_revision: Optional[str] = None, revision_name: Optional[str] = None) -> str:
+def rehearsal_cue(args: dict, **kwargs) -> str:
+    active_revision = args.get("active_revision")
+    revision_name = args.get("revision_name")
+
     """Generate AI delivery coaching cues for rehearsal of a talk revision.
 
     Args:
@@ -674,7 +681,7 @@ async def rehearsal_cue(active_revision: Optional[str] = None, revision_name: Op
             engine.dispose()
 
     try:
-        return await asyncio.to_thread(_sync)
+        return _sync()
     except Exception as e:
         logger.error(f"rehearsal_cue failed: {e}")
         return f"Error generating rehearsal cues: {e}"
@@ -682,8 +689,10 @@ async def rehearsal_cue(active_revision: Optional[str] = None, revision_name: Op
 
 # ── Stage 6: Export ──────────────────────────────────────────────────
 
-@tool
-async def export_talk_summary(active_revision: Optional[str] = None, revision_name: Optional[str] = None) -> str:
+def export_talk_summary(args: dict, **kwargs) -> str:
+    active_revision = args.get("active_revision")
+    revision_name = args.get("revision_name")
+
     """Assemble and export the final talk manuscript summary.
 
     Args:
@@ -729,7 +738,7 @@ async def export_talk_summary(active_revision: Optional[str] = None, revision_na
             engine.dispose()
 
     try:
-        return await asyncio.to_thread(_sync)
+        return _sync()
     except Exception as e:
         logger.error(f"export_talk_summary failed: {e}")
         return f"Error exporting manuscript: {e}"
@@ -737,8 +746,7 @@ async def export_talk_summary(active_revision: Optional[str] = None, revision_na
 
 # ── Cost Reporting ───────────────────────────────────────────────────
 
-@tool
-async def cost_report() -> str:
+def cost_report(args: dict, **kwargs) -> str:
     """Show LLM token usage and estimated cost for the current talkmaster session.
 
     Returns:
@@ -756,7 +764,7 @@ async def cost_report() -> str:
         )
 
     try:
-        return await asyncio.to_thread(_sync)
+        return _sync()
     except Exception as e:
         logger.error(f"cost_report failed: {e}")
         return f"Error fetching usage: {e}"
@@ -788,8 +796,10 @@ def _get_jwlinker_cards(pub_code: str, topic_name: Optional[str] = None,
     return get_cards_for_generate(args)
 
 
-@tool
-async def generate_anki_deck(pub_code: str, topic_name: Optional[str] = None) -> str:
+def generate_anki_deck(args: dict, **kwargs) -> str:
+    pub_code = args.get("pub_code")
+    topic_name = args.get("topic_name")
+
     """Generate an Anki flashcard deck (.apkg) from a JW publication in the database.
 
     The deck is saved and a download URL is returned so the user can
@@ -838,14 +848,16 @@ async def generate_anki_deck(pub_code: str, topic_name: Optional[str] = None) ->
         )
 
     try:
-        return await asyncio.to_thread(_sync)
+        return _sync()
     except Exception as e:
         logger.error(f"generate_anki_deck failed: {e}")
         return f"Error generating Anki deck: {e}"
 
 
-@tool
-async def push_to_siyuan(pub_code: str, topic_name: Optional[str] = None) -> str:
+def push_to_siyuan(args: dict, **kwargs) -> str:
+    pub_code = args.get("pub_code")
+    topic_name = args.get("topic_name")
+
     """Push JW publication content to SiYuan as a structured document tree.
 
     Creates a two-level tree (sections → lessons) with scripture links and
@@ -895,7 +907,7 @@ async def push_to_siyuan(pub_code: str, topic_name: Optional[str] = None) -> str
         )
 
     try:
-        return await asyncio.to_thread(_sync)
+        return _sync()
     except Exception as e:
         logger.error(f"push_to_siyuan failed: {e}")
         return f"Error pushing to SiYuan: {e}"

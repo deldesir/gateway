@@ -1,28 +1,10 @@
-"""
-/v1/tools/* — Direct tool-dispatch endpoints for RiveBot macros.
-
-RiveBot's macro_bridge calls these endpoints when a RiveScript brain uses
-  <call>talkmaster_status</call>
-  <call>import_talk s-34 topic-name My Theme</call>
-
-Design:
-- POST /v1/tools/{tool_name}  — body is a JSON dict of kwargs (may be empty)
-- GET  /v1/tools/{tool_name}  — same, but no body (no-arg tools like talkmaster_status)
-- The X-User-Id header scopes the call to a specific user (passed through to tools
-  that accept a user_id; silently ignored for tools that don't).
-- On success returns {"result": "<string>"}.
-- On error returns 400 or 500 with {"detail": "<reason>"}.
-
-Only tools in ToolRegistry are accessible. Attempting to call an unknown tool
-returns 404.
-"""
-
 from typing import Any, Dict, Optional
+import asyncio
 
 from fastapi import APIRouter, Header, HTTPException, Request
 from loguru import logger
 
-from app.graph.tools.registry import ToolRegistry
+from app.hermes.tools import get_hermes_tools  # Ensures tools are registered
 
 router = APIRouter(tags=["tools"])
 
@@ -35,54 +17,36 @@ async def _invoke_tool(tool_name: str, kwargs: Dict[str, Any], user_id: str,
     they are mapped positionally to the tool's Pydantic schema field names.
     This lets macro_bridge pass space-split RiveScript args without knowing
     each tool's parameter names at the .rive authoring time.
-
-    Example:
-        _args=["s-34", "Courage", "Faith in times of trial"]
-        → {pub_code="s-34", topic_name="Courage", theme="Faith..."}
     """
-    try:
-        tool_fn = ToolRegistry.get(tool_name)
-    except ValueError:
+    tools = get_hermes_tools()
+    tool_entry = tools.get(tool_name)
+    
+    if not tool_entry:
         raise HTTPException(status_code=404, detail=f"Unknown tool: '{tool_name}'")
 
-    # Map positional args to field names using the tool's schema.
-    # The LAST field acts as a catch-all: any remaining tokens are joined
-    # with spaces so that multi-word values (like talk themes or section
-    # titles) are not silently truncated.
-    #
-    # Example: _args=["s-34", "Courage", "Faith", "in", "times"]
-    #   field_names = [pub_code, topic_name, theme]
-    #   → {pub_code="s-34", topic_name="Courage", theme="Faith in times"}
     if "_args" in kwargs:
         pos_args: list = kwargs.pop("_args")
-        schema = getattr(tool_fn, "args_schema", None)
-        if schema and hasattr(schema, "model_fields"):
-            field_names = list(schema.model_fields.keys())
-        elif schema and hasattr(schema, "__fields__"):
-            field_names = list(schema.__fields__.keys())
-        else:
-            field_names = []
+        schema = getattr(tool_entry, "schema", {})
+        props = schema.get("parameters", {}).get("properties", {})
+        field_names = list(props.keys())
+
         for i, val in enumerate(pos_args):
             if i < len(field_names) - 1:
-                # All but the last field: one positional arg each
                 kwargs.setdefault(field_names[i], val)
             elif i == len(field_names) - 1:
-                # Last field: join this and all remaining tokens
                 kwargs.setdefault(field_names[i], " ".join(pos_args[i:]))
                 break
-            # If no schema fields, extra args are dropped
 
-    # Inject user_id into kwargs so tools that accept it can use it.
-    # Tools that don't declare user_id in their schema simply ignore it.
     kwargs.setdefault("user_id", user_id)
 
-    # Inject active context from macro_bridge headers
     if context:
         for key, val in context.items():
             kwargs.setdefault(key, val)
 
     try:
-        result = await tool_fn.ainvoke(kwargs if kwargs else {"user_id": user_id})
+        # Hermes handlers are synchronous, we wrap them so they don't block RiveBot requests
+        handler = getattr(tool_entry, "handler")
+        result = await asyncio.to_thread(handler, kwargs if kwargs else {"user_id": user_id})
     except Exception as e:
         logger.error(f"[tools] {tool_name} raised {type(e).__name__}: {e}")
         raise HTTPException(status_code=500, detail=f"Tool '{tool_name}' failed: {e}")

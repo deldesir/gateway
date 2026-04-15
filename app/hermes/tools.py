@@ -1,75 +1,22 @@
-"""
-Tool adapter layer — bridges LangChain @tool functions to Hermes Agent.
-
-V1 tools use LangChain's @tool decorator with async signatures:
-    @tool
-    async def fetch_dossier(urn: str) -> str: ...
-
-Hermes tools use a different pattern:
-    def handler(args: dict, **kw) -> str: ...
-    registry.register("fetch_dossier", handler, description="...")
-
-This module provides adapters that wrap existing V1 tools for Hermes,
-plus new MemPalace tools that use the _current_urn ContextVar for
-tenant isolation.
-"""
-
-import asyncio
 import logging
-import os
-from typing import Callable
-
+from tools.registry import registry
 from app.hermes.engine import _current_urn
+import app.hermes.schemas as schemas
+from app.graph.tools import rapidpro, mocks, talkprep, forms, upload
 
 logger = logging.getLogger(__name__)
-
-
-# ── Adapter: LangChain @tool → Hermes handler ───────────────────────────────
-
-def _wrap_langchain_tool(lc_tool) -> Callable:
-    """
-    Wrap a LangChain @tool function for Hermes's tool registry.
-
-    LangChain tools have .ainvoke(args) → result.
-    Hermes tools are sync: handler(args, **kw) → str.
-    We bridge by running the async tool in a new event loop
-    (safe because we're already in a thread pool worker).
-    """
-    def handler(args: dict, **kw) -> str:
-        try:
-            # We're in a thread pool worker — no running event loop
-            result = asyncio.run(lc_tool.ainvoke(args))
-            return str(result)
-        except RuntimeError:
-            # Fallback: if there IS a running loop (shouldn't happen),
-            # use loop.run_until_complete
-            loop = asyncio.get_event_loop()
-            result = loop.run_until_complete(lc_tool.ainvoke(args))
-            return str(result)
-
-    handler.__name__ = getattr(lc_tool, "name", lc_tool.__name__)
-    handler.__doc__ = getattr(lc_tool, "description", lc_tool.__doc__ or "")
-    return handler
-
 
 # ── MemPalace tools (new in V2) ─────────────────────────────────────────────
 
 def search_memory(args: dict, **kw) -> str:
-    """Search the user's memory palace for relevant past conversations.
-
-    Args:
-        query (str): Natural language search query
-        wing (str, optional): Scope search to a specific wing
-    """
+    """Search the user's memory palace for relevant past conversations."""
     from mempalace.mcp_server import tool_search
 
     query = args.get("query", "")
     wing = args.get("wing")
 
-    # Server-side wing injection: use the URN-derived wing, not user input
     urn = _current_urn.get()
     if urn:
-        # Each WhatsApp user gets their own wing for tenant isolation
         wing = f"wa_{urn.split(':')[-1].lstrip('+')}"
 
     result = tool_search(query=query, wing=wing, n_results=5)
@@ -77,12 +24,7 @@ def search_memory(args: dict, **kw) -> str:
 
 
 def store_memory(args: dict, **kw) -> str:
-    """Store a fact or note in the user's memory palace.
-
-    Args:
-        content (str): The content to store
-        room (str, optional): Topic/room to file under
-    """
+    """Store a fact or note in the user's memory palace."""
     from mempalace.mcp_server import tool_store
 
     urn = _current_urn.get()
@@ -96,85 +38,91 @@ def store_memory(args: dict, **kw) -> str:
 
 
 def recall_memory(args: dict, **kw) -> str:
-    """Get the status and overview of the memory palace.
-
-    No arguments required — returns palace statistics.
-    """
+    """Get the status and overview of the memory palace."""
     from mempalace.mcp_server import tool_status
     result = tool_status()
     return str(result)
+
+
+SEARCH_MEMORY_SCHEMA = {
+    "name": "search_memory",
+    "description": "Search the user's memory palace for relevant past conversations.",
+    "parameters": {
+        "type": "object",
+        "properties": {"query": {"type": "string"}},
+        "required": ["query"]
+    }
+}
+
+STORE_MEMORY_SCHEMA = {
+    "name": "store_memory",
+    "description": "Store a fact or note in the user's memory palace.",
+    "parameters": {
+        "type": "object",
+        "properties": {"content": {"type": "string"}, "room": {"type": "string"}},
+        "required": ["content"]
+    }
+}
+
+RECALL_MEMORY_SCHEMA = {
+    "name": "recall_memory",
+    "description": "Get the status and overview of the memory palace.",
+    "parameters": {"type": "object", "properties": {}}
+}
 
 
 # ── Tool registration ───────────────────────────────────────────────────────
 
 _registered = False
 
-
 def register_all_tools() -> None:
-    """
-    Register all V1 tools + new V2 tools with the Hermes Agent.
-
-    Called once during app lifespan startup. This function:
-    1. Wraps each existing LangChain @tool with the adapter
-    2. Registers new MemPalace tools
-    3. Logs the final tool count for operational visibility
-
-    Tools are only registered if Hermes is available. On import failure,
-    a warning is logged and the gateway falls back to V1 LangGraph.
-    """
+    """Register all V2 native tools globally via hermes_agent."""
     global _registered
     if _registered:
         return
 
-    try:
-        from run_agent import AIAgent
-    except ImportError:
-        logger.warning("Hermes Agent not available — skipping tool registration")
-        return
+    # RapidPro Tools
+    registry.register("fetch_dossier", "rapidpro", schemas.FETCH_DOSSIER, rapidpro.fetch_dossier)
+    registry.register("start_flow", "rapidpro", schemas.START_FLOW, rapidpro.start_flow)
 
-    # V1 tools to migrate (import lazily to avoid circular imports)
-    from app.graph.tools.registry import ToolRegistry as V1Registry
+    # Mocks Tools
+    registry.register("check_stock", "mocks", schemas.CHECK_STOCK, mocks.check_stock)
+    registry.register("order_delivery", "mocks", schemas.ORDER_DELIVERY, mocks.order_delivery)
+    registry.register("schedule_viewing", "mocks", schemas.SCHEDULE_VIEWING, mocks.schedule_viewing)
 
-    v1_tools = V1Registry.all_tools()
-    registered_count = 0
+    # Forms Tools
+    registry.register("submit_form", "forms", schemas.SUBMIT_FORM, forms.submit_form)
 
-    for tool in v1_tools:
-        tool_name = getattr(tool, "name", getattr(tool, "__name__", str(tool)))
-        wrapped = _wrap_langchain_tool(tool)
-        # Store in a module-level registry for Hermes to discover
-        _hermes_tools[tool_name] = {
-            "handler": wrapped,
-            "description": getattr(tool, "description", wrapped.__doc__ or ""),
-        }
-        registered_count += 1
+    # Upload Tools
+    registry.register("upload_jwpub", "upload", schemas.UPLOAD_JWPUB, upload.upload_jwpub)
 
-    # V2 MemPalace tools
-    _hermes_tools["search_memory"] = {
-        "handler": search_memory,
-        "description": search_memory.__doc__,
-    }
-    _hermes_tools["store_memory"] = {
-        "handler": store_memory,
-        "description": store_memory.__doc__,
-    }
-    _hermes_tools["recall_memory"] = {
-        "handler": recall_memory,
-        "description": recall_memory.__doc__,
-    }
+    # TalkPrep Tools
+    registry.register("get_talkprep_help", "talkprep", schemas.GET_TALKPREP_HELP, talkprep.get_talkprep_help)
+    registry.register("talkmaster_status", "talkprep", schemas.TALKMASTER_STATUS, talkprep.talkmaster_status)
+    registry.register("select_active_talk", "talkprep", schemas.SELECT_ACTIVE_TALK, talkprep.select_active_talk)
+    registry.register("list_publications", "talkprep", schemas.LIST_PUBLICATIONS, talkprep.list_publications)
+    registry.register("list_topics", "talkprep", schemas.LIST_TOPICS, talkprep.list_topics)
+    registry.register("import_talk", "talkprep", schemas.IMPORT_TALK, talkprep.import_talk)
+    registry.register("create_revision", "talkprep", schemas.CREATE_REVISION, talkprep.create_revision)
+    registry.register("develop_section", "talkprep", schemas.DEVELOP_SECTION, talkprep.develop_section)
+    registry.register("evaluate_talk", "talkprep", schemas.EVALUATE_TALK, talkprep.evaluate_talk)
+    registry.register("get_evaluation_scores", "talkprep", schemas.GET_EVALUATION_SCORES, talkprep.get_evaluation_scores)
+    registry.register("rehearsal_cue", "talkprep", schemas.REHEARSAL_CUE, talkprep.rehearsal_cue)
+    registry.register("export_talk_summary", "talkprep", schemas.EXPORT_TALK_SUMMARY, talkprep.export_talk_summary)
+    registry.register("cost_report", "talkprep", schemas.COST_REPORT, talkprep.cost_report)
+    registry.register("generate_anki_deck", "talkprep", schemas.GENERATE_ANKI_DECK, talkprep.generate_anki_deck)
+    registry.register("push_to_siyuan", "talkprep", schemas.PUSH_TO_SIYUAN, talkprep.push_to_siyuan)
+
+    # MemPalace Tools
+    registry.register("search_memory", "mempalace", SEARCH_MEMORY_SCHEMA, search_memory)
+    registry.register("store_memory", "mempalace", STORE_MEMORY_SCHEMA, store_memory)
+    registry.register("recall_memory", "mempalace", RECALL_MEMORY_SCHEMA, recall_memory)
 
     _registered = True
-    logger.info(
-        f"V2 tool registration complete: {registered_count} V1 tools + "
-        f"3 MemPalace tools = {registered_count + 3} total"
-    )
-
-
-# Module-level tool store (populated by register_all_tools)
-_hermes_tools: dict = {}
-
+    logger.info("Registered 23 native Hermes-compatible tools globally.")
 
 def get_hermes_tools() -> dict:
-    """Return the registered tool dict for Hermes to consume."""
+    """Return the global registry dict if anything needs to introspect it."""
     if not _registered:
         register_all_tools()
-    return _hermes_tools
+    return registry._tools
