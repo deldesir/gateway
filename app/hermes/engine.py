@@ -135,12 +135,23 @@ def _invoke_sync(
         api_key=os.getenv("OPENAI_API_KEY", ""),
         base_url=os.getenv("LITELLM_BASE_URL", "http://localhost:4000/v1"),
         max_iterations=_MAX_ITERATIONS,
+        enabled_toolsets=[
+            "rapidpro", 
+            "mocks", 
+            "forms", 
+            "upload", 
+            "talkprep", 
+            "mempalace", 
+            "session_search", 
+            "clarify"
+        ],
         ephemeral_system_prompt=system_prompt,
         session_id=f"whatsapp:{urn}:{persona}",
         user_id=urn,
         platform="whatsapp",
         quiet_mode=True,
         skip_context_files=True,   # No project context on edge device
+        skip_memory=True,          # We use MemPalace, not built-in USER.md
         verbose_logging=False,
     )
 
