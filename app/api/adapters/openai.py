@@ -9,6 +9,7 @@ This adapter:
   4. Invokes the LangGraph and returns an OpenAI-shaped response
 """
 
+import asyncio
 import time
 import uuid
 from typing import Dict, List, Optional
@@ -367,24 +368,34 @@ async def openai_chat_completions(
         await set_var(model_persona, user_id, "noai", "false")
         api_logger.info(f"AI recovered for {user_id} — cleared noai flag")
 
-    # ── 5.2 Persistence ──────────────────────────────────────────────────
+    # ── 5.2 Persistence (synchronous per §8.3.2) ────────────────────────
+    # Write completes BEFORE the HTTP response to guarantee the next message
+    # sees this turn in MemPalace context. Uses asyncio.to_thread to avoid
+    # blocking the event loop while preserving the synchronous guarantee.
     if not getattr(final_text, "skip_persistence", False):
         from app.hooks.palace_writer import persist_turn_to_palace
-        background_tasks.add_task(
-            persist_turn_to_palace,
-            urn=user_id,
-            persona=model_persona,
-            user_message=last_user_message,
-            assistant_response=final_text
-        )
+        try:
+            await asyncio.to_thread(
+                persist_turn_to_palace,
+                urn=user_id,
+                persona=model_persona,
+                user_message=last_user_message,
+                assistant_response=final_text,
+            )
+        except Exception as e:
+            api_logger.error(f"Palace write failed (non-blocking): {e}")
 
     # ── 5.5 Advance RiveBot topic if a stage-completing tool ran ──────────────
-    from app.api.middleware.rivebot_client import advance_topic_if_needed
-    # Note: detect_stage_completing_tool was tied to LangGraph state structure,
-    # leaving it disabled in V2 until a Hermes equivalent is written if needed.
-    # stage_tool = detect_stage_completing_tool(result)
-    # if stage_tool:
-    #     await advance_topic_if_needed(stage_tool, model_persona, user_id)
+    from app.api.middleware.rivebot_client import (
+        advance_topic_if_needed,
+        STAGE_TRANSITIONS,
+    )
+    # Hermes returns plain text — scan for stage-completing tool names
+    # mentioned in the response (Hermes includes tool results inline).
+    for tool_name in STAGE_TRANSITIONS:
+        if tool_name in (final_text or ""):
+            await advance_topic_if_needed(tool_name, model_persona, user_id)
+            break
 
     # Since Hermes returns just text, we don't have token counts easily accessible yet.
     # Set them to 0 or extract them later if Hermes adds usage tracking.

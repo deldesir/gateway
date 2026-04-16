@@ -83,7 +83,7 @@ def persist_turn_to_palace(
 
     # Per-user wing for tenant isolation (server-side, not user-controllable)
     phone = urn.split(":")[-1].lstrip("+")
-    wing = f"wa_{phone}"
+    wing = f"wing_{phone}"
     room = persona  # Each persona gets its own room within the user's wing
 
     # Build the turn content (verbatim, per MemPalace design — no summarization)

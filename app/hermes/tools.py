@@ -17,7 +17,7 @@ def search_memory(args: dict, **kw) -> str:
 
     urn = _current_urn.get()
     if urn:
-        wing = f"wa_{urn.split(':')[-1].lstrip('+')}"
+        wing = f"wing_{urn.split(':')[-1].lstrip('+')}"
 
     result = tool_search(query=query, wing=wing, n_results=5)
     return str(result)
@@ -28,7 +28,7 @@ def store_memory(args: dict, **kw) -> str:
     from mempalace.mcp_server import tool_store
 
     urn = _current_urn.get()
-    wing = f"wa_{urn.split(':')[-1].lstrip('+')}" if urn else "default"
+    wing = f"wing_{urn.split(':')[-1].lstrip('+')}" if urn else "default"
 
     content = args.get("content", "")
     room = args.get("room", "general")

@@ -37,6 +37,7 @@ _MAX_WORKERS = int(os.getenv("HERMES_THREAD_POOL_SIZE", "2"))
 _MAX_ITERATIONS = int(os.getenv("HERMES_MAX_ITERATIONS", "15"))
 _DEDUP_TTL = int(os.getenv("HERMES_DEDUP_TTL", "30"))    # seconds
 _MAX_QUEUE_DEPTH = int(os.getenv("HERMES_MAX_QUEUE", "4"))
+_RATE_LIMIT_SECS = float(os.getenv("HERMES_RATE_LIMIT_SECS", "5.0"))
 
 # ── Thread pool ─────────────────────────────────────────────────────────────
 
@@ -60,6 +61,9 @@ _in_flight: Dict[str, tuple] = {}
 
 # Current number of queued/running tasks
 _queue_depth = 0
+
+# Per-URN rate limiting (§11.3): {urn: monotonic_timestamp}
+_last_cognitive: Dict[str, float] = {}
 
 
 def _message_key(urn: str, message: str) -> str:
@@ -197,6 +201,13 @@ async def invoke_hermes(
             return future.result()
         # Wait for the existing invocation to complete
         return await asyncio.wrap_future(future)
+
+    # ── Per-URN rate limit (§11.3) ────────────────────────────────────────
+    now = time.monotonic()
+    if now - _last_cognitive.get(urn, 0) < _RATE_LIMIT_SECS:
+        logger.info(f"Rate limit hit for {urn} — throttling")
+        return "Please wait a few seconds before sending another message."
+    _last_cognitive[urn] = now
 
     # ── Queue depth check ────────────────────────────────────────────────
     if _queue_depth >= _MAX_QUEUE_DEPTH:
