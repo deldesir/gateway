@@ -6,7 +6,7 @@ This adapter:
   1. Parses the RapidPro message prefix to extract URN + channel
   2. Resolves the channel to a persona
   3. Dispatches admin commands (/ or # prefixed)
-  4. Invokes the LangGraph and returns an OpenAI-shaped response
+  4. Invokes Hermes Agent and returns an OpenAI-shaped response
 """
 
 import asyncio
@@ -327,7 +327,7 @@ async def openai_chat_completions(
             )
     except Exception as e:
         logger.error(f"Rivebot match error: {e}")
-        # On error, safely fall through to LangGraph
+        # On error, safely fall through to Hermes Agent
 
     # ── 5. Hermes Agent invocation ───────────────────────────────────────────────
     try:

@@ -7,7 +7,7 @@ from app.memory.serializer import to_json_safe
 
 class JsonCheckpointer:
     """
-    JSON-based LangGraph-compatible checkpointer keyed by thread_id.
+    JSON-based checkpointer keyed by thread_id (V1 legacy, retained for admin commands).
     """
 
     def __init__(self, path: str = "memory.json"):

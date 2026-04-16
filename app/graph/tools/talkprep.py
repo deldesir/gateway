@@ -1,5 +1,5 @@
 """
-TalkPrep LangGraph tools — full 6-stage workflow exposed to the gateway agent.
+TalkPrep Hermes tools — full 6-stage workflow exposed to the gateway agent.
 
 All blocking I/O is wrapped in asyncio.to_thread() so the async event loop
 is never blocked even when talkmaster calls SQLite or runs LLM chains.

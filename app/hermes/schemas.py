@@ -163,7 +163,7 @@ LIST_TOPICS = {
                         "type": "string"
                     },
                     {
-                        "type": "None"
+                        "type": "null"
                     }
                 ],
                 "default": None
@@ -191,7 +191,7 @@ IMPORT_TALK = {
                         "type": "string"
                     },
                     {
-                        "type": "None"
+                        "type": "null"
                     }
                 ],
                 "default": None
@@ -223,7 +223,7 @@ CREATE_REVISION = {
                         "type": "string"
                     },
                     {
-                        "type": "None"
+                        "type": "null"
                     }
                 ],
                 "default": None
@@ -251,7 +251,7 @@ DEVELOP_SECTION = {
                         "type": "string"
                     },
                     {
-                        "type": "None"
+                        "type": "null"
                     }
                 ],
                 "default": None
@@ -276,7 +276,7 @@ EVALUATE_TALK = {
                         "type": "string"
                     },
                     {
-                        "type": "None"
+                        "type": "null"
                     }
                 ],
                 "default": None
@@ -287,7 +287,7 @@ EVALUATE_TALK = {
                         "type": "string"
                     },
                     {
-                        "type": "None"
+                        "type": "null"
                     }
                 ],
                 "default": None
@@ -309,7 +309,7 @@ GET_EVALUATION_SCORES = {
                         "type": "string"
                     },
                     {
-                        "type": "None"
+                        "type": "null"
                     }
                 ],
                 "default": None
@@ -320,7 +320,7 @@ GET_EVALUATION_SCORES = {
                         "type": "string"
                     },
                     {
-                        "type": "None"
+                        "type": "null"
                     }
                 ],
                 "default": None
@@ -342,7 +342,7 @@ REHEARSAL_CUE = {
                         "type": "string"
                     },
                     {
-                        "type": "None"
+                        "type": "null"
                     }
                 ],
                 "default": None
@@ -353,7 +353,7 @@ REHEARSAL_CUE = {
                         "type": "string"
                     },
                     {
-                        "type": "None"
+                        "type": "null"
                     }
                 ],
                 "default": None
@@ -375,7 +375,7 @@ EXPORT_TALK_SUMMARY = {
                         "type": "string"
                     },
                     {
-                        "type": "None"
+                        "type": "null"
                     }
                 ],
                 "default": None
@@ -386,7 +386,7 @@ EXPORT_TALK_SUMMARY = {
                         "type": "string"
                     },
                     {
-                        "type": "None"
+                        "type": "null"
                     }
                 ],
                 "default": None
@@ -421,7 +421,7 @@ GENERATE_ANKI_DECK = {
                         "type": "string"
                     },
                     {
-                        "type": "None"
+                        "type": "null"
                     }
                 ],
                 "default": None
@@ -449,7 +449,7 @@ PUSH_TO_SIYUAN = {
                         "type": "string"
                     },
                     {
-                        "type": "None"
+                        "type": "null"
                     }
                 ],
                 "default": None
@@ -477,7 +477,7 @@ UPLOAD_JWPUB = {
                         "type": "string"
                     },
                     {
-                        "type": "None"
+                        "type": "null"
                     }
                 ],
                 "default": None

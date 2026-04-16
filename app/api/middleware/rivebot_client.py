@@ -1,6 +1,6 @@
 """
 RiveBot HTTP client — called from the AI Gateway to:
-  1. Pre-match messages before LangGraph (match_intent)
+  1. Pre-match messages before Hermes Agent (match_intent)
   2. Advance a user's workflow topic when a stage-completing tool runs (set_topic)
 """
 
@@ -31,7 +31,7 @@ async def match_intent(
     message: str, persona: str, user_id: str = "user"
 ) -> tuple[Optional[str], dict]:
     """
-    Call RiveBot to attempt a deterministic match before invoking LangGraph.
+    Call RiveBot to attempt a deterministic match before invoking Hermes Agent.
 
     Returns:
         (response, context) where:
@@ -114,7 +114,7 @@ async def advance_topic_if_needed(tool_name: str, persona: str, user_id: str) ->
     """
     If tool_name completes a workflow stage, advance the user's RiveScript topic.
 
-    Called from openai.py after LangGraph completes, so that the user's next
+    Called from openai.py after Hermes Agent completes, so that the user's next
     message to RiveBot is matched against the correct stage-locked triggers.
     Fires-and-forgets on error — never blocks the response.
     """
