@@ -8,6 +8,11 @@ def setup_logger():
     """
     logger.remove()
 
+    # Set global default for extra["name"] — overridden per-module via
+    # logger.bind(name="..."). Without this, bare logger.info() calls
+    # (without a bound name) raise KeyError: 'name' in the format handler.
+    logger.configure(extra={"name": "app"})
+
     logger.add(
         sys.stdout,
         level="INFO",
