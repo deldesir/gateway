@@ -36,6 +36,8 @@ async def _run_migrations(conn):
         "ALTER TABLE konex_personas ADD COLUMN slug VARCHAR",
         # Persona: add language column with default
         "ALTER TABLE konex_personas ADD COLUMN language VARCHAR DEFAULT 'ht'",
+        # Persona: add allowed_urns for per-persona access control (Finding 15)
+        "ALTER TABLE konex_personas ADD COLUMN allowed_urns JSON DEFAULT '[]'",
     ]
 
     for sql in migrations:

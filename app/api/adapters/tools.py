@@ -28,7 +28,9 @@ async def _invoke_tool(tool_name: str, kwargs: Dict[str, Any], user_id: str,
         pos_args: list = kwargs.pop("_args")
         schema = getattr(tool_entry, "schema", {})
         props = schema.get("parameters", {}).get("properties", {})
-        field_names = list(props.keys())
+        
+        # Exclude auto-injected active_* fields from positional mapping
+        field_names = [k for k in props.keys() if not k.startswith("active_")]
 
         for i, val in enumerate(pos_args):
             if i < len(field_names) - 1:

@@ -24,7 +24,9 @@ _SEED_DATA = [
         "personality": "Professional, helpful, efficient, patient.",
         "style": "Formal yet friendly, speaks in Haitian Creole, focuses on solutions.",
         "language": "ht",
-        "allowed_tools": ["fetch_dossier", "retrieval"],
+        # Hermes toolset-level names (not individual function names).
+        # 'mempalace' is always added as a baseline by the engine.
+        "allowed_tools": ["rapidpro", "mempalace", "session_search", "clarify"],
     },
     {
         "slug": "konex-sales",
@@ -32,7 +34,7 @@ _SEED_DATA = [
         "personality": "Energetic, persuasive, enthusiastic, proactive.",
         "style": "Casual, uses emojis, speaks in Haitian Creole, focuses on upselling plans.",
         "language": "ht",
-        "allowed_tools": ["start_flow", "retrieval"],
+        "allowed_tools": ["rapidpro", "mocks", "mempalace", "session_search", "clarify"],
     },
     {
         "slug": "talkprep",
@@ -48,13 +50,8 @@ _SEED_DATA = [
         ),
         "language": "ht",
         "allowed_tools": [
-            "get_talkprep_help", "talkmaster_status", "select_active_talk",
-            "list_publications", "list_topics", "import_talk",
-            "create_revision", "develop_section",
-            "evaluate_talk", "get_evaluation_scores",
-            "rehearsal_cue", "export_talk_summary",
-            "cost_report", "generate_anki_deck", "push_to_siyuan",
-            "upload_jwpub", "retrieval",
+            "talkprep", "upload", "mempalace",
+            "session_search", "clarify",
         ],
     },
     {
@@ -63,7 +60,7 @@ _SEED_DATA = [
         "personality": "Friendly, casual, human.",
         "style": "Short, natural, warm — like texting a friend. Speaks Haitian Creole and English.",
         "language": "ht,en",
-        "allowed_tools": ["retrieval"],
+        "allowed_tools": ["mempalace", "session_search", "clarify"],
     },
 ]
 

@@ -14,6 +14,8 @@ class PersonaBase(SQLModel):
     language: str = Field(default="ht")           # default lang for this persona
     system_prompt: Optional[str] = None
     allowed_tools: List[str] = Field(default=[], sa_column=Column(JSON))
+    # Access control: empty list = public (any user), non-empty = restricted to listed URNs
+    allowed_urns: List[str] = Field(default=[], sa_column=Column("allowed_urns", JSON))
 
 class Persona(PersonaBase, table=True):
     __tablename__ = "konex_personas"
@@ -32,6 +34,7 @@ class PersonaUpdate(SQLModel):
     language: Optional[str] = None
     system_prompt: Optional[str] = None
     allowed_tools: Optional[List[str]] = None
+    allowed_urns: Optional[List[str]] = None
 
 class KnowledgeItemBase(SQLModel):
     title: str = Field(index=True)

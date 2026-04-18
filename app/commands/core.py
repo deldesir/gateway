@@ -1,20 +1,37 @@
 from .registry import CommandRegistry, CommandContext
 import os
-from temba_client.v2 import TembaClient
+from pathlib import Path
+
+_sessions_dir = Path(os.getenv(
+    "HERMES_HOME", str(Path.home() / ".hermes")
+)) / "sessions"
+
 
 @CommandRegistry.register("reset")
 async def cmd_reset(ctx: CommandContext) -> str:
-    """Wipes memory for the current thread."""
-    if hasattr(ctx.checkpointer, "adelete_thread"):
-        await ctx.checkpointer.adelete_thread(ctx.thread_id)
-        return "✅ Memory wiped. Conversation history has been reset for this phone number."
-    return "❌ Checkpointer does not support deletion."
+    """Wipes conversation history for the current session."""
+    session_file = _sessions_dir / f"session_{ctx.thread_id}.json"
+
+    deleted = False
+    if session_file.exists():
+        session_file.unlink()
+        deleted = True
+
+    # Also clear legacy checkpointer if present
+    if ctx.checkpointer is not None and hasattr(ctx.checkpointer, "adelete_thread"):
+        try:
+            await ctx.checkpointer.adelete_thread(ctx.thread_id)
+        except Exception:
+            pass
+
+    if deleted:
+        return "✅ Memory wiped. Conversation history has been reset."
+    return "✅ No previous conversation found. Starting fresh."
+
 
 @CommandRegistry.register("debug")
 async def cmd_debug(ctx: CommandContext) -> str:
     """Returns system debug info."""
-    from .registry import CommandRegistry # Import inside to avoid circular dependency if needed, but registry is separate so it's fine.
-    # Actually CommandRegistry is imported at top level.
     return (
         f"🐛 **System Diagnostics**\n"
         f"- **User**: `{ctx.user_id}`\n"
@@ -23,33 +40,40 @@ async def cmd_debug(ctx: CommandContext) -> str:
         f"- **Commands Loaded**: `{len(CommandRegistry._commands)}`"
     )
 
-# @CommandRegistry.register("persona")
-# async def cmd_persona(ctx: CommandContext) -> str:
-#    """Handles persona switch requests."""
-#    if ctx.args:
-#        return f"🔄 **Persona Switch Requested**: `{ctx.args[0]}`.\n(Please update your RapidPro flow to send 'model={ctx.args[0]}' to persist this change.)"
-#    return "⚠️ Usage: `#persona <id>`"
 
 @CommandRegistry.register("nuke")
 async def cmd_nuke(ctx: CommandContext) -> str:
     """Deep clean: Resets memory AND blocks/archives in RapidPro."""
-    # 1. Reset Memory (Local)
-    if hasattr(ctx.checkpointer, "adelete_thread"):
-        await ctx.checkpointer.adelete_thread(ctx.thread_id)
-        
-    # 2. RapidPro Cleanup
-    client = TembaClient(os.getenv("RAPIDPRO_HOST"), os.getenv("RAPIDPRO_API_TOKEN"))
-    
-    urn = ctx.user_id if ":" in ctx.user_id else f"tel:{ctx.user_id}"
-    contact = client.get_contacts(urn=urn).first()
-    
-    if contact:
-        # Block and Archive messages
-        client.bulk_block_contacts(contacts=[contact.uuid])
-        client.bulk_archive_contact_messages(contacts=[contact.uuid])
-        return "☢️ **NUKED**. Memory wiped, user blocked, messages archived."
-        
-    return "⚠️ Memory wiped, but User not found in RapidPro."
+    # 1. Delete session file
+    session_file = _sessions_dir / f"session_{ctx.thread_id}.json"
+    if session_file.exists():
+        session_file.unlink()
+
+    # 2. Clear legacy checkpointer
+    if ctx.checkpointer is not None and hasattr(ctx.checkpointer, "adelete_thread"):
+        try:
+            await ctx.checkpointer.adelete_thread(ctx.thread_id)
+        except Exception:
+            pass
+
+    # 3. RapidPro cleanup (if configured)
+    try:
+        from temba_client.v2 import TembaClient
+        rp_host = os.getenv("RAPIDPRO_HOST")
+        rp_token = os.getenv("RAPIDPRO_API_TOKEN")
+        if rp_host and rp_token:
+            client = TembaClient(rp_host, rp_token)
+            urn = ctx.user_id if ":" in ctx.user_id else f"tel:{ctx.user_id}"
+            contact = client.get_contacts(urn=urn).first()
+            if contact:
+                client.bulk_block_contacts(contacts=[contact.uuid])
+                client.bulk_archive_contact_messages(contacts=[contact.uuid])
+                return "☢️ **NUKED**. Session wiped, user blocked, messages archived."
+            return "⚠️ Session wiped, but user not found in RapidPro."
+    except Exception as e:
+        return f"⚠️ Session wiped, but RapidPro cleanup failed: {e}"
+
+    return "⚠️ Session wiped. RapidPro not configured."
 
 @CommandRegistry.register("help")
 async def cmd_help(ctx: CommandContext) -> str:

@@ -150,9 +150,9 @@ LIST_PUBLICATIONS = {
 
 LIST_TOPICS = {
     "name": "list_topics",
-    "description": "List all topics (talk outlines) for a given publication code.\n\nArgs:\n    pub_code: Publication code, e.g. 's-34', 'lmd', 'scl'.\n    active_pub: Auto-injected from context (not user-facing).\n\nReturns:\n    Formatted list of available topics with categories.",
+    "description": "List all topics (talk outlines) for a given publication code.\n\nArgs:\n    pub_code: Publication code, e.g. 's-34', 'lmd', 'scl'.\n    active_pub: Infer this from previous tool outputs in memory.\n\nReturns:\n    Formatted list of available topics with categories.",
     "parameters": {
-        "description": "List all topics (talk outlines) for a given publication code.\n\nArgs:\n    pub_code: Publication code, e.g. 's-34', 'lmd', 'scl'.\n    active_pub: Auto-injected from context (not user-facing).\n\nReturns:\n    Formatted list of available topics with categories.",
+        "description": "List all topics (talk outlines) for a given publication code.\n\nArgs:\n    pub_code: Publication code, e.g. 's-34', 'lmd', 'scl'.\n    active_pub: Infer this from previous tool outputs in memory.\n\nReturns:\n    Formatted list of available topics with categories.",
         "properties": {
             "pub_code": {
                 "type": "string"
@@ -178,10 +178,21 @@ LIST_TOPICS = {
 
 IMPORT_TALK = {
     "name": "import_talk",
-    "description": "Import a talk outline from a JW Library publication into talkmaster.\n\nArgs:\n    topic_query: Topic name or number to search for.\n        Can be the full topic name, a partial match, or \"No 26\"-style.\n        The pub_code is auto-inferred from the last listed/uploaded publication.\n    active_pub: Auto-injected from context (not user-facing).\n\nReturns:\n    Confirmation with imported talk details and its new ID.",
+    "description": "Import a talk outline from a JW Library publication into talkmaster.\n\nArgs:\n    pub_code: Optional publication code (e.g. 's-34').\n    topic_query: Topic name or number to search for.\n        Can be the full topic name, a partial match, or \"No 26\"-style.\n        The pub_code is auto-inferred from the last listed/uploaded publication.\n    active_pub: Infer this from previous tool outputs in memory.\n\nReturns:\n    Confirmation with imported talk details and its new ID.",
     "parameters": {
-        "description": "Import a talk outline from a JW Library publication into talkmaster.\n\nArgs:\n    topic_query: Topic name or number to search for.\n        Can be the full topic name, a partial match, or \"No 26\"-style.\n        The pub_code is auto-inferred from the last listed/uploaded publication.\n    active_pub: Auto-injected from context (not user-facing).\n\nReturns:\n    Confirmation with imported talk details and its new ID.",
+        "description": "Import a talk outline from a JW Library publication into talkmaster.\n\nArgs:\n    pub_code: Optional publication code (e.g. 's-34').\n    topic_query: Topic name or number to search for.\n        Can be the full topic name, a partial match, or \"No 26\"-style.\n        The pub_code is auto-inferred from the last listed/uploaded publication.\n    active_pub: Infer this from previous tool outputs in memory.\n\nReturns:\n    Confirmation with imported talk details and its new ID.",
         "properties": {
+            "pub_code": {
+                "anyOf": [
+                    {
+                        "type": "string"
+                    },
+                    {
+                        "type": "null"
+                    }
+                ],
+                "default": None
+            },
             "topic_query": {
                 "type": "string"
             },
@@ -206,9 +217,9 @@ IMPORT_TALK = {
 
 CREATE_REVISION = {
     "name": "create_revision",
-    "description": "Create a new revision of a talk with an audience persona and golden thread.\n\nArgs:\n    version_name: Unique name for this revision (e.g., 'v1', 'young-adults').\n    audience_description: Description of the target audience.\n    active_talk_id: Auto-injected from context (not user-facing).\n\nReturns:\n    Confirmation with revision details and next steps.",
+    "description": "Create a new revision of a talk with an audience persona and golden thread.\n\nArgs:\n    version_name: Unique name for this revision (e.g., 'v1', 'young-adults').\n    audience_description: Description of the target audience.\n    active_talk_id: Infer this from previous tool outputs in memory.\n\nReturns:\n    Confirmation with revision details and next steps.",
     "parameters": {
-        "description": "Create a new revision of a talk with an audience persona and golden thread.\n\nArgs:\n    version_name: Unique name for this revision (e.g., 'v1', 'young-adults').\n    audience_description: Description of the target audience.\n    active_talk_id: Auto-injected from context (not user-facing).\n\nReturns:\n    Confirmation with revision details and next steps.",
+        "description": "Create a new revision of a talk with an audience persona and golden thread.\n\nArgs:\n    version_name: Unique name for this revision (e.g., 'v1', 'young-adults').\n    audience_description: Description of the target audience.\n    active_talk_id: Infer this from previous tool outputs in memory.\n\nReturns:\n    Confirmation with revision details and next steps.",
         "properties": {
             "version_name": {
                 "type": "string"
@@ -238,9 +249,9 @@ CREATE_REVISION = {
 
 DEVELOP_SECTION = {
     "name": "develop_section",
-    "description": "AI-develop a single section of a talk revision.\n\nArgs:\n    section_title: Title of the section to develop (partial match OK).\n    active_revision: Auto-injected from context (not user-facing).\n\nReturns:\n    Confirmation or status of the developed section.",
+    "description": "AI-develop a single section of a talk revision.\n\nArgs:\n    section_title: Title of the section to develop (partial match OK).\n    active_revision: Infer this from previous tool outputs in memory.\n\nReturns:\n    Confirmation or status of the developed section.",
     "parameters": {
-        "description": "AI-develop a single section of a talk revision.\n\nArgs:\n    section_title: Title of the section to develop (partial match OK).\n    active_revision: Auto-injected from context (not user-facing).\n\nReturns:\n    Confirmation or status of the developed section.",
+        "description": "AI-develop a single section of a talk revision.\n\nArgs:\n    section_title: Title of the section to develop (partial match OK).\n    active_revision: Infer this from previous tool outputs in memory.\n\nReturns:\n    Confirmation or status of the developed section.",
         "properties": {
             "section_title": {
                 "type": "string"
@@ -266,9 +277,9 @@ DEVELOP_SECTION = {
 
 EVALUATE_TALK = {
     "name": "evaluate_talk",
-    "description": "Evaluate a talk revision against the 53-point S-38 rubric.\n\nArgs:\n    active_revision: Auto-injected from context.\n    revision_name: Explicit override (from AI/direct call).\n\nReturns:\n    Trigger confirmation \u2014 scores available via get_evaluation_scores.",
+    "description": "Evaluate a talk revision against the 53-point S-38 rubric.\n\nArgs:\n    active_revision: Infer this from previous tool outputs in memory.\n    revision_name: Explicit override (from AI/direct call).\n\nReturns:\n    Trigger confirmation \u2014 scores available via get_evaluation_scores.",
     "parameters": {
-        "description": "Evaluate a talk revision against the 53-point S-38 rubric.\n\nArgs:\n    active_revision: Auto-injected from context.\n    revision_name: Explicit override (from AI/direct call).\n\nReturns:\n    Trigger confirmation \u2014 scores available via get_evaluation_scores.",
+        "description": "Evaluate a talk revision against the 53-point S-38 rubric.\n\nArgs:\n    active_revision: Infer this from previous tool outputs in memory.\n    revision_name: Explicit override (from AI/direct call).\n\nReturns:\n    Trigger confirmation \u2014 scores available via get_evaluation_scores.",
         "properties": {
             "active_revision": {
                 "anyOf": [
@@ -299,9 +310,9 @@ EVALUATE_TALK = {
 
 GET_EVALUATION_SCORES = {
     "name": "get_evaluation_scores",
-    "description": "Get S-38 rubric evaluation scores for a talk revision.\n\nArgs:\n    active_revision: Auto-injected from context.\n    revision_name: Explicit override.\n\nReturns:\n    Scores broken down by S-38 category with coaching tips.",
+    "description": "Get S-38 rubric evaluation scores for a talk revision.\n\nArgs:\n    active_revision: Infer this from previous tool outputs in memory.\n    revision_name: Explicit override.\n\nReturns:\n    Scores broken down by S-38 category with coaching tips.",
     "parameters": {
-        "description": "Get S-38 rubric evaluation scores for a talk revision.\n\nArgs:\n    active_revision: Auto-injected from context.\n    revision_name: Explicit override.\n\nReturns:\n    Scores broken down by S-38 category with coaching tips.",
+        "description": "Get S-38 rubric evaluation scores for a talk revision.\n\nArgs:\n    active_revision: Infer this from previous tool outputs in memory.\n    revision_name: Explicit override.\n\nReturns:\n    Scores broken down by S-38 category with coaching tips.",
         "properties": {
             "active_revision": {
                 "anyOf": [
@@ -332,9 +343,9 @@ GET_EVALUATION_SCORES = {
 
 REHEARSAL_CUE = {
     "name": "rehearsal_cue",
-    "description": "Generate AI delivery coaching cues for rehearsal of a talk revision.\n\nArgs:\n    active_revision: Auto-injected from context.\n    revision_name: Explicit override.\n\nReturns:\n    Personalized delivery cues: pacing, pauses, emphasis, eye contact.",
+    "description": "Generate AI delivery coaching cues for rehearsal of a talk revision.\n\nArgs:\n    active_revision: Infer this from previous tool outputs in memory.\n    revision_name: Explicit override.\n\nReturns:\n    Personalized delivery cues: pacing, pauses, emphasis, eye contact.",
     "parameters": {
-        "description": "Generate AI delivery coaching cues for rehearsal of a talk revision.\n\nArgs:\n    active_revision: Auto-injected from context.\n    revision_name: Explicit override.\n\nReturns:\n    Personalized delivery cues: pacing, pauses, emphasis, eye contact.",
+        "description": "Generate AI delivery coaching cues for rehearsal of a talk revision.\n\nArgs:\n    active_revision: Infer this from previous tool outputs in memory.\n    revision_name: Explicit override.\n\nReturns:\n    Personalized delivery cues: pacing, pauses, emphasis, eye contact.",
         "properties": {
             "active_revision": {
                 "anyOf": [
@@ -365,9 +376,9 @@ REHEARSAL_CUE = {
 
 EXPORT_TALK_SUMMARY = {
     "name": "export_talk_summary",
-    "description": "Assemble and export the final talk manuscript summary.\n\nArgs:\n    active_revision: Auto-injected from context.\n    revision_name: Explicit override.\n\nReturns:\n    A condensed version of the full manuscript for review.",
+    "description": "Assemble and export the final talk manuscript summary.\n\nArgs:\n    active_revision: Infer this from previous tool outputs in memory.\n    revision_name: Explicit override.\n\nReturns:\n    A condensed version of the full manuscript for review.",
     "parameters": {
-        "description": "Assemble and export the final talk manuscript summary.\n\nArgs:\n    active_revision: Auto-injected from context.\n    revision_name: Explicit override.\n\nReturns:\n    A condensed version of the full manuscript for review.",
+        "description": "Assemble and export the final talk manuscript summary.\n\nArgs:\n    active_revision: Infer this from previous tool outputs in memory.\n    revision_name: Explicit override.\n\nReturns:\n    A condensed version of the full manuscript for review.",
         "properties": {
             "active_revision": {
                 "anyOf": [

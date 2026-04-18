@@ -84,10 +84,12 @@ def persist_turn_to_palace(
     # Per-user wing for tenant isolation (server-side, not user-controllable)
     phone = urn.split(":")[-1].lstrip("+")
     wing = f"wing_{phone}"
-    room = persona  # Each persona gets its own room within the user's wing
+    room = "general"  # Flat room — persona stored as content tag, not partition key
 
     # Build the turn content (verbatim, per MemPalace design — no summarization)
+    # Persona tag is embedded in content for grep-ability and search filtering
     content = (
+        f"[persona:{persona}]\n"
         f"[User] {user_message}\n"
         f"[{persona}] {assistant_response}"
     )

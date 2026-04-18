@@ -22,7 +22,29 @@ async def lifespan(app: FastAPI):
     _init_notebook_map()
     register_all_tools()
     
+    # Background Task: Remove old analytics dumps (F-32)
+    import asyncio
+    async def _cleanup_dumps_loop():
+        import os, time
+        from app.logger import logger
+        dumps_dir = "/opt/iiab/ai-gateway/data/dumps"
+        while True:
+            try:
+                if os.path.exists(dumps_dir):
+                    now = time.time()
+                    for root, _, files in os.walk(dumps_dir):
+                        for name in files:
+                            filepath = os.path.join(root, name)
+                            if now - os.path.getmtime(filepath) > 7 * 86400:  # 7 days
+                                os.remove(filepath)
+            except Exception as e:
+                logger.warning(f"Dump TTL cleanup failed: {e}")
+            await asyncio.sleep(86400)  # run daily
+            
+    cleanup_task = asyncio.create_task(_cleanup_dumps_loop())
+    
     yield
+    cleanup_task.cancel()
     # Shutdown: Cleanup if needed
 
 

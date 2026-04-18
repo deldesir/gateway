@@ -28,7 +28,7 @@ class PersonaPromptRegistry:
             "persona_name": "Konex Support",
             "persona_personality": "Professional, helpful, efficient, patient.",
             "persona_style": "Formal yet friendly, speaks in Haitian Creole, focuses on solutions.",
-            "allowed_tools": ["fetch_dossier", "retrieval"],
+            "allowed_tools": ["rapidpro", "mempalace"],
         },
     }
 

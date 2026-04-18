@@ -291,11 +291,13 @@ def list_topics(args: dict, **kwargs) -> str:
 
 def import_talk(args: dict, **kwargs) -> str:
     topic_query = args.get("topic_query")
+    pub_code_arg = args.get("pub_code")
     active_pub = args.get("active_pub")
 
     """Import a talk outline from a JW Library publication into talkmaster.
 
     Args:
+        pub_code: Publication code (e.g. 's-34').
         topic_query: Topic name or number to search for.
             Can be the full topic name, a partial match, or "No 26"-style.
             The pub_code is auto-inferred from the last listed/uploaded publication.
@@ -307,7 +309,7 @@ def import_talk(args: dict, **kwargs) -> str:
     def _sync():
         from talkmaster.bridge import import_from_jwlinker, save_imported_talk
 
-        pub_code = active_pub or ""
+        pub_code = pub_code_arg or active_pub or ""
         if not pub_code:
             return (
                 "\u26a0\ufe0f No active publication. First run:\n"
@@ -390,17 +392,22 @@ def create_revision(args: dict, **kwargs) -> str:
             if existing:
                 return f"Revision '{version_name}' already exists. Choose a different name."
 
-            persona = AudiencePersona(
-                talk_id=talk_id,
-                description=audience_description,
-            )
-            session.add(persona)
-            session.flush()
+            persona_name = version_name
+            persona = session.query(AudiencePersona).filter_by(name=persona_name).first()
+            if not persona:
+                persona = AudiencePersona(
+                    name=persona_name,
+                    description=audience_description,
+                )
+                session.add(persona)
+                session.flush()
 
             revision = Revision(
                 talk_id=talk_id,
                 version_name=version_name,
-                audience_persona_id=persona.id,
+                persona_id=persona.id,
+                language="en",
+                notebook_id="",
             )
             session.add(revision)
             session.commit()
