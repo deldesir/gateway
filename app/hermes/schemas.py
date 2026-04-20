@@ -526,3 +526,45 @@ SUBMIT_FORM = {
     }
 }
 
+# ── SiYuan Read Tools ────────────────────────────────────────────────────────
+
+SIYUAN_SEARCH = {
+    "name": "siyuan_search",
+    "description": (
+        "Search the knowledge wiki (SiYuan) for information. Use this to find "
+        "study notes, talk preparation materials, research summaries, and any "
+        "previously saved knowledge. Returns matching blocks with content previews."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "query": {
+                "type": "string",
+                "description": "Search query — keywords or phrases to find in the wiki."
+            },
+            "notebook": {
+                "type": "string",
+                "description": "Optional: notebook name to scope the search."
+            },
+        },
+        "required": ["query"],
+    },
+}
+
+SIYUAN_READ = {
+    "name": "siyuan_read",
+    "description": (
+        "Read a specific wiki page by its ID. Use after siyuan_search to read "
+        "the full content of a search result. Returns clean markdown."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "doc_id": {
+                "type": "string",
+                "description": "Block ID of the document to read (from siyuan_search results)."
+            },
+        },
+        "required": ["doc_id"],
+    },
+}

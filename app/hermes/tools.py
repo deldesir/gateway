@@ -19,13 +19,13 @@ def search_memory(args: dict, **kw) -> str:
     if urn:
         wing = f"wing_{urn.split(':')[-1].lstrip('+')}"
 
-    result = tool_search(query=query, wing=wing, n_results=5)
+    result = tool_search(query=query, wing=wing, limit=5)
     return str(result)
 
 
 def store_memory(args: dict, **kw) -> str:
     """Store a fact or note in the user's memory palace."""
-    from mempalace.mcp_server import tool_store
+    from mempalace.mcp_server import tool_add_drawer
 
     urn = _current_urn.get()
     wing = f"wing_{urn.split(':')[-1].lstrip('+')}" if urn else "default"
@@ -33,7 +33,7 @@ def store_memory(args: dict, **kw) -> str:
     content = args.get("content", "")
     room = args.get("room", "general")
 
-    result = tool_store(content=content, wing=wing, room=room)
+    result = tool_add_drawer(content=content, wing=wing, room=room)
     return str(result)
 
 
@@ -69,6 +69,32 @@ RECALL_MEMORY_SCHEMA = {
     "description": "Get the status and overview of the memory palace.",
     "parameters": {"type": "object", "properties": {}}
 }
+
+# ── SiYuan read tool handlers ───────────────────────────────────────────────
+
+def _handle_siyuan_search(args: dict, **kw) -> str:
+    """Search the SiYuan knowledge wiki."""
+    import json
+    from app.hooks.siyuan_tools import siyuan_search
+
+    results = siyuan_search(
+        query=args.get("query", ""),
+        notebook=args.get("notebook"),
+    )
+    if not results:
+        return json.dumps({"message": "No results found.", "results": []})
+    return json.dumps({"results": results}, ensure_ascii=False)
+
+
+def _handle_siyuan_read(args: dict, **kw) -> str:
+    """Read a SiYuan document by block ID."""
+    import json
+    from app.hooks.siyuan_tools import siyuan_read_doc
+
+    content = siyuan_read_doc(doc_id=args.get("doc_id", ""))
+    if content is None:
+        return json.dumps({"error": "Document not found or unreadable."})
+    return json.dumps({"content": content}, ensure_ascii=False)
 
 
 # ── Tool registration ───────────────────────────────────────────────────────
@@ -118,8 +144,12 @@ def register_all_tools() -> None:
     registry.register("store_memory", "mempalace", STORE_MEMORY_SCHEMA, store_memory)
     registry.register("recall_memory", "mempalace", RECALL_MEMORY_SCHEMA, recall_memory)
 
+    # SiYuan Read Tools (close the write-only gap)
+    registry.register("siyuan_search", "siyuan", schemas.SIYUAN_SEARCH, _handle_siyuan_search)
+    registry.register("siyuan_read", "siyuan", schemas.SIYUAN_READ, _handle_siyuan_read)
+
     _registered = True
-    logger.info("Registered 23 native Hermes-compatible tools globally.")
+    logger.info("Registered 25 native Hermes-compatible tools globally.")
 
 def get_hermes_tools() -> dict:
     """Return the global registry dict if anything needs to introspect it."""

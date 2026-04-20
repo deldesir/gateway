@@ -22,10 +22,42 @@ logger = logging.getLogger(__name__)
 # ── Configuration ────────────────────────────────────────────────────────────
 
 _SIYUAN_URL = os.getenv("SIYUAN_API_URL", "http://localhost:6806")
-_SIYUAN_TOKEN = os.getenv("SIYUAN_ACCESS_AUTH_CODE", "")
+_SIYUAN_AUTH_CODE = os.getenv("SIYUAN_ACCESS_AUTH_CODE", "")
 
 # Notebook ID cache: {notebook_name: notebook_id}
 _notebook_map: Dict[str, str] = {}
+
+# Persistent HTTP client with session cookie for SiYuan auth.
+# SiYuan 3.6.x uses session-based auth: login via /api/system/loginAuth
+# with the access auth code, then use the session cookie for all requests.
+# Header-based "Authorization: Token <code>" is NOT supported.
+_client: Optional[httpx.Client] = None
+_auth_ok: bool = False
+
+
+def _get_client() -> httpx.Client:
+    """Return a persistent httpx.Client, authenticating on first use."""
+    global _client, _auth_ok
+
+    if _client is None:
+        _client = httpx.Client(timeout=10)
+
+    if not _auth_ok and _SIYUAN_AUTH_CODE:
+        try:
+            resp = _client.post(
+                f"{_SIYUAN_URL}/api/system/loginAuth",
+                json={"authCode": _SIYUAN_AUTH_CODE},
+            )
+            data = resp.json()
+            if data.get("code") == 0:
+                _auth_ok = True
+                logger.info("SiYuan session auth OK")
+            else:
+                logger.warning(f"SiYuan login failed: {data.get('msg')}")
+        except Exception as e:
+            logger.error(f"SiYuan login error: {e}")
+
+    return _client
 
 
 # ── HTTP client ──────────────────────────────────────────────────────────────
@@ -35,16 +67,13 @@ def _siyuan_request(endpoint: str, payload: dict) -> dict:
     Make a synchronous POST request to SiYuan's HTTP API.
 
     SiYuan's API is JSON-RPC-style: POST to /api/<endpoint> with a JSON body.
-    Auth is via the Authorization header with the access auth code.
+    Auth is via session cookie obtained from /api/system/loginAuth.
     """
     url = f"{_SIYUAN_URL}/api/{endpoint}"
-    headers = {"Content-Type": "application/json"}
-
-    if _SIYUAN_TOKEN:
-        headers["Authorization"] = f"Token {_SIYUAN_TOKEN}"
+    client = _get_client()
 
     try:
-        resp = httpx.post(url, json=payload, headers=headers, timeout=10)
+        resp = client.post(url, json=payload)
         resp.raise_for_status()
         data = resp.json()
         if data.get("code") != 0:
@@ -197,3 +226,72 @@ def siyuan_append_block(
         return block_id
 
     return None
+
+
+# ── Read operations ──────────────────────────────────────────────────────────
+
+def siyuan_search(query: str, notebook: str = None, limit: int = 5) -> list:
+    """
+    Full-text search across SiYuan blocks.
+
+    Args:
+        query: Search query text
+        notebook: Optional notebook name to scope search
+        limit: Maximum results to return (default 5)
+
+    Returns:
+        List of result dicts with id, content preview, and path
+    """
+    payload = {"query": query}
+
+    result = _siyuan_request("search/fullTextSearchBlock", payload)
+    blocks = (result.get("data") or {}).get("blocks", [])
+
+    # Filter by notebook if specified
+    if notebook:
+        nb_id = get_notebook_id(notebook)
+        if nb_id:
+            blocks = [b for b in blocks if b.get("box") == nb_id]
+
+    # Return top N results, truncated
+    results = []
+    for b in blocks[:limit]:
+        content = b.get("content", "")
+        if len(content) > 500:
+            content = content[:500] + "..."
+        results.append({
+            "id": b.get("id", ""),
+            "content": content,
+            "path": b.get("hPath", b.get("path", "")),
+            "notebook": b.get("box", ""),
+        })
+
+    return results
+
+
+def siyuan_read_doc(doc_id: str) -> Optional[str]:
+    """
+    Read a SiYuan document's markdown content by block ID.
+
+    Uses the export API which returns clean markdown regardless of
+    how the document was authored internally.
+
+    Args:
+        doc_id: Block ID of the document root
+
+    Returns:
+        Markdown content string, or None if not found
+    """
+    result = _siyuan_request("export/exportMdContent", {"id": doc_id})
+
+    if result.get("code") != 0:
+        logger.warning(f"SiYuan read failed: {result.get('msg')}")
+        return None
+
+    content = (result.get("data") or {}).get("content", "")
+
+    # Truncate to prevent blowing the context window
+    if len(content) > 8000:
+        content = content[:8000] + "\n\n...(truncated — document exceeds 8000 chars)"
+
+    return content

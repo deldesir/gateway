@@ -18,7 +18,7 @@ _URN_SIMPLE = re.compile(r"(tel|whatsapp|telegram):(\+?\d+)")
 _URN_PREFIX = re.compile(
     r"^(?P<contact_name>[^(]+?)\s*\("
     r"(?P<urn>(?:(?:tel|whatsapp|telegram):)?\+?\d+)"
-    r"(?:\s*>\s*(?P<channel>\+?\d+))?"
+    r"(?:\s*>\s*(?P<channel>[a-zA-Z0-9\-]+))?"
     r"\) says:\s+"
 )
 # Colon-separated format: "scheme:urn:channel: message"
