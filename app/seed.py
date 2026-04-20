@@ -61,10 +61,13 @@ _SEED_DATA = [
         "personality": "Friendly, casual, human.",
         "style": "Short, natural, warm — like texting a friend. Speaks Haitian Creole and English.",
         "language": "ht,en",
+        # NOTE: cronjob intentionally excluded — the cron scheduler spawns
+        # agents with unrestricted toolsets (ignores persona allowed_tools).
+        # Re-enable once cron/scheduler.py is patched to respect enabled_toolsets.
         "allowed_tools": [
             "mempalace", "memory", "todo", "file",
             "code_execution", "terminal", "skills", "siyuan",
-            "web", "cronjob", "delegation", "session_search",
+            "web", "delegation", "session_search",
         ],
     },
     {
