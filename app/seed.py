@@ -27,8 +27,7 @@ _SEED_DATA = [
         "style": "Formal yet friendly, speaks in Haitian Creole, focuses on solutions.",
         "language": "ht",
         # Hermes toolset-level names.
-        # Dead tools removed: session_search (no FTS), clarify (no callback)
-        "allowed_tools": ["rapidpro", "mempalace", "memory"],
+        "allowed_tools": ["rapidpro", "mempalace", "memory", "search"],
     },
     {
         "slug": "konex-sales",
@@ -36,7 +35,7 @@ _SEED_DATA = [
         "personality": "Energetic, persuasive, enthusiastic, proactive.",
         "style": "Casual, uses emojis, speaks in Haitian Creole, focuses on upselling plans.",
         "language": "ht",
-        "allowed_tools": ["rapidpro", "mocks", "mempalace", "memory"],
+        "allowed_tools": ["rapidpro", "mempalace", "memory", "search"],
     },
     {
         "slug": "talkprep",
@@ -53,7 +52,7 @@ _SEED_DATA = [
         "language": "ht",
         "allowed_tools": [
             "talkprep", "upload", "mempalace", "memory",
-            "file", "skills", "siyuan",
+            "file", "skills", "siyuan", "web",
         ],
     },
     {
@@ -65,6 +64,7 @@ _SEED_DATA = [
         "allowed_tools": [
             "mempalace", "memory", "todo", "file",
             "code_execution", "terminal", "skills", "siyuan",
+            "web", "cronjob", "delegation", "session_search",
         ],
     },
     {
@@ -73,7 +73,7 @@ _SEED_DATA = [
         "personality": "Helpful, knowledgeable, patient. A general-purpose assistant for everyday questions, research, and knowledge lookup. Does not have access to system tools or admin capabilities.",
         "style": "Short, natural, warm — like texting a friend. Speaks Haitian Creole and English.",
         "language": "ht,en",
-        "allowed_tools": ["mempalace", "memory", "todo"],
+        "allowed_tools": ["mempalace", "memory", "todo", "search"],
     },
 ]
 
