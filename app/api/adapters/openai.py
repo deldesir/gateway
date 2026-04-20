@@ -22,6 +22,7 @@ from app.api.middleware.message_parser import parse_rapidpro_message
 from app.logger import logger
 from app.services.auth import check_admin_permissions
 from app.services.channel import resolve_persona, DEFAULT_PERSONA
+from app.hermes.engine import invoke_hermes
 
 router = APIRouter(tags=["chat"])
 api_logger = logger.bind(name="API")

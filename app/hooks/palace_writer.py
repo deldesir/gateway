@@ -46,9 +46,9 @@ def _store_with_retry(
     metadata: Optional[dict] = None,
 ) -> None:
     """Store content in MemPalace with retry on SQLite lock."""
-    from mempalace.mcp_server import tool_store
+    from mempalace.mcp_server import tool_add_drawer
 
-    tool_store(
+    tool_add_drawer(
         content=content,
         wing=wing,
         room=room,
