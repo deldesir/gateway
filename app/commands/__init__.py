@@ -12,6 +12,7 @@ from . import channel
 from . import cost
 from . import status
 from . import reload
+from . import skill_audit
 from . import health
 from . import noai
 from . import broadcast

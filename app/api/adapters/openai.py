@@ -29,6 +29,29 @@ api_logger = logger.bind(name="API")
 # ── API Key Authentication (F-30) ────────────────────────────────────────────
 # When GATEWAY_API_KEY is set, all requests must include it.
 # When unset, dev mode — no auth required.
+def _parse_authorized_users() -> dict:
+    """Parse AUTHORIZED_USERS env var into a phone→name lookup dict."""
+    raw = os.getenv("AUTHORIZED_USERS", "")
+    if not raw:
+        return {}
+    result = {}
+    for entry in raw.split(","):
+        entry = entry.strip()
+        if ":" in entry:
+            phone, name = entry.split(":", 1)
+            phone = phone.strip().replace("+", "").replace("whatsapp:", "")
+            result[phone] = name.strip()
+    return result
+
+_AUTHORIZED_USERS: dict = _parse_authorized_users()
+
+if not _AUTHORIZED_USERS:
+    import logging as _gw_log
+    _gw_log.getLogger(__name__).warning(
+        "AUTHORIZED_USERS is not set — access gate disabled (open dev mode). "
+        "Set AUTHORIZED_USERS=phone:Name,... to restrict access."
+    )
+
 _API_KEY = os.getenv("GATEWAY_API_KEY", "")
 
 
@@ -160,8 +183,10 @@ async def openai_chat_completions(
     )
 
     if not parsed.user_id:
-        api_logger.warning("Missing 'user' field in request (likely RapidPro test ping). Falling back to 'rapidpro-ping'.")
-        parsed.user_id = "rapidpro-ping"
+        api_logger.warning("Missing 'user' field in request — rejecting (F-10).")
+        return _openai_response(
+            DEFAULT_PERSONA, "{{noreply}}", id_prefix="chatcmpl-nouser"
+        )
 
     # Update request with cleaned values
     request.messages[-1]["content"] = parsed.content
@@ -171,7 +196,17 @@ async def openai_chat_completions(
     user_id = parsed.user_id
     last_user_message = parsed.content
 
-    # ── 1.5  Attachment handling ────────────────────────────────────────────
+    # ── 1.6 Authorization gate (F-26) ────────────────────────────────────────
+    # Check BEFORE RiveBot, commands, or Hermes — blocks all code paths.
+    if _AUTHORIZED_USERS:
+        user_digits = user_id.replace("+", "").split(":")[-1]
+        if user_digits not in _AUTHORIZED_USERS:
+            api_logger.warning(f"Unauthorized user {user_id} — silent drop")
+            return _openai_response(
+                DEFAULT_PERSONA, "", id_prefix="chatcmpl-unauth"
+            )
+
+    # ── 1.5  Attachment handling ─────────────────────────────────────────────
     if parsed.attachments:
         # Check if any attachment or the message text mentions .jwpub
         is_jwpub = ".jwpub" in last_user_message.lower()
@@ -298,6 +333,7 @@ async def openai_chat_completions(
         intent_response, rivebot_context = await match_intent(
             last_user_message, model_persona, user_id
         )
+        rivebot_context["urn"] = user_id
         # NoAI silence: 3rd+ fallback → send nothing to the user
         if rivebot_context.get("silent"):
             # ── Smart silent: check if user is responding to an AI turn ──
@@ -436,7 +472,18 @@ async def openai_chat_completions(
         from app.graph.prompts import PersonaPromptRegistry
         persona_vars = await PersonaPromptRegistry.get_async(model_persona)
 
-        from app.hermes.engine import invoke_hermes
+        # Check allowed_urns for resolved persona (not just switches)
+        if persona_vars.get("allowed_urns"):
+            if user_id not in persona_vars["allowed_urns"]:
+                api_logger.warning(f"Persona access DENIED: {user_id} → {model_persona}")
+                return _openai_response(
+                    model_persona,
+                    "⚠️ Ou pa gen aksè nan sèvis sa a.",
+                    id_prefix="chatcmpl-denied",
+                )
+
+        # ── 4.9 Allowed URNs gate (persona-level access control) ──────────────
+        # Note: global access gate is already applied above at step 1.6.
         hermes_result = await invoke_hermes(
             urn=user_id,
             persona=model_persona,

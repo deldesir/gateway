@@ -20,9 +20,14 @@ async def check_admin_permissions(user_id: str, command_root: str) -> bool:
          api_logger.warning("No ADMIN_PHONE configured! Dev Mode: ALLOWED.")
          return True
          
+    clean_user = user_id.replace("+", "").replace(" ", "")
+    # Extract just the digits (strip whatsapp:, tel:, etc.)
+    if ":" in clean_user:
+        clean_user = clean_user.split(":")[-1]
+
     for admin in admin_phones:
-        # Flexible match (handle + prefix variations)
-        if admin in user_id or (admin.replace("+", "") in user_id.replace("+", "")):
+        clean_admin = admin.replace("+", "").replace(" ", "")
+        if clean_user == clean_admin:
             api_logger.info(f"User {user_id} authorized via ADMIN_PHONE.")
             return True
 

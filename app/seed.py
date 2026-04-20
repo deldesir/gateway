@@ -6,6 +6,8 @@ personas whose slug doesn't already exist, so admin edits survive.
 """
 
 from sqlmodel import select
+import os
+import json
 from app.db import async_session
 from app.models import Persona
 from app.logger import logger
@@ -24,9 +26,9 @@ _SEED_DATA = [
         "personality": "Professional, helpful, efficient, patient.",
         "style": "Formal yet friendly, speaks in Haitian Creole, focuses on solutions.",
         "language": "ht",
-        # Hermes toolset-level names (not individual function names).
-        # 'mempalace' is always added as a baseline by the engine.
-        "allowed_tools": ["rapidpro", "mempalace", "session_search", "clarify"],
+        # Hermes toolset-level names.
+        # Dead tools removed: session_search (no FTS), clarify (no callback)
+        "allowed_tools": ["rapidpro", "mempalace", "memory"],
     },
     {
         "slug": "konex-sales",
@@ -34,7 +36,7 @@ _SEED_DATA = [
         "personality": "Energetic, persuasive, enthusiastic, proactive.",
         "style": "Casual, uses emojis, speaks in Haitian Creole, focuses on upselling plans.",
         "language": "ht",
-        "allowed_tools": ["rapidpro", "mocks", "mempalace", "session_search", "clarify"],
+        "allowed_tools": ["rapidpro", "mocks", "mempalace", "memory"],
     },
     {
         "slug": "talkprep",
@@ -50,8 +52,8 @@ _SEED_DATA = [
         ),
         "language": "ht",
         "allowed_tools": [
-            "talkprep", "upload", "mempalace",
-            "session_search", "clarify",
+            "talkprep", "upload", "mempalace", "memory",
+            "file", "skills", "siyuan",
         ],
     },
     {
@@ -60,16 +62,38 @@ _SEED_DATA = [
         "personality": "Friendly, casual, human.",
         "style": "Short, natural, warm — like texting a friend. Speaks Haitian Creole and English.",
         "language": "ht,en",
-        "allowed_tools": ["mempalace", "session_search", "clarify"],
+        "allowed_tools": [
+            "mempalace", "memory", "todo", "file",
+            "code_execution", "terminal", "skills", "siyuan",
+        ],
+    },
+    {
+        "slug": "general",
+        "name": "IIAB Assistant",
+        "personality": "Helpful, knowledgeable, patient. A general-purpose assistant for everyday questions, research, and knowledge lookup. Does not have access to system tools or admin capabilities.",
+        "style": "Short, natural, warm — like texting a friend. Speaks Haitian Creole and English.",
+        "language": "ht,en",
+        "allowed_tools": ["mempalace", "memory", "todo"],
     },
 ]
 
 
 async def seed_personas() -> None:
     """Insert seed personas if they don't already exist in the DB."""
+    # Build list of admin URNs from env variable
+    admin_phones = os.getenv("ADMIN_PHONE", "").replace(" ", "").split(",")
+    admin_urns = [f"whatsapp:{p.strip()}" for p in admin_phones if p.strip()]
+    admin_urns_json = json.dumps(admin_urns) if admin_urns else "[]"
+    
     async with async_session() as session:
         inserted = 0
         for data in _SEED_DATA:
+            # Secure privileged personas against DB drops by re-applying restrictions
+            if data["slug"] in ("assistant", "talkprep"):
+                data["allowed_urns"] = admin_urns_json
+            elif data["slug"] in ("general", "konex-support", "konex-sales"):
+                data["allowed_urns"] = "[]"
+                
             # Check if slug exists
             result = await session.exec(
                 select(Persona).where(Persona.slug == data["slug"])
