@@ -99,10 +99,10 @@ def start_crm_ops(args: dict, **kwargs) -> str:
     if ":" not in urn:
         urn = f"whatsapp:{urn}"
 
-    flow_uuid = os.getenv("CRM_OPS_FLOW_UUID")
+    flow_uuid = os.getenv("CRM_ROUTER_FLOW_UUID") or os.getenv("CRM_OPS_FLOW_UUID")
     if not flow_uuid:
-        logger.error("[crm_ops] CRM_OPS_FLOW_UUID not configured")
-        return "⚠️ CRM operations not configured. Set CRM_OPS_FLOW_UUID."
+        logger.error("[crm_ops] CRM_ROUTER_FLOW_UUID not configured")
+        return "⚠️ CRM operations not configured. Set CRM_ROUTER_FLOW_UUID."
 
     client = get_client()
     if not client:
