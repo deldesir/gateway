@@ -110,6 +110,8 @@ def register_all_tools() -> None:
     # RapidPro Tools
     registry.register("fetch_dossier", "rapidpro", schemas.FETCH_DOSSIER, rapidpro.fetch_dossier)
     registry.register("start_flow", "rapidpro", schemas.START_FLOW, rapidpro.start_flow)
+    registry.register("start_crm_ops", "rapidpro", schemas.START_CRM_OPS, rapidpro.start_crm_ops)
+    registry.register("send_crm_help", "rapidpro", schemas.SEND_CRM_HELP, rapidpro.send_crm_help)
 
     # Mocks Tools
     registry.register("check_stock", "mocks", schemas.CHECK_STOCK, mocks.check_stock)
@@ -149,7 +151,7 @@ def register_all_tools() -> None:
     registry.register("siyuan_read", "siyuan", schemas.SIYUAN_READ, _handle_siyuan_read)
 
     _registered = True
-    logger.info("Registered 25 native Hermes-compatible tools globally.")
+    logger.info("Registered 27 native Hermes-compatible tools globally.")
 
 def get_hermes_tools() -> dict:
     """Return the global registry dict if anything needs to introspect it."""

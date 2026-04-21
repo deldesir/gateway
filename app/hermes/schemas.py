@@ -568,3 +568,44 @@ SIYUAN_READ = {
         "required": ["doc_id"],
     },
 }
+
+# ── CRM Operations (ADR-010) ────────────────────────────────────────────────
+
+START_CRM_OPS = {
+    "name": "start_crm_ops",
+    "description": (
+        "Start the CRM operations flow for the admin user. "
+        "Triggers a RapidPro flow that provides a WhatsApp menu for workspace "
+        "management. Returns {{noreply}} to suppress AI response."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "user_id": {
+                "type": "string",
+                "description": "Admin URN (auto-injected by macro bridge)."
+            }
+        },
+        "required": ["user_id"],
+    },
+}
+
+SEND_CRM_HELP = {
+    "name": "send_crm_help",
+    "description": (
+        "Send a WhatsApp Quick Reply button explaining how to access CRM operations. "
+        "Use when the admin asks how to manage contacts, access workspace ops, or trigger admin menus. "
+        "Returns {{noreply}} (button is sent directly via WuzAPI)."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "user_id": {
+                "type": "string",
+                "description": "Admin URN (auto-injected by macro bridge)."
+            }
+        },
+        "required": ["user_id"],
+    },
+}
+

@@ -84,3 +84,58 @@ async def mark_as_read(phone: str, message_id: str) -> bool:
         return resp.status_code == 200
     except Exception:
         return False
+
+
+async def send_buttons(
+    phone: str,
+    content: str,
+    buttons: list[dict],
+    footer: str = "",
+) -> bool:
+    """Send a WhatsApp message with Quick Reply buttons via WuzAPI (ADR-010 Layer A).
+
+    Uses /chat/send/template (source-verified in /opt/iiab/wuzapi/API.md).
+
+    Args:
+        phone: Recipient phone number (digits only, e.g. "50937145893").
+        content: Message body text.
+        buttons: List of {"DisplayText": "text", "Type": "quickreply"}.
+                 Max 3 buttons per WhatsApp and WuzAPI constraints.
+        footer: Optional footer text (max 60 chars recommended).
+
+    Returns:
+        True if sent successfully.
+
+    CRITICAL: The button's DisplayText is BOTH the label shown on the button AND
+    the exact text WhatsApp sends as a message when the user taps it.
+    It MUST match a RiveBot trigger in _common/admin.rive exactly (case-insensitive).
+    """
+    if not WUZAPI_TOKEN:
+        logger.warning("WUZAPI_TOKEN not set — cannot send buttons")
+        return False
+
+    payload = {
+        "Phone": phone,
+        "Content": content,
+        "Footer": footer,
+        "Buttons": buttons[:3],  # WhatsApp hard cap: 3 quickreply buttons
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.post(
+                f"{WUZAPI_URL}/chat/send/template",
+                json=payload,
+                headers={"Authorization": WUZAPI_TOKEN},
+            )
+        if resp.status_code == 200:
+            labels = [b.get("DisplayText", "?") for b in buttons]
+            logger.info(f"Button message sent to {phone}: {labels}")
+            return True
+        else:
+            logger.warning(f"WuzAPI button send failed: {resp.status_code} {resp.text[:200]}")
+            return False
+    except Exception as e:
+        logger.warning(f"WuzAPI button send error: {e}")
+        return False
+
