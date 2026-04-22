@@ -8,6 +8,9 @@ from app.hermes.tools import get_hermes_tools  # Ensures tools are registered
 
 router = APIRouter(tags=["tools"])
 
+# CRM tools that benefit from typing indicators (ADR-011 T2)
+_CRM_TOOLS = {"crm_list_groups", "crm_lookup_contact", "crm_org_info", "crm_create_group"}
+
 
 async def _invoke_tool(tool_name: str, kwargs: Dict[str, Any], user_id: str,
                        context: Optional[Dict[str, str]] = None) -> str:
@@ -45,6 +48,15 @@ async def _invoke_tool(tool_name: str, kwargs: Dict[str, Any], user_id: str,
         for key, val in context.items():
             kwargs.setdefault(key, val)
 
+    # ADR-011 T2: Show "typing..." for CRM L2 commands (fire-and-forget)
+    if tool_name in _CRM_TOOLS and user_id:
+        try:
+            from app.api.middleware.wuzapi_client import send_presence
+            phone = user_id.split(":")[-1].lstrip("+") if ":" in user_id else user_id
+            asyncio.create_task(send_presence(phone, "composing"))
+        except Exception:
+            pass  # best-effort — don't block the tool call
+
     try:
         # Hermes handlers are synchronous, we wrap them so they don't block RiveBot requests
         handler = getattr(tool_entry, "handler")
@@ -54,6 +66,7 @@ async def _invoke_tool(tool_name: str, kwargs: Dict[str, Any], user_id: str,
         raise HTTPException(status_code=500, detail=f"Tool '{tool_name}' failed: {e}")
 
     return str(result)
+
 
 
 @router.post("/v1/tools/{tool_name}")

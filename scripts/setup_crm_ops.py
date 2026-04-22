@@ -210,32 +210,29 @@ def _make_webhook_split(node_uuid, method, url, result_name, ok_dest, fail_dest,
             "exits": [exit_ok, exit_fail]}
 
 
-NUM_EMOJIS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"]
-
-
 def _make_wait_menu(node_uuid, prompt, choices, timeout_dest,
                     default_dest=None, timeout_seconds=300):
-    """Menu node: numbered text menu + wait + switch.
+    """Menu node: quick_replies + wait + switch.
 
-    WhatsApp limits quick_replies to 3 buttons, so we use numbered text.
-    Each choice is matched by both its number (1,2,3...) and keyword.
-    choices: list of (keyword, dest_uuid) pairs.
+    ADR-011 Finding 11: Courier auto-converts >3 quick_replies to WhatsApp
+    List Messages (handler.go:474-628). ≤3 render as native buttons.
+    Courier sends the Title field back as @input.text (handler.go:221-223).
+
+    choices: list of (label, dest_uuid) pairs. Max 10 (goflow limit).
     """
-    # Build numbered prompt
-    lines = []
-    for i, (text, _dest) in enumerate(choices):
-        lines.append(f"{NUM_EMOJIS[i]} {text}")
-    full_prompt = prompt + "\n".join(lines)
+    # Build quick_replies list — each label becomes a selectable item
+    quick_replies = [text for text, _dest in choices]
 
-    actions = [_make_action("send_msg", text=full_prompt)]
+    actions = [_make_action("send_msg", text=prompt.rstrip(),
+                            quick_replies=quick_replies)]
     exits, categories, cases = [], [], []
-    for i, (text, dest) in enumerate(choices):
+    for text, dest in choices:
         ex = _make_exit(dest)
         cat = _make_category(text, ex["uuid"])
-        # Match on number OR keyword (e.g. "1" or "contacts")
-        keyword = text.lower().replace("❌", "").replace("⬅️", "").strip()
-        case = {"uuid": u(), "type": "has_any_word",
-                "arguments": [f"{i+1} {keyword}"],
+        # Match on Title text Courier sends back (handler.go:221-223)
+        # has_only_phrase is case-insensitive (tests.go:155), unlike has_only_text
+        case = {"uuid": u(), "type": "has_only_phrase",
+                "arguments": [text],
                 "category_uuid": cat["uuid"]}
         exits.append(ex); categories.append(cat); cases.append(case)
     ex_timeout = _make_exit(timeout_dest)
@@ -340,7 +337,7 @@ def _build_ui(nodes, layout):
     return {"nodes": ui_nodes, "editor": "0.156.6"}
 
 
-def _make_flow(uuid, name, nodes, layout, expire=10):
+def _make_flow(uuid, name, nodes, layout, expire=30):
     return {
         "uuid": uuid, "name": name,
         "spec_version": "14.4.0", "language": "eng", "type": "messaging",
@@ -391,17 +388,17 @@ def generate_router_flow(admins_uuid, sub_flow_uuids):
     nodes.append(_make_msg_node(N["denied"],
         "🚫 *Access Denied*\n\nYou are not in the Admins group."))
 
-    # Main menu — numbered text (WhatsApp 3-button limit)
+    # Main menu — quick_replies (ADR-011: >3 items → WhatsApp List Message)
     nodes.append(_make_wait_menu(
         N["menu"],
-        "📋 *CRM Operations*\n\nReply with a number:\n\n",
+        "📋 *CRM Operations*\n\nSelect an option:",
         [
             ("Contacts", N["enter_contacts"]),
-            ("Groups", N["enter_groups"]),
+            ("Segments", N["enter_groups"]),
             ("Messages", N["enter_messages"]),
             ("Flows", N["enter_flows"]),
             ("System", N["enter_system"]),
-            ("Exit", N["exit"]),
+            ("❌ Exit", N["exit"]),
         ],
         timeout_dest=N["timeout"],
         default_dest=N["menu"],
@@ -413,7 +410,7 @@ def generate_router_flow(admins_uuid, sub_flow_uuids):
     # enter_flow dispatchers — each returns to menu
     for key, label in [
         ("contacts", "Contacts Ops"),
-        ("groups", "Groups Ops"),
+        ("groups", "Segments Ops"),
         ("messages", "Messages Ops"),
         ("flows", "Flows Ops"),
         ("system", "System Ops"),
@@ -440,7 +437,7 @@ def generate_router_flow(admins_uuid, sub_flow_uuids):
         N["enter_system"]:   (1200, ROW * 3),
         N["exit"]:           (400, ROW * 4),
     }
-    return flow_uuid, _make_flow(flow_uuid, "CRM Operations", nodes, layout, expire=10)
+    return flow_uuid, _make_flow(flow_uuid, "CRM Operations", nodes, layout)
 
 
 # ── Contacts Ops ─────────────────────────────────────────────────────────────
@@ -471,13 +468,13 @@ def generate_contacts_flow():
 
     nodes.append(_make_wait_menu(
         N["menu"],
-        "👤 *Contacts*\n\nReply with a number:\n\n",
+        "👤 *Contacts*\n\nSelect an option:",
         [
             ("Lookup", N["lookup_ask"]),
             ("Create", N["create_ask_urn"]),
             ("Block", N["block_ask"]),
             ("Unblock", N["unblock_ask"]),
-            ("Back", N["back"]),
+            ("⬅️ Back", N["back"]),
         ],
         timeout_dest=N["timeout"],
         default_dest=N["menu"],
@@ -599,13 +596,13 @@ def generate_contacts_flow():
         N["unblock_ok"]:      (X + 500, ROW * 9),
         N["unblock_err"]:     (X + 800, ROW * 9),
     }
-    return flow_uuid, _make_flow(flow_uuid, "Contacts Ops", nodes, layout, expire=10)
+    return flow_uuid, _make_flow(flow_uuid, "Contacts Ops", nodes, layout)
 
 
-# ── Groups Ops ───────────────────────────────────────────────────────────────
+# ── Segments Ops (RapidPro Groups — renamed per ADR-011 Finding 10) ──────────
 
 def generate_groups_flow():
-    """Groups Ops: list, create, delete (by name with CONFIRM guard)."""
+    """Segments Ops: list, create, delete (by name with CONFIRM guard)."""
     WH = WEBHOOK_API_URL
     flow_uuid = u()
     N = {
@@ -621,16 +618,16 @@ def generate_groups_flow():
 
     nodes.append(_make_wait_menu(
         N["menu"],
-        "📋 *Groups*\n\nReply with a number:\n\n",
+        "📋 *Segments*\n\nSelect an option:",
         [
             ("List", N["list_wh"]),
             ("Create", N["create_ask"]),
             ("Delete", N["delete_list"]),
-            ("Back", N["back"]),
+            ("⬅️ Back", N["back"]),
         ],
         timeout_dest=N["timeout"], default_dest=N["menu"],
     ))
-    nodes.append(_make_msg_node(N["timeout"], "⏱️ Groups timed out."))
+    nodes.append(_make_msg_node(N["timeout"], "⏱️ Segments timed out."))
     nodes.append(_make_msg_node(N["back"], "⬅️ Returning to main menu..."))
 
     # ── List ──
@@ -639,7 +636,7 @@ def generate_groups_flow():
         "groups_list", N["list_ok"], N["list_err"]))
     _G = "@webhook.json.results"
     nodes.append(_make_msg_node(N["list_ok"],
-        "📋 *Groups:*\n\n"
+        "📋 *Segments:*\n\n"
         f"• {_G}.0.name ({_G}.0.count members)\n"
         f"• {_G}.1.name ({_G}.1.count members)\n"
         f"• {_G}.2.name ({_G}.2.count members)\n"
@@ -650,11 +647,11 @@ def generate_groups_flow():
         f"• {_G}.7.name ({_G}.7.count members)",
         dest_uuid=N["menu"]))
     nodes.append(_make_msg_node(N["list_err"],
-        "⚠️ Failed to list groups.", dest_uuid=N["menu"]))
+        "⚠️ Failed to list segments.", dest_uuid=N["menu"]))
 
     # ── Create ──
     nodes.append(_make_wait_input(N["create_ask"],
-        "➕ Enter a name for the new group:", "new_group_name",
+        "➕ Enter a name for the new segment:", "new_group_name",
         N["create_wh"], N["timeout"]))
     nodes.append(_make_webhook_split(N["create_wh"],
         "POST", f"{WH}/groups.json",
@@ -662,11 +659,11 @@ def generate_groups_flow():
         body='{"name": "@results.new_group_name.value"}',
         extra_headers={"Content-Type": "application/json"}))
     nodes.append(_make_msg_node(N["create_ok"],
-        "✅ Group *@results.new_group_name.value* created!\n\n"
+        "✅ Segment *@results.new_group_name.value* created!\n\n"
         "UUID: @webhook.json.uuid",
         dest_uuid=N["menu"]))
     nodes.append(_make_msg_node(N["create_err"],
-        "⚠️ Failed to create group.", dest_uuid=N["menu"]))
+        "⚠️ Failed to create segment.", dest_uuid=N["menu"]))
 
     # ── Delete (show list → ask name → lookup UUID → confirm → delete) ──
     # Step 1: Show groups so user can see names
@@ -676,21 +673,21 @@ def generate_groups_flow():
     # Step 2: Ask for group name
     _G = "@webhook.json.results"
     nodes.append(_make_wait_input(N["delete_ask"],
-        "🗑️ *Delete Group*\n\n"
+        "🗑️ *Delete Segment*\n\n"
         f"• {_G}.0.name\n• {_G}.1.name\n• {_G}.2.name\n"
         f"• {_G}.3.name\n• {_G}.4.name\n• {_G}.5.name\n\n"
-        "Type the *exact group name* to delete:",
+        "Type the *exact segment name* to delete:",
         "delete_group_name", N["delete_lookup"], N["timeout"]))
     # Step 3: Lookup group by name to get UUID
     nodes.append(_make_webhook_split(N["delete_lookup"],
         "GET", f"{WH}/groups.json?name=@results.delete_group_name.value",
         "delete_group_lookup", N["delete_confirm"], N["delete_notfound"]))
     nodes.append(_make_msg_node(N["delete_notfound"],
-        "⚠️ No group found with that name. Check spelling and try again.",
+        "⚠️ No segment found with that name. Check spelling and try again.",
         dest_uuid=N["menu"]))
     # Step 4: Confirm using the resolved name
     nodes.append(_make_confirm_guard(N["delete_confirm"],
-        "⚠️ *This will permanently delete group:*\n\n"
+        "⚠️ *This will permanently delete segment:*\n\n"
         "Name: @webhook.json.results.0.name\n"
         "UUID: @webhook.json.results.0.uuid\n\n"
         "Type *CONFIRM* to proceed or anything else to cancel.",
@@ -700,9 +697,9 @@ def generate_groups_flow():
         "DELETE", f"{WH}/groups.json?uuid=@webhook.json.results.0.uuid",
         "group_delete", N["delete_ok"], N["delete_err"]))
     nodes.append(_make_msg_node(N["delete_ok"],
-        "✅ Group *@results.delete_group_name.value* deleted.", dest_uuid=N["menu"]))
+        "✅ Segment *@results.delete_group_name.value* deleted.", dest_uuid=N["menu"]))
     nodes.append(_make_msg_node(N["delete_err"],
-        "⚠️ Failed to delete group.", dest_uuid=N["menu"]))
+        "⚠️ Failed to delete segment.", dest_uuid=N["menu"]))
     nodes.append(_make_msg_node(N["delete_cancel"],
         "❌ Delete cancelled.", dest_uuid=N["menu"]))
 
@@ -727,7 +724,7 @@ def generate_groups_flow():
         N["delete_err"]:      (300, ROW * 10),
         N["delete_cancel"]:   (300, ROW * 9),
     }
-    return flow_uuid, _make_flow(flow_uuid, "Groups Ops", nodes, layout, expire=10)
+    return flow_uuid, _make_flow(flow_uuid, "Segments Ops", nodes, layout)
 
 
 # ── Messages Ops ─────────────────────────────────────────────────────────────
@@ -752,11 +749,11 @@ def generate_messages_flow():
 
     nodes.append(_make_wait_menu(
         N["menu"],
-        "💬 *Messages*\n\nReply with a number:\n\n",
+        "💬 *Messages*\n\nSelect an option:",
         [
             ("Send", N["send_ask_urn"]),
             ("Broadcast", N["bcast_list"]),
-            ("Back", N["back"]),
+            ("⬅️ Back", N["back"]),
         ],
         timeout_dest=N["timeout"], default_dest=N["menu"],
     ))
@@ -840,7 +837,7 @@ def generate_messages_flow():
         N["bcast_ok"]:       (500, ROW * 7),
         N["bcast_err"]:      (800, ROW * 7),
     }
-    return flow_uuid, _make_flow(flow_uuid, "Messages Ops", nodes, layout, expire=10)
+    return flow_uuid, _make_flow(flow_uuid, "Messages Ops", nodes, layout)
 
 
 # ── Flows Ops ────────────────────────────────────────────────────────────────
@@ -863,11 +860,11 @@ def generate_flows_ops_flow():
 
     nodes.append(_make_wait_menu(
         N["menu"],
-        "🔄 *Flows*\n\nReply with a number:\n\n",
+        "🔄 *Flows*\n\nSelect an option:",
         [
             ("List", N["list_wh"]),
             ("Start", N["start_list"]),
-            ("Back", N["back"]),
+            ("⬅️ Back", N["back"]),
         ],
         timeout_dest=N["timeout"], default_dest=N["menu"],
     ))
@@ -945,7 +942,7 @@ def generate_flows_ops_flow():
         N["start_ok"]:        (500, ROW * 7),
         N["start_err"]:       (800, ROW * 7),
     }
-    return flow_uuid, _make_flow(flow_uuid, "Flows Ops", nodes, layout, expire=10)
+    return flow_uuid, _make_flow(flow_uuid, "Flows Ops", nodes, layout)
 
 
 # ── System Ops ───────────────────────────────────────────────────────────────
@@ -967,14 +964,14 @@ def generate_system_flow():
 
     nodes.append(_make_wait_menu(
         N["menu"],
-        "⚙️ *System*\n\nReply with a number:\n\n",
+        "⚙️ *System*\n\nSelect an option:",
         [
             ("Org Info", N["org_wh"]),
             ("Channels", N["ch_wh"]),
             ("Globals", N["globals_wh"]),
             ("Update Global", N["gupdate_ask_key"]),
             ("Fields", N["fields_wh"]),
-            ("Back", N["back"]),
+            ("⬅️ Back", N["back"]),
         ],
         timeout_dest=N["timeout"], default_dest=N["menu"],
     ))
@@ -1080,7 +1077,7 @@ def generate_system_flow():
         N["fields_ok"]:      (X_F, ROW * 3),
         N["fields_err"]:     (X_F + 200, ROW * 3),
     }
-    return flow_uuid, _make_flow(flow_uuid, "System Ops", nodes, layout, expire=10)
+    return flow_uuid, _make_flow(flow_uuid, "System Ops", nodes, layout)
 
 
 # ── Exit CRM Ops ─────────────────────────────────────────────────────────────
@@ -1229,7 +1226,7 @@ def main():
     name_to_env = {
         "CRM Operations": "CRM_ROUTER_FLOW_UUID",
         "Contacts Ops":   "CRM_CONTACTS_FLOW_UUID",
-        "Groups Ops":     "CRM_GROUPS_FLOW_UUID",
+        "Segments Ops":    "CRM_GROUPS_FLOW_UUID",
         "Messages Ops":   "CRM_MESSAGES_FLOW_UUID",
         "Flows Ops":      "CRM_FLOWS_FLOW_UUID",
         "System Ops":     "CRM_SYSTEM_FLOW_UUID",

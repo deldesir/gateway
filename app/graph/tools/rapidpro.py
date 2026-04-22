@@ -160,3 +160,153 @@ def send_crm_help(args: dict, **kwargs) -> str:
     logger.info(f"[crm_help] Fallback plain-text for {urn}")
     return "🗂️ Type *ops menu* to access CRM Operations, or *exit_ops* to leave a session."
 
+
+# ── Layer 2 Direct Commands (ADR-011 T2) ─────────────────────────────────────
+# These bypass the flow system entirely. Single message in → single message out.
+# Auth is enforced in macro_bridge.py before these are called.
+
+import requests as _requests
+
+
+def _rp_api(method: str, endpoint: str, **kwargs) -> dict:
+    """Call RapidPro API v2. Returns parsed JSON or error dict."""
+    host = os.getenv("RAPIDPRO_HOST", "https://garantie.boutique")
+    token = os.getenv("RAPIDPRO_API_TOKEN", "")
+    url = f"{host}/api/v2/{endpoint}"
+    headers = {"Authorization": f"Token {token}"}
+    try:
+        if method == "GET":
+            r = _requests.get(url, headers=headers, params=kwargs.get("params"), timeout=8)
+        else:
+            headers["Content-Type"] = "application/json"
+            r = _requests.post(url, headers=headers, json=kwargs.get("json"), timeout=8)
+        r.raise_for_status()
+        return r.json()
+    except Exception as e:
+        logger.error(f"[crm_l2] {method} {endpoint} failed: {e}")
+        return {"error": str(e)}
+
+
+def crm_list_groups(args: dict, **kwargs) -> str:
+    """Layer 2: list groups (segments) — instant single-message response.
+
+    Usage: type 'list groups' in WhatsApp.
+    """
+    data = _rp_api("GET", "groups.json")
+    if "error" in data:
+        return f"⚠️ Failed to list segments: {data['error']}"
+
+    results = data.get("results", [])
+    if not results:
+        return "📋 No segments found."
+
+    lines = ["📋 *Segments:*\n"]
+    for g in results[:15]:  # Cap at 15 to avoid WhatsApp message truncation
+        name = g.get("name", "?")
+        count = g.get("count", 0)
+        lines.append(f"• {name} ({count} members)")
+
+    total = data.get("count", len(results))
+    if total > 15:
+        lines.append(f"\n_Showing 15 of {total}. Use *ops* → Segments for full list._")
+
+    lines.append("\n💡 Type *ops* for guided CRM operations.")
+    return "\n".join(lines)
+
+
+def crm_lookup_contact(args: dict, **kwargs) -> str:
+    """Layer 2: lookup a contact by phone number.
+
+    Usage: type 'lookup <phone>' in WhatsApp.
+    Positional arg: phone number (digits only).
+    """
+    phone = args.get("phone", "").strip()
+    if not phone:
+        return "⚠️ Missing phone number.\n\n*Usage:* `lookup <phone number>`"
+
+    # Normalize: strip + and leading zeros
+    phone = phone.lstrip("+").lstrip("0")
+
+    data = _rp_api("GET", "contacts.json", params={"urn": f"whatsapp:{phone}"})
+    if "error" in data:
+        return f"⚠️ Lookup failed: {data['error']}"
+
+    results = data.get("results", [])
+    if not results:
+        return f"🔍 No contact found for *{phone}*.\n\n💡 Type *ops* → Contacts → Create to add them."
+
+    c = results[0]
+    name = c.get("name") or "_(no name)_"
+    uuid = c.get("uuid", "?")[:8]
+    lang = c.get("language") or "—"
+    groups = [g.get("name", "?") for g in c.get("groups", [])]
+    fields = c.get("fields", {})
+
+    lines = [
+        f"👤 *{name}*\n",
+        f"📱 whatsapp:{phone}",
+        f"🏷️ Segments: {', '.join(groups) if groups else '_(none)_'}",
+        f"🌐 Language: {lang}",
+        f"🔑 UUID: ...{uuid}",
+    ]
+
+    # Show non-empty custom fields
+    if fields:
+        visible = {k: v for k, v in fields.items() if v}
+        if visible:
+            lines.append("\n📝 *Fields:*")
+            for k, v in list(visible.items())[:5]:
+                lines.append(f"  • {k}: {v}")
+
+    lines.append("\n💡 Type *ops* → Contacts for more operations.")
+    return "\n".join(lines)
+
+
+def crm_org_info(args: dict, **kwargs) -> str:
+    """Layer 2: show organization info — instant single-message response.
+
+    Usage: type 'org info' in WhatsApp.
+    """
+    data = _rp_api("GET", "org.json")
+    if "error" in data:
+        return f"⚠️ Failed to get org info: {data['error']}"
+
+    name = data.get("name", "?")
+    timezone = data.get("timezone", "?")
+    languages = data.get("languages", [])
+    credits = data.get("credits", {})
+
+    lines = [
+        f"🏢 *{name}*\n",
+        f"🕐 Timezone: {timezone}",
+        f"🌐 Languages: {', '.join(languages) if languages else '_(none)_'}",
+    ]
+
+    if credits:
+        remaining = credits.get("remaining", "?")
+        lines.append(f"💳 Credits: {remaining}")
+
+    lines.append("\n💡 Type *ops* → System for more details.")
+    return "\n".join(lines)
+
+
+def crm_create_group(args: dict, **kwargs) -> str:
+    """Layer 2: create a segment (RapidPro group).
+
+    Usage: type 'create group <name>' in WhatsApp.
+    Positional arg: group name (can be multi-word).
+    """
+    name = args.get("name", "").strip()
+    if not name:
+        return "⚠️ Missing segment name.\n\n*Usage:* `create group <name>`"
+
+    data = _rp_api("POST", "groups.json", json={"name": name})
+    if "error" in data:
+        return f"⚠️ Failed to create segment: {data['error']}"
+
+    uuid = data.get("uuid", "?")
+    return (
+        f"✅ Segment *{name}* created!\n\n"
+        f"🔑 UUID: {uuid}\n\n"
+        "💡 Add contacts via *ops* → Contacts."
+    )

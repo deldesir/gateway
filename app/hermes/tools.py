@@ -113,6 +113,12 @@ def register_all_tools() -> None:
     registry.register("start_crm_ops", "rapidpro", schemas.START_CRM_OPS, rapidpro.start_crm_ops)
     registry.register("send_crm_help", "rapidpro", schemas.SEND_CRM_HELP, rapidpro.send_crm_help)
 
+    # CRM Layer 2 Direct Commands (ADR-011 T2)
+    registry.register("crm_list_groups", "rapidpro", schemas.CRM_LIST_GROUPS, rapidpro.crm_list_groups)
+    registry.register("crm_lookup_contact", "rapidpro", schemas.CRM_LOOKUP_CONTACT, rapidpro.crm_lookup_contact)
+    registry.register("crm_org_info", "rapidpro", schemas.CRM_ORG_INFO, rapidpro.crm_org_info)
+    registry.register("crm_create_group", "rapidpro", schemas.CRM_CREATE_GROUP, rapidpro.crm_create_group)
+
     # Mocks Tools
     registry.register("check_stock", "mocks", schemas.CHECK_STOCK, mocks.check_stock)
     registry.register("order_delivery", "mocks", schemas.ORDER_DELIVERY, mocks.order_delivery)

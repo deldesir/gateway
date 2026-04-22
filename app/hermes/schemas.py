@@ -609,3 +609,52 @@ SEND_CRM_HELP = {
     },
 }
 
+# ── Layer 2 Direct Commands (ADR-011 T2) ─────────────────────────────────────
+
+CRM_LIST_GROUPS = {
+    "name": "crm_list_groups",
+    "description": "List all RapidPro segments (groups) with member counts. Instant single-message response.",
+    "parameters": {
+        "type": "object",
+        "properties": {},
+    },
+}
+
+CRM_LOOKUP_CONTACT = {
+    "name": "crm_lookup_contact",
+    "description": "Look up a contact by phone number. Returns name, segments, language, and fields.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "phone": {
+                "type": "string",
+                "description": "Phone number to look up (digits only)."
+            }
+        },
+        "required": ["phone"],
+    },
+}
+
+CRM_ORG_INFO = {
+    "name": "crm_org_info",
+    "description": "Show RapidPro organization info: name, timezone, languages, credits.",
+    "parameters": {
+        "type": "object",
+        "properties": {},
+    },
+}
+
+CRM_CREATE_GROUP = {
+    "name": "crm_create_group",
+    "description": "Create a new RapidPro segment (group).",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string",
+                "description": "Name for the new segment."
+            }
+        },
+        "required": ["name"],
+    },
+}
