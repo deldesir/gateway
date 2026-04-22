@@ -125,26 +125,6 @@ def patch_wait_timeout(flow, timeout_seconds=600):
     return changes
 
 
-# ── Patch: Add welcome message ───────────────────────────────────────────────
-
-def patch_welcome_message(flow):
-    """Finding 2: Add a welcome send_msg before call_llm on first node."""
-    first_node = flow["nodes"][0]
-    actions = first_node.get("actions", [])
-
-    # Check if there's already a send_msg before call_llm
-    if actions and actions[0]["type"] == "call_llm":
-        welcome = {
-            "uuid": u(),
-            "type": "send_msg",
-            "text": "🤖 *Hermes is thinking...*",
-            "attachments": [],
-        }
-        actions.insert(0, welcome)
-        print("   ✅ Added welcome message before call_llm")
-        return 1
-    return 0
-
 
 # ── Patch: Add LLM failure message ──────────────────────────────────────────
 
@@ -289,7 +269,6 @@ def main():
     print("\n── Step 2: Apply Hardening Patches ──")
     total = 0
     total += patch_wait_timeout(flow, timeout_seconds=600)  # 10 min
-    total += patch_welcome_message(flow)
     total += patch_llm_failure(flow)
     total += patch_stop_matching(flow)
     total += patch_expiry(flow, minutes=720)  # 12h
