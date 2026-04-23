@@ -6,6 +6,8 @@ Currently supports:
 - Mark as read
 - Typing indicators (chat presence)
 - Button messages (Quick Reply)
+- Document sending (send_document)
+- WhatsApp Status text (set_status)
 
 WuzAPI docs: /opt/iiab/wuzapi/API.md
 """
@@ -187,5 +189,88 @@ async def send_buttons(
             return False
     except Exception as e:
         logger.warning(f"WuzAPI button send error: {e}")
+        return False
+
+
+async def send_document(
+    phone: str,
+    document_b64: str,
+    filename: str,
+) -> bool:
+    """Send a document via WuzAPI.
+
+    Args:
+        phone: Recipient phone number (digits only).
+        document_b64: Base64 encoded document content, prefixed with MIME type.
+            Example: "data:application/pdf;base64,JVBERi0xLjQK..."
+        filename: Name of the file (e.g. "report.csv").
+
+    Returns:
+        True if sent successfully.
+    """
+    if not WUZAPI_TOKEN:
+        logger.warning("WUZAPI_TOKEN not set — cannot send document")
+        return False
+
+    url = f"{WUZAPI_URL}/chat/send/document"
+    payload = {
+        "Phone": phone,
+        "FileName": filename,
+        "Document": document_b64,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                url,
+                json=payload,
+                headers={"Authorization": WUZAPI_TOKEN},
+            )
+        if resp.status_code == 200:
+            logger.info(f"Document {filename} sent to {phone}")
+            return True
+        else:
+            logger.warning(f"WuzAPI send document failed: {resp.status_code} {resp.text[:200]}")
+            return False
+    except Exception as e:
+        logger.warning(f"WuzAPI send document error: {e}")
+        return False
+
+
+async def set_status(
+    text: str,
+) -> bool:
+    """Set the WhatsApp account's text status via WuzAPI.
+
+    Args:
+        text: Status text to display.
+
+    Returns:
+        True if set successfully.
+    """
+    if not WUZAPI_TOKEN:
+        logger.warning("WUZAPI_TOKEN not set — cannot set status")
+        return False
+
+    url = f"{WUZAPI_URL}/status/set/text"
+    payload = {
+        "Body": text,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(
+                url,
+                json=payload,
+                headers={"Authorization": WUZAPI_TOKEN},
+            )
+        if resp.status_code == 200:
+            logger.info(f"WhatsApp status set to: {text}")
+            return True
+        else:
+            logger.warning(f"WuzAPI set status failed: {resp.status_code} {resp.text[:200]}")
+            return False
+    except Exception as e:
+        logger.warning(f"WuzAPI set status error: {e}")
         return False
 

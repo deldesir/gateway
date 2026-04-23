@@ -485,6 +485,19 @@ async def openai_chat_completions(
 
         # ── 4.9 Allowed URNs gate (persona-level access control) ──────────────
         # Note: global access gate is already applied above at step 1.6.
+
+        # ── Tier 3 Reaction Plumbing (Finding 22) ──────────────
+        _phone = None
+        _msg_id = None
+        if parsed.external_msg_id and parsed.user_id:
+            _phone = parsed.user_id.split(":")[-1].lstrip("+")
+            _msg_id = parsed.external_msg_id
+            try:
+                from app.api.middleware.wuzapi_client import send_reaction
+                asyncio.create_task(send_reaction(_phone, _msg_id, "⏳"))
+            except Exception as e:
+                api_logger.debug(f"WuzAPI reaction init failed: {e}")
+
         hermes_result = await invoke_hermes(
             urn=user_id,
             persona=model_persona,
@@ -495,9 +508,27 @@ async def openai_chat_completions(
             allowed_tools=persona_vars.get("allowed_tools"),
         )
         final_text = hermes_result.get("final_response", "")
+
+        # Clear the hourglass
+        if _phone and _msg_id:
+            try:
+                from app.api.middleware.wuzapi_client import send_reaction
+                asyncio.create_task(send_reaction(_phone, _msg_id, ""))
+            except Exception:
+                pass
+
     except Exception as e:
         # ── AI failure: auto-enable noai mode ─────────────────────────────────
         api_logger.error(f"Hermes failed for {user_id}: {e}")
+        
+        # Clear the hourglass on failure
+        try:
+            if '_phone' in locals() and '_msg_id' in locals() and _phone and _msg_id:
+                from app.api.middleware.wuzapi_client import send_reaction
+                asyncio.create_task(send_reaction(_phone, _msg_id, ""))
+        except Exception:
+            pass
+
         await set_var(model_persona, user_id, "noai", "true")
 
         # Return the first noai message directly (don't wait for next match)
