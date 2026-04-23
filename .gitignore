@@ -7,6 +7,10 @@ wheels/
 *.egg-info
 .venv
 
+# Runtime caches (auto-downloaded / auto-generated)
+.cache/
+.mempalace/
+
 # Environment
 .env
 .env.*
