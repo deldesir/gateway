@@ -23,6 +23,7 @@ from app.logger import logger
 from app.services.auth import check_admin_permissions
 from app.services.channel import resolve_persona, DEFAULT_PERSONA
 from app.hermes.engine import invoke_hermes
+from app.api.middleware.circuit_breaker import can_attempt, record_success, record_failure, status as breaker_status
 
 router = APIRouter(tags=["chat"])
 api_logger = logger.bind(name="API")
@@ -335,56 +336,7 @@ async def openai_chat_completions(
             last_user_message, model_persona, user_id
         )
         rivebot_context["urn"] = user_id
-        # NoAI silence: 3rd+ fallback → send nothing to the user
-        if rivebot_context.get("silent"):
-            # ── Smart silent: check if user is responding to an AI turn ──
-            # If the last assistant message in the session was from Hermes
-            # (not [RiveBot]), the user is likely answering an AI question.
-            # In that case, ignore the silent flag and forward to AI.
-            _last_was_ai = False
-            try:
-                session_file = _sessions_dir / f"session_{thread_id}.json"
-                if session_file.exists():
-                    _sdata = json.loads(session_file.read_text())
-                    _smsgs = _sdata.get("messages", [])
-                    # Find last assistant message
-                    for _m in reversed(_smsgs):
-                        if _m.get("role") == "assistant":
-                            _last_was_ai = not _m.get("content", "").startswith("[RiveBot]")
-                            break
-            except Exception:
-                pass
-
-            if _last_was_ai:
-                api_logger.info(f"Silent trigger for {user_id} — overriding (last turn was AI)")
-                # Fall through to Hermes Agent (skip the silent handler)
-            else:
-                api_logger.info(f"Silent trigger for {user_id} — emoji reaction")
-
-                # Best-effort: send context-aware reaction via WuzAPI
-                if parsed.external_msg_id and parsed.user_id:
-                    phone = parsed.user_id.split(":")[-1].lstrip("+")
-                    _msg = last_user_message.strip().lower()
-                    _reaction_map = {
-                        "ok": "👍🏾", "okay": "👍🏾", "yes": "👍🏾", "yep": "👍🏾",
-                        "no": "👌🏾", "nah": "👌🏾", "nope": "👌🏾",
-                        "lol": "😁", "haha": "😁", "😂": "😁",
-                        "cool": "😊", "nice": "😊", "great": "😊",
-                        "thanks": "🙏🏾", "thank you": "🙏🏾", "thx": "🙏🏾",
-                        "bye": "👋🏾", "later": "👋🏾", "ciao": "👋🏾",
-                        "wow": "😉", "oh": "😉",
-                    }
-                    emoji = _reaction_map.get(_msg, "👍🏾")
-                    try:
-                        from app.api.middleware.wuzapi_client import send_reaction, mark_as_read
-                        await send_reaction(phone, parsed.external_msg_id, emoji)
-                        await mark_as_read(phone, parsed.external_msg_id)
-                    except Exception as e:
-                        api_logger.debug(f"WuzAPI reaction/read failed (non-critical): {e}")
-
-                # Return {{noreply}} sentinel — RapidPro flow must check for this
-                # and skip sending. This avoids blank WhatsApp messages.
-                return _openai_response(model_persona, "{{noreply}}", id_prefix="chatcmpl-silent")
+        # (noai/silent handling removed — replaced by circuit breaker in §5)
 
         # Persona switch: re-route to new persona
         if rivebot_context.get("switch_persona"):
@@ -468,6 +420,23 @@ async def openai_chat_completions(
         # On error, safely fall through to Hermes Agent
 
     # ── 5. Hermes Agent invocation ───────────────────────────────────────────────
+
+    # ── 5.0 Circuit breaker gate ──────────────────────────────────────────────
+    if not can_attempt():
+        api_logger.warning(f"Circuit breaker OPEN — skipping Hermes for {user_id}")
+        lang = rivebot_context.get("lang", "ht")
+        if lang == "en":
+            degraded = (
+                "⚠️ Our AI service is temporarily unavailable. We're working on it. "
+                "In the meantime, type *help* to see what I can do for you."
+            )
+        else:
+            degraded = (
+                "⚠️ Sèvis AI nou an pa disponib pou kounye a. N ap travay sou sa. "
+                "Antretan, tape *help* pou wè sa m ka fè pou ou."
+            )
+        return _openai_response(model_persona, degraded, id_prefix="chatcmpl-breaker")
+
     try:
         # Resolve persona properties
         from app.graph.prompts import PersonaPromptRegistry
@@ -482,9 +451,6 @@ async def openai_chat_completions(
                     "⚠️ Ou pa gen aksè nan sèvis sa a.",
                     id_prefix="chatcmpl-denied",
                 )
-
-        # ── 4.9 Allowed URNs gate (persona-level access control) ──────────────
-        # Note: global access gate is already applied above at step 1.6.
 
         # ── Tier 3 Reaction Plumbing (Finding 22) ──────────────
         _phone = None
@@ -517,10 +483,14 @@ async def openai_chat_completions(
             except Exception:
                 pass
 
+        # ── AI succeeded — close circuit ──────────────────────────────────────
+        record_success()
+
     except Exception as e:
-        # ── AI failure: auto-enable noai mode ─────────────────────────────────
+        # ── AI failure — record in circuit breaker ────────────────────────────
         api_logger.error(f"Hermes failed for {user_id}: {e}")
-        
+        record_failure(str(e)[:200])
+
         # Clear the hourglass on failure
         try:
             if '_phone' in locals() and '_msg_id' in locals() and _phone and _msg_id:
@@ -529,9 +499,6 @@ async def openai_chat_completions(
         except Exception:
             pass
 
-        await set_var(model_persona, user_id, "noai", "true")
-
-        # Return the first noai message directly (don't wait for next match)
         lang = rivebot_context.get("lang", "ht")
         if lang == "en":
             noai_msg = (
@@ -544,11 +511,6 @@ async def openai_chat_completions(
                 "Antretan, tape *help* pou wè sa m ka fè pou ou."
             )
         return _openai_response(model_persona, noai_msg, id_prefix="chatcmpl-noai")
-
-    # ── 5.1 AI succeeded: clear noai if it was previously set ─────────────────
-    if rivebot_context.get("noai"):
-        await set_var(model_persona, user_id, "noai", "false")
-        api_logger.info(f"AI recovered for {user_id} — cleared noai flag")
 
     # ── 5.2 Persistence (fire-and-forget — F-08) ─────────────────────────
     # Palace write runs in background to avoid blocking the HTTP response.
