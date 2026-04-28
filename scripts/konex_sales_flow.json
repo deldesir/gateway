@@ -1,0 +1,589 @@
+{
+  "version": "13",
+  "site": "http://localhost",
+  "flows": [
+    {
+      "uuid": "211d0a77-8c10-4c76-b8d5-c3b724d451cc",
+      "name": "Konex Sales Menu",
+      "spec_version": "14.4.0",
+      "language": "eng",
+      "type": "messaging",
+      "revision": 1,
+      "expire_after_minutes": 30,
+      "localization": {},
+      "nodes": [
+        {
+          "uuid": "6e222bd1-0244-44ac-92d1-b94735ef4fbd",
+          "actions": [
+            {
+              "uuid": "cefaf7b7-9662-4280-9a75-f479105ce26f",
+              "type": "set_run_result",
+              "name": "entry_guard",
+              "value": "1"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "f29632ab-bc6f-4733-9f27-35b1c7326ee6",
+              "destination_uuid": "8c0edf67-449e-46cd-baa6-ca9d53d54b0b"
+            }
+          ]
+        },
+        {
+          "uuid": "8c0edf67-449e-46cd-baa6-ca9d53d54b0b",
+          "actions": [
+            {
+              "uuid": "0c73c558-10b5-468d-96b7-156398d0f802",
+              "type": "send_msg",
+              "text": "\ud83d\udc4b *Konex Sales*\n\nHow can I help you today?",
+              "quick_replies": [
+                "\ud83d\udcf1 View Plans",
+                "\ud83d\ude80 Upgrade",
+                "\ud83c\udf89 Promotions",
+                "\ud83d\udccb My Account",
+                "\u274c Exit"
+              ]
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@input.text",
+            "wait": {
+              "type": "msg",
+              "timeout": {
+                "seconds": 300,
+                "category_uuid": "39f6232e-bffe-4cbd-9def-d2ef3ab21ed0"
+              }
+            },
+            "cases": [
+              {
+                "uuid": "98dee3d5-7926-45f4-9dd5-ded17e4fe4d8",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udcf1 View Plans"
+                ],
+                "category_uuid": "29686760-0f17-4a94-bd77-f3315d811d20"
+              },
+              {
+                "uuid": "97489711-2b2b-4a3f-8df0-c26c865440c8",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\ude80 Upgrade"
+                ],
+                "category_uuid": "75434ed5-1d83-4eec-beee-aeab53850738"
+              },
+              {
+                "uuid": "5c1d89c4-7381-4004-92b5-774a7da44b33",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83c\udf89 Promotions"
+                ],
+                "category_uuid": "603b355b-3e8e-40cd-afb7-d1b5ffb3ebea"
+              },
+              {
+                "uuid": "909c8526-5be8-4bcb-b577-1debc27cd849",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udccb My Account"
+                ],
+                "category_uuid": "f79623c1-c0a5-4e2c-9dbf-d08ea8060269"
+              },
+              {
+                "uuid": "96d9a135-7a3c-495c-899b-aa0c817e27c6",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\u274c Exit"
+                ],
+                "category_uuid": "b9ebdc63-17dc-400c-af9b-382d0abbdfbb"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "29686760-0f17-4a94-bd77-f3315d811d20",
+                "name": "\ud83d\udcf1 View Plans",
+                "exit_uuid": "23704a8d-623f-408a-ab80-d91c6985c448"
+              },
+              {
+                "uuid": "75434ed5-1d83-4eec-beee-aeab53850738",
+                "name": "\ud83d\ude80 Upgrade",
+                "exit_uuid": "86ae8bd5-666e-4840-9670-542f8737f9ba"
+              },
+              {
+                "uuid": "603b355b-3e8e-40cd-afb7-d1b5ffb3ebea",
+                "name": "\ud83c\udf89 Promotions",
+                "exit_uuid": "08db66c1-8503-4408-bb90-914d8f9226a5"
+              },
+              {
+                "uuid": "f79623c1-c0a5-4e2c-9dbf-d08ea8060269",
+                "name": "\ud83d\udccb My Account",
+                "exit_uuid": "d8637eef-437d-4cb7-9861-5efa805cf1e2"
+              },
+              {
+                "uuid": "b9ebdc63-17dc-400c-af9b-382d0abbdfbb",
+                "name": "\u274c Exit",
+                "exit_uuid": "c7ae1923-e4d2-42f6-bc42-f290dccdd19b"
+              },
+              {
+                "uuid": "39f6232e-bffe-4cbd-9def-d2ef3ab21ed0",
+                "name": "No Response",
+                "exit_uuid": "1d46989d-0074-492b-930d-1f6063890175"
+              },
+              {
+                "uuid": "a789640a-114f-4eeb-8c4d-34ac8888230c",
+                "name": "Other",
+                "exit_uuid": "67723b86-1c5a-4568-afef-8221ac267f0e"
+              }
+            ],
+            "default_category_uuid": "a789640a-114f-4eeb-8c4d-34ac8888230c",
+            "result_name": "menu_8c0edf67"
+          },
+          "exits": [
+            {
+              "uuid": "23704a8d-623f-408a-ab80-d91c6985c448",
+              "destination_uuid": "85de7653-689a-4d3d-ab7c-74caabca1ba1"
+            },
+            {
+              "uuid": "86ae8bd5-666e-4840-9670-542f8737f9ba",
+              "destination_uuid": "1a4e2f6b-6ddd-461f-996f-791f685a859c"
+            },
+            {
+              "uuid": "08db66c1-8503-4408-bb90-914d8f9226a5",
+              "destination_uuid": "b321a7a0-433a-47e7-b03b-ea11c6a6bc3e"
+            },
+            {
+              "uuid": "d8637eef-437d-4cb7-9861-5efa805cf1e2",
+              "destination_uuid": "cea54d23-4b2c-42be-aa5b-f54883e967ee"
+            },
+            {
+              "uuid": "c7ae1923-e4d2-42f6-bc42-f290dccdd19b",
+              "destination_uuid": "6f090074-e8ac-456b-806c-4cca580d03c1"
+            },
+            {
+              "uuid": "1d46989d-0074-492b-930d-1f6063890175",
+              "destination_uuid": "8ea5b219-db8f-42ea-a0c3-5c11ba03b9fa"
+            },
+            {
+              "uuid": "67723b86-1c5a-4568-afef-8221ac267f0e",
+              "destination_uuid": "8c0edf67-449e-46cd-baa6-ca9d53d54b0b"
+            }
+          ]
+        },
+        {
+          "uuid": "8ea5b219-db8f-42ea-a0c3-5c11ba03b9fa",
+          "actions": [
+            {
+              "uuid": "a4a68fb1-ffa3-4a8f-95ca-a848b33d09f8",
+              "type": "send_msg",
+              "text": "\u23f1\ufe0f Sales session timed out.\n\nType *sales* to start again."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "347243c9-0311-4a98-a685-ee9b3f67f466",
+              "destination_uuid": null
+            }
+          ]
+        },
+        {
+          "uuid": "6f090074-e8ac-456b-806c-4cca580d03c1",
+          "actions": [
+            {
+              "uuid": "f5c112bf-556c-410b-97c4-a6d72b616e79",
+              "type": "send_msg",
+              "text": "\u2705 Thanks for visiting Konex Sales!\n\nType *sales* anytime."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "a4dbcf31-2a8c-41db-89cf-23d302398979",
+              "destination_uuid": null
+            }
+          ]
+        },
+        {
+          "uuid": "85de7653-689a-4d3d-ab7c-74caabca1ba1",
+          "actions": [
+            {
+              "uuid": "8e956516-5df6-4e6f-bf9b-59044f9d738f",
+              "type": "send_msg",
+              "text": "\ud83d\udcf1 *Konex Plans*\n\n\u2022 *Basic* \u2014 250 HTG/mwa (1GB, 50 min)\n\u2022 *Standard* \u2014 500 HTG/mwa (5GB, unlimited min)\n\u2022 *Premium* \u2014 1000 HTG/mwa (unlimited data + min)\n\nTap *Upgrade* to change your plan!"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "e1352b50-722b-41a6-9ee8-9916e13ad1fa",
+              "destination_uuid": "8c0edf67-449e-46cd-baa6-ca9d53d54b0b"
+            }
+          ]
+        },
+        {
+          "uuid": "1a4e2f6b-6ddd-461f-996f-791f685a859c",
+          "actions": [
+            {
+              "uuid": "b3830c06-e078-488f-9204-a2ea6ef2c4c1",
+              "type": "send_msg",
+              "text": "\ud83d\ude80 *Upgrade Plan*\n\nWhich plan would you like?",
+              "quick_replies": [
+                "Basic \u2014 250 HTG",
+                "Standard \u2014 500 HTG",
+                "Premium \u2014 1000 HTG",
+                "\u2b05\ufe0f Back"
+              ]
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@input.text",
+            "wait": {
+              "type": "msg",
+              "timeout": {
+                "seconds": 300,
+                "category_uuid": "98bfccf5-0cef-4b1c-b9aa-3058a03a5d92"
+              }
+            },
+            "cases": [
+              {
+                "uuid": "3f40e45e-350a-486e-9db9-f796d29f743a",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "Basic \u2014 250 HTG"
+                ],
+                "category_uuid": "b7313ac3-33b5-4888-9255-00f0aa62df15"
+              },
+              {
+                "uuid": "76f12422-c86b-4d80-840b-8696f61533ab",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "Standard \u2014 500 HTG"
+                ],
+                "category_uuid": "ff0675ba-b6df-40e6-8bb4-f9ddae66db85"
+              },
+              {
+                "uuid": "76a40fa5-6a93-45ae-a6c5-b70a27308a2a",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "Premium \u2014 1000 HTG"
+                ],
+                "category_uuid": "164d245a-90f6-4a0b-ba7f-f4d8c2aeb673"
+              },
+              {
+                "uuid": "0d44009f-4da6-4c58-8ab5-5dc72a7c152c",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\u2b05\ufe0f Back"
+                ],
+                "category_uuid": "ddb53308-c051-459f-b8d6-ec704b68f9e9"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "b7313ac3-33b5-4888-9255-00f0aa62df15",
+                "name": "Basic \u2014 250 HTG",
+                "exit_uuid": "48c401b5-c918-46be-812a-857128228e47"
+              },
+              {
+                "uuid": "ff0675ba-b6df-40e6-8bb4-f9ddae66db85",
+                "name": "Standard \u2014 500 HTG",
+                "exit_uuid": "f3e6bac4-9a6a-42a7-a983-b5eebb0a06a4"
+              },
+              {
+                "uuid": "164d245a-90f6-4a0b-ba7f-f4d8c2aeb673",
+                "name": "Premium \u2014 1000 HTG",
+                "exit_uuid": "0a064f10-0a9b-4ab9-94a1-5ef2602d59a2"
+              },
+              {
+                "uuid": "ddb53308-c051-459f-b8d6-ec704b68f9e9",
+                "name": "\u2b05\ufe0f Back",
+                "exit_uuid": "0dbad59f-816f-4ef7-a225-99f62e14acb2"
+              },
+              {
+                "uuid": "98bfccf5-0cef-4b1c-b9aa-3058a03a5d92",
+                "name": "No Response",
+                "exit_uuid": "a8736599-3792-4d86-afe5-6ab4a73eb3a6"
+              },
+              {
+                "uuid": "1214af03-193f-4bc4-b879-099914528464",
+                "name": "Other",
+                "exit_uuid": "393f6a28-aece-45f6-b7b4-f30bb2c20182"
+              }
+            ],
+            "default_category_uuid": "1214af03-193f-4bc4-b879-099914528464",
+            "result_name": "menu_1a4e2f6b"
+          },
+          "exits": [
+            {
+              "uuid": "48c401b5-c918-46be-812a-857128228e47",
+              "destination_uuid": "8c675bb0-2495-4888-acdb-0b601fa72287"
+            },
+            {
+              "uuid": "f3e6bac4-9a6a-42a7-a983-b5eebb0a06a4",
+              "destination_uuid": "8c675bb0-2495-4888-acdb-0b601fa72287"
+            },
+            {
+              "uuid": "0a064f10-0a9b-4ab9-94a1-5ef2602d59a2",
+              "destination_uuid": "8c675bb0-2495-4888-acdb-0b601fa72287"
+            },
+            {
+              "uuid": "0dbad59f-816f-4ef7-a225-99f62e14acb2",
+              "destination_uuid": "8c0edf67-449e-46cd-baa6-ca9d53d54b0b"
+            },
+            {
+              "uuid": "a8736599-3792-4d86-afe5-6ab4a73eb3a6",
+              "destination_uuid": "8ea5b219-db8f-42ea-a0c3-5c11ba03b9fa"
+            },
+            {
+              "uuid": "393f6a28-aece-45f6-b7b4-f30bb2c20182",
+              "destination_uuid": "1a4e2f6b-6ddd-461f-996f-791f685a859c"
+            }
+          ]
+        },
+        {
+          "uuid": "8c675bb0-2495-4888-acdb-0b601fa72287",
+          "actions": [
+            {
+              "uuid": "5bb5ab95-cb23-4303-b699-73e0238cba1b",
+              "type": "send_msg",
+              "text": "\u26a0\ufe0f *Confirm Upgrade*\n\nYou selected: *@results.menu_1a4e2f6b.value*\n\nProceed with the upgrade?",
+              "quick_replies": [
+                "\u2705 Confirm",
+                "\u274c Cancel"
+              ]
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@input.text",
+            "wait": {
+              "type": "msg",
+              "timeout": {
+                "seconds": 300,
+                "category_uuid": "16e05131-d586-41b7-8943-ddfe8ef66bc1"
+              }
+            },
+            "cases": [
+              {
+                "uuid": "a92eb2d5-6dcd-4286-8e92-299069b386e1",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\u2705 Confirm"
+                ],
+                "category_uuid": "b1fd020e-fe2d-4ac6-bc84-9377fa906ca6"
+              },
+              {
+                "uuid": "9db97e28-07aa-4145-80ec-35b82e5cf954",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\u274c Cancel"
+                ],
+                "category_uuid": "8e70d365-ce8c-4c71-8aa9-74a63adb70ca"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "b1fd020e-fe2d-4ac6-bc84-9377fa906ca6",
+                "name": "\u2705 Confirm",
+                "exit_uuid": "f5619c46-be07-4134-a7d5-49a8662358a5"
+              },
+              {
+                "uuid": "8e70d365-ce8c-4c71-8aa9-74a63adb70ca",
+                "name": "\u274c Cancel",
+                "exit_uuid": "cb5cc0c1-4a95-4502-b85a-d4091e74ef8d"
+              },
+              {
+                "uuid": "16e05131-d586-41b7-8943-ddfe8ef66bc1",
+                "name": "No Response",
+                "exit_uuid": "a7bfe02f-e77c-4b67-a76a-87de49ed1f8f"
+              },
+              {
+                "uuid": "abf2caf5-9a6f-4778-86d3-2dce5a24061d",
+                "name": "Other",
+                "exit_uuid": "efa70035-8150-4130-ae5f-4bdb3b50e2e7"
+              }
+            ],
+            "default_category_uuid": "abf2caf5-9a6f-4778-86d3-2dce5a24061d",
+            "result_name": "menu_8c675bb0"
+          },
+          "exits": [
+            {
+              "uuid": "f5619c46-be07-4134-a7d5-49a8662358a5",
+              "destination_uuid": "de8d693f-1ff9-449a-bb15-bbb85df641a9"
+            },
+            {
+              "uuid": "cb5cc0c1-4a95-4502-b85a-d4091e74ef8d",
+              "destination_uuid": "7351fad1-a626-46d0-9de6-ec2297af52a3"
+            },
+            {
+              "uuid": "a7bfe02f-e77c-4b67-a76a-87de49ed1f8f",
+              "destination_uuid": "8ea5b219-db8f-42ea-a0c3-5c11ba03b9fa"
+            },
+            {
+              "uuid": "efa70035-8150-4130-ae5f-4bdb3b50e2e7",
+              "destination_uuid": "8c0edf67-449e-46cd-baa6-ca9d53d54b0b"
+            }
+          ]
+        },
+        {
+          "uuid": "de8d693f-1ff9-449a-bb15-bbb85df641a9",
+          "actions": [
+            {
+              "uuid": "70e2c309-1b80-4cca-82fe-0bbea8e72307",
+              "type": "send_msg",
+              "text": "\u2705 *Upgrade request submitted!*\n\nPlan: @results.menu_1a4e2f6b.value\nA representative will confirm your upgrade shortly.\n\nQuestions? Type *talk to support*."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "d2ecbc6a-40b1-4f80-a09c-9a350e336fb3",
+              "destination_uuid": "8c0edf67-449e-46cd-baa6-ca9d53d54b0b"
+            }
+          ]
+        },
+        {
+          "uuid": "7351fad1-a626-46d0-9de6-ec2297af52a3",
+          "actions": [
+            {
+              "uuid": "66c98d4e-24cc-41b9-b190-c770ece849a9",
+              "type": "send_msg",
+              "text": "\u274c Upgrade cancelled.\n\nNo changes made to your plan."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "710a2a7a-67e8-4403-9732-7aa181e3d7a4",
+              "destination_uuid": "8c0edf67-449e-46cd-baa6-ca9d53d54b0b"
+            }
+          ]
+        },
+        {
+          "uuid": "b321a7a0-433a-47e7-b03b-ea11c6a6bc3e",
+          "actions": [
+            {
+              "uuid": "8a2391aa-fb93-4cd1-89a0-ade35f829235",
+              "type": "send_msg",
+              "text": "\ud83c\udf89 *Current Promotions*\n\n\u2022 \ud83c\udd95 *New Customer* \u2014 First month free on Standard+\n\u2022 \ud83d\udcde *Referral Bonus* \u2014 Get 100 HTG credit per referral\n\u2022 \ud83d\udcf1 *Weekend Double* \u2014 2x data on weekends (Premium)\n\nType *upgrade* to take advantage of these offers!"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "107bf7eb-cd82-47ee-903f-dd85e569c3e9",
+              "destination_uuid": "8c0edf67-449e-46cd-baa6-ca9d53d54b0b"
+            }
+          ]
+        },
+        {
+          "uuid": "cea54d23-4b2c-42be-aa5b-f54883e967ee",
+          "actions": [
+            {
+              "uuid": "03a751bf-ac25-40b7-a905-3f18cea21614",
+              "type": "send_msg",
+              "text": "\ud83d\udccb *Your Account*\n\nName: @contact.name\nNumber: @contact.urns.0\nPlan: \u2014\n\nFor detailed account info, type *talk to support*."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "a495ec49-9150-4dcc-8e0d-afa358c30f8a",
+              "destination_uuid": "8c0edf67-449e-46cd-baa6-ca9d53d54b0b"
+            }
+          ]
+        }
+      ],
+      "_ui": {
+        "nodes": {
+          "6e222bd1-0244-44ac-92d1-b94735ef4fbd": {
+            "position": {
+              "left": 300,
+              "top": -220
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "8c0edf67-449e-46cd-baa6-ca9d53d54b0b": {
+            "position": {
+              "left": 300,
+              "top": 0
+            },
+            "type": "wait_for_response",
+            "config": {}
+          },
+          "8ea5b219-db8f-42ea-a0c3-5c11ba03b9fa": {
+            "position": {
+              "left": 700,
+              "top": 0
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "6f090074-e8ac-456b-806c-4cca580d03c1": {
+            "position": {
+              "left": 700,
+              "top": 220
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "85de7653-689a-4d3d-ab7c-74caabca1ba1": {
+            "position": {
+              "left": 0,
+              "top": 440
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "1a4e2f6b-6ddd-461f-996f-791f685a859c": {
+            "position": {
+              "left": 400,
+              "top": 440
+            },
+            "type": "wait_for_response",
+            "config": {}
+          },
+          "8c675bb0-2495-4888-acdb-0b601fa72287": {
+            "position": {
+              "left": 400,
+              "top": 660
+            },
+            "type": "wait_for_response",
+            "config": {}
+          },
+          "de8d693f-1ff9-449a-bb15-bbb85df641a9": {
+            "position": {
+              "left": 300,
+              "top": 880
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "7351fad1-a626-46d0-9de6-ec2297af52a3": {
+            "position": {
+              "left": 600,
+              "top": 880
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "b321a7a0-433a-47e7-b03b-ea11c6a6bc3e": {
+            "position": {
+              "left": 800,
+              "top": 440
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "cea54d23-4b2c-42be-aa5b-f54883e967ee": {
+            "position": {
+              "left": 0,
+              "top": 660
+            },
+            "type": "execute_actions",
+            "config": {}
+          }
+        },
+        "editor": "0.156.6"
+      }
+    }
+  ],
+  "campaigns": [],
+  "triggers": [],
+  "fields": [],
+  "groups": []
+}

@@ -6,7 +6,8 @@ from app.api.downloads import router as downloads_router
 from app.db import init_db
 from app.seed import seed_personas
 import app.models  # Register SQLModel tables
-import app.commands  # Register commands
+# NOTE: Legacy app.commands import removed (ADR-011 migration).
+# Commands are now macro_* tools in app/graph/tools/{system,config}.py
 
 
 @asynccontextmanager

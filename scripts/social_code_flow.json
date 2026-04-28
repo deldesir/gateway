@@ -1,0 +1,927 @@
+{
+  "version": "13",
+  "site": "http://localhost",
+  "flows": [
+    {
+      "uuid": "4745c1c3-7beb-486d-a82f-e19740f791a8",
+      "name": "Social-Code Training",
+      "spec_version": "14.4.0",
+      "language": "eng",
+      "type": "messaging",
+      "revision": 1,
+      "expire_after_minutes": 60,
+      "localization": {},
+      "nodes": [
+        {
+          "uuid": "ee327f3c-b049-42f4-b86f-e7c2f99782d2",
+          "actions": [
+            {
+              "uuid": "8976ddd6-d0d9-4297-bfc4-9affaa68a346",
+              "type": "set_run_result",
+              "name": "entry_guard",
+              "value": "1"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "6e64cecc-b2d3-4d6f-907d-7986dc84c3fa",
+              "destination_uuid": "8eaa9503-7bb2-4552-9723-78bf5a797a63"
+            }
+          ]
+        },
+        {
+          "uuid": "8eaa9503-7bb2-4552-9723-78bf5a797a63",
+          "actions": [
+            {
+              "uuid": "4dd71e58-9504-47e8-b813-ef3297778edb",
+              "type": "send_msg",
+              "text": "\ud83c\udfaf *Social-Code Training*\n\nChoose a drill app to practice your social skills:",
+              "quick_replies": [
+                "\ud83d\udde3\ufe0f Small Talk",
+                "\ud83e\udde0 Wit Gym",
+                "\u2694\ufe0f Debate Club",
+                "\ud83c\udf0a Deep Talk",
+                "\ud83d\udc9a Empathy Lab",
+                "\ud83d\udcd6 Story Teller",
+                "\ud83e\udd1d Negotiator",
+                "\ud83c\udfb5 Conductor",
+                "\ud83e\uddf2 Magnet",
+                "\ud83d\udce6 Archive"
+              ]
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@input.text",
+            "wait": {
+              "type": "msg",
+              "timeout": {
+                "seconds": 300,
+                "category_uuid": "9c46239a-f7e4-4420-b9ff-dab377b7ebeb"
+              }
+            },
+            "cases": [
+              {
+                "uuid": "a2818b06-0b1f-4e5d-888b-342c02c9b5e9",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udde3\ufe0f Small Talk"
+                ],
+                "category_uuid": "4185a7f7-8b26-4b42-a996-3b8f035dd285"
+              },
+              {
+                "uuid": "9a66aa96-1928-448b-9e06-0084ce9619b5",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83e\udde0 Wit Gym"
+                ],
+                "category_uuid": "80f1eda5-ac0a-4b94-8b59-615f612f940e"
+              },
+              {
+                "uuid": "bef2fb2d-539d-46e3-b5e7-06bae00be35e",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\u2694\ufe0f Debate Club"
+                ],
+                "category_uuid": "e833b90c-015c-4e98-9c24-2ab4ff3a6523"
+              },
+              {
+                "uuid": "4fa622e7-e309-4f7c-bf37-af8e4a68ef05",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83c\udf0a Deep Talk"
+                ],
+                "category_uuid": "ea669bad-d031-4366-8eb6-1d4c4cc68abf"
+              },
+              {
+                "uuid": "73a6bb38-7a7a-4865-b86d-4e247ce75c6f",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udc9a Empathy Lab"
+                ],
+                "category_uuid": "fa734f81-3b5a-4b17-ba9b-38747a87912f"
+              },
+              {
+                "uuid": "2518e095-5d63-42b8-95db-1514a1aec216",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udcd6 Story Teller"
+                ],
+                "category_uuid": "45436cc6-54ad-4063-8a36-db12ba1c6aa4"
+              },
+              {
+                "uuid": "b9d63076-2684-4bda-983b-86b9c03f8169",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83e\udd1d Negotiator"
+                ],
+                "category_uuid": "05e3b7c2-b2be-4c08-bc59-27b2bdef2cc6"
+              },
+              {
+                "uuid": "6cf11a70-2b25-43c1-a2c1-124df45bd98b",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83c\udfb5 Conductor"
+                ],
+                "category_uuid": "9c993932-62eb-4f1f-899f-204116899ffc"
+              },
+              {
+                "uuid": "451a953c-ed52-4ef8-8ae2-cda2ceff1790",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83e\uddf2 Magnet"
+                ],
+                "category_uuid": "3ef306fa-77d5-42fc-bd97-596a1e10c671"
+              },
+              {
+                "uuid": "2c9dead4-26ff-4962-805a-7e4d5c1443c6",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udce6 Archive"
+                ],
+                "category_uuid": "58e7eed0-b29d-4509-91d5-d30f77d61f7e"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "4185a7f7-8b26-4b42-a996-3b8f035dd285",
+                "name": "\ud83d\udde3\ufe0f Small Talk",
+                "exit_uuid": "4c026663-003f-449c-a81d-473cc1014a64"
+              },
+              {
+                "uuid": "80f1eda5-ac0a-4b94-8b59-615f612f940e",
+                "name": "\ud83e\udde0 Wit Gym",
+                "exit_uuid": "33e32497-cd6b-4c5d-aedc-a9f2b8b92d7c"
+              },
+              {
+                "uuid": "e833b90c-015c-4e98-9c24-2ab4ff3a6523",
+                "name": "\u2694\ufe0f Debate Club",
+                "exit_uuid": "7f5b83cc-dbf0-437a-bd86-03ede96d893a"
+              },
+              {
+                "uuid": "ea669bad-d031-4366-8eb6-1d4c4cc68abf",
+                "name": "\ud83c\udf0a Deep Talk",
+                "exit_uuid": "1caa35cf-a23a-466a-9ab4-aab3eec8e87d"
+              },
+              {
+                "uuid": "fa734f81-3b5a-4b17-ba9b-38747a87912f",
+                "name": "\ud83d\udc9a Empathy Lab",
+                "exit_uuid": "34caff47-1416-4c07-8771-471edf768b4f"
+              },
+              {
+                "uuid": "45436cc6-54ad-4063-8a36-db12ba1c6aa4",
+                "name": "\ud83d\udcd6 Story Teller",
+                "exit_uuid": "04e7d9a3-07d1-448b-a3b9-cecdee4818c4"
+              },
+              {
+                "uuid": "05e3b7c2-b2be-4c08-bc59-27b2bdef2cc6",
+                "name": "\ud83e\udd1d Negotiator",
+                "exit_uuid": "6c05ddf9-a83b-4240-821c-b4f2a4b31c6e"
+              },
+              {
+                "uuid": "9c993932-62eb-4f1f-899f-204116899ffc",
+                "name": "\ud83c\udfb5 Conductor",
+                "exit_uuid": "1afa9171-79a9-4cd6-ba60-bb2fe47bfd2a"
+              },
+              {
+                "uuid": "3ef306fa-77d5-42fc-bd97-596a1e10c671",
+                "name": "\ud83e\uddf2 Magnet",
+                "exit_uuid": "2665a5b3-0567-471b-ac96-41757bf77292"
+              },
+              {
+                "uuid": "58e7eed0-b29d-4509-91d5-d30f77d61f7e",
+                "name": "\ud83d\udce6 Archive",
+                "exit_uuid": "3cc8356e-c81a-4537-a395-58a36ac1626a"
+              },
+              {
+                "uuid": "9c46239a-f7e4-4420-b9ff-dab377b7ebeb",
+                "name": "No Response",
+                "exit_uuid": "55f3c890-dd22-4cb1-8f2e-1f27dc13a36d"
+              },
+              {
+                "uuid": "76d6cf3b-6e1c-41f8-84cd-029a9eb619bc",
+                "name": "Other",
+                "exit_uuid": "68f9c949-3a06-4e19-8d22-783036f4e13a"
+              }
+            ],
+            "default_category_uuid": "76d6cf3b-6e1c-41f8-84cd-029a9eb619bc",
+            "result_name": "menu_8eaa9503"
+          },
+          "exits": [
+            {
+              "uuid": "4c026663-003f-449c-a81d-473cc1014a64",
+              "destination_uuid": "d9756a51-57af-4f99-99af-7b1613fad67d"
+            },
+            {
+              "uuid": "33e32497-cd6b-4c5d-aedc-a9f2b8b92d7c",
+              "destination_uuid": "d9756a51-57af-4f99-99af-7b1613fad67d"
+            },
+            {
+              "uuid": "7f5b83cc-dbf0-437a-bd86-03ede96d893a",
+              "destination_uuid": "d9756a51-57af-4f99-99af-7b1613fad67d"
+            },
+            {
+              "uuid": "1caa35cf-a23a-466a-9ab4-aab3eec8e87d",
+              "destination_uuid": "d9756a51-57af-4f99-99af-7b1613fad67d"
+            },
+            {
+              "uuid": "34caff47-1416-4c07-8771-471edf768b4f",
+              "destination_uuid": "d9756a51-57af-4f99-99af-7b1613fad67d"
+            },
+            {
+              "uuid": "04e7d9a3-07d1-448b-a3b9-cecdee4818c4",
+              "destination_uuid": "d9756a51-57af-4f99-99af-7b1613fad67d"
+            },
+            {
+              "uuid": "6c05ddf9-a83b-4240-821c-b4f2a4b31c6e",
+              "destination_uuid": "d9756a51-57af-4f99-99af-7b1613fad67d"
+            },
+            {
+              "uuid": "1afa9171-79a9-4cd6-ba60-bb2fe47bfd2a",
+              "destination_uuid": "d9756a51-57af-4f99-99af-7b1613fad67d"
+            },
+            {
+              "uuid": "2665a5b3-0567-471b-ac96-41757bf77292",
+              "destination_uuid": "d9756a51-57af-4f99-99af-7b1613fad67d"
+            },
+            {
+              "uuid": "3cc8356e-c81a-4537-a395-58a36ac1626a",
+              "destination_uuid": "d9756a51-57af-4f99-99af-7b1613fad67d"
+            },
+            {
+              "uuid": "55f3c890-dd22-4cb1-8f2e-1f27dc13a36d",
+              "destination_uuid": "572d6f1e-fb47-4d34-b9cd-bd7a2119f42d"
+            },
+            {
+              "uuid": "68f9c949-3a06-4e19-8d22-783036f4e13a",
+              "destination_uuid": "8eaa9503-7bb2-4552-9723-78bf5a797a63"
+            }
+          ]
+        },
+        {
+          "uuid": "572d6f1e-fb47-4d34-b9cd-bd7a2119f42d",
+          "actions": [
+            {
+              "uuid": "420eee79-fc8e-4299-b0c5-b7d60b7e5470",
+              "type": "send_msg",
+              "text": "\u23f1\ufe0f Training session timed out.\n\nType *train* to start again."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "9c8feca3-8e84-4295-958c-84edc5167abe",
+              "destination_uuid": null
+            }
+          ]
+        },
+        {
+          "uuid": "61190597-82ea-4162-974e-c521e9ad7ffe",
+          "actions": [
+            {
+              "uuid": "ee266995-43d7-43a0-93d3-32f69029af65",
+              "type": "send_msg",
+              "text": "\u2705 Training session ended.\n\nType *train* anytime to practice again!"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "bf6b94f0-5eb6-4b67-8f2e-06a8712b38eb",
+              "destination_uuid": null
+            }
+          ]
+        },
+        {
+          "uuid": "d9756a51-57af-4f99-99af-7b1613fad67d",
+          "actions": [
+            {
+              "uuid": "29727fa2-9aa4-4e07-bee2-3e2ceb8195f7",
+              "type": "send_msg",
+              "text": "\u2699\ufe0f *Select Difficulty*\n\nChoose your training level:",
+              "quick_replies": [
+                "\ud83d\udfe2 Basic",
+                "\ud83d\udfe1 Intermediate",
+                "\ud83d\udfe0 Advanced",
+                "\ud83d\udd34 Mastery",
+                "\u2b05\ufe0f Back",
+                "\u274c Exit"
+              ]
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@input.text",
+            "wait": {
+              "type": "msg",
+              "timeout": {
+                "seconds": 300,
+                "category_uuid": "2a064e5b-a4c3-4a61-856d-6ceca4372a2b"
+              }
+            },
+            "cases": [
+              {
+                "uuid": "198c27c3-f2a1-435f-a313-486a7797ab40",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udfe2 Basic"
+                ],
+                "category_uuid": "79546ec1-be81-496e-ba50-31657fe54177"
+              },
+              {
+                "uuid": "32edd17d-caa2-473f-9d4a-821b238be34f",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udfe1 Intermediate"
+                ],
+                "category_uuid": "a6d37b34-9ac4-4d23-bd43-8d5d6742a99c"
+              },
+              {
+                "uuid": "86d81ee4-e195-470b-8f0a-c7cf7191d504",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udfe0 Advanced"
+                ],
+                "category_uuid": "9ff69541-ad57-4044-9379-b614c15414a0"
+              },
+              {
+                "uuid": "ffcdead3-f43a-4eb6-9dfa-10f3a63e09de",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udd34 Mastery"
+                ],
+                "category_uuid": "18d0900d-674e-4778-97db-cac914de91f8"
+              },
+              {
+                "uuid": "12c00097-223f-4f7c-98d3-21ef0b5aced5",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\u2b05\ufe0f Back"
+                ],
+                "category_uuid": "82ca326f-8e15-47b0-a8f4-4fda0be9369f"
+              },
+              {
+                "uuid": "b824c40d-67d3-4bba-a472-6d9961528b4e",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\u274c Exit"
+                ],
+                "category_uuid": "cb9a2614-8dba-43de-b9b0-4e9681bfeeae"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "79546ec1-be81-496e-ba50-31657fe54177",
+                "name": "\ud83d\udfe2 Basic",
+                "exit_uuid": "b90c083b-8bcc-4710-8f0e-113a46710396"
+              },
+              {
+                "uuid": "a6d37b34-9ac4-4d23-bd43-8d5d6742a99c",
+                "name": "\ud83d\udfe1 Intermediate",
+                "exit_uuid": "82077210-d1a8-462b-9d6d-1ee8163811d6"
+              },
+              {
+                "uuid": "9ff69541-ad57-4044-9379-b614c15414a0",
+                "name": "\ud83d\udfe0 Advanced",
+                "exit_uuid": "3c3934d8-5bd8-4884-8a9a-348b5a389cc5"
+              },
+              {
+                "uuid": "18d0900d-674e-4778-97db-cac914de91f8",
+                "name": "\ud83d\udd34 Mastery",
+                "exit_uuid": "d20eaaeb-2f84-4f6f-b272-6a68bd671999"
+              },
+              {
+                "uuid": "82ca326f-8e15-47b0-a8f4-4fda0be9369f",
+                "name": "\u2b05\ufe0f Back",
+                "exit_uuid": "0330f60a-0088-46d4-b666-6f9c4b67dca7"
+              },
+              {
+                "uuid": "cb9a2614-8dba-43de-b9b0-4e9681bfeeae",
+                "name": "\u274c Exit",
+                "exit_uuid": "ec801aaf-97e0-4b4b-90ca-3433185967cf"
+              },
+              {
+                "uuid": "2a064e5b-a4c3-4a61-856d-6ceca4372a2b",
+                "name": "No Response",
+                "exit_uuid": "ca2609a0-da6b-47f4-bc97-ce125762986d"
+              },
+              {
+                "uuid": "60a5855d-b616-4066-b978-450fe395d8e6",
+                "name": "Other",
+                "exit_uuid": "430f550a-96bf-4ffa-91d9-94d3fa38c530"
+              }
+            ],
+            "default_category_uuid": "60a5855d-b616-4066-b978-450fe395d8e6",
+            "result_name": "menu_d9756a51"
+          },
+          "exits": [
+            {
+              "uuid": "b90c083b-8bcc-4710-8f0e-113a46710396",
+              "destination_uuid": "bfc9dce2-5ec6-4d2e-8a7e-ea3fd782e08e"
+            },
+            {
+              "uuid": "82077210-d1a8-462b-9d6d-1ee8163811d6",
+              "destination_uuid": "bfc9dce2-5ec6-4d2e-8a7e-ea3fd782e08e"
+            },
+            {
+              "uuid": "3c3934d8-5bd8-4884-8a9a-348b5a389cc5",
+              "destination_uuid": "bfc9dce2-5ec6-4d2e-8a7e-ea3fd782e08e"
+            },
+            {
+              "uuid": "d20eaaeb-2f84-4f6f-b272-6a68bd671999",
+              "destination_uuid": "bfc9dce2-5ec6-4d2e-8a7e-ea3fd782e08e"
+            },
+            {
+              "uuid": "0330f60a-0088-46d4-b666-6f9c4b67dca7",
+              "destination_uuid": "8eaa9503-7bb2-4552-9723-78bf5a797a63"
+            },
+            {
+              "uuid": "ec801aaf-97e0-4b4b-90ca-3433185967cf",
+              "destination_uuid": "61190597-82ea-4162-974e-c521e9ad7ffe"
+            },
+            {
+              "uuid": "ca2609a0-da6b-47f4-bc97-ce125762986d",
+              "destination_uuid": "572d6f1e-fb47-4d34-b9cd-bd7a2119f42d"
+            },
+            {
+              "uuid": "430f550a-96bf-4ffa-91d9-94d3fa38c530",
+              "destination_uuid": "d9756a51-57af-4f99-99af-7b1613fad67d"
+            }
+          ]
+        },
+        {
+          "uuid": "bfc9dce2-5ec6-4d2e-8a7e-ea3fd782e08e",
+          "actions": [
+            {
+              "uuid": "7d588501-904a-49fd-8132-6fcebee575a9",
+              "type": "call_webhook",
+              "method": "POST",
+              "url": "https://garantie.boutique/ai/v1/tools/sim_get_scenario",
+              "headers": {
+                "Accept": "application/json",
+                "X-API-Key": "@globals.gateway_key",
+                "X-User-Id": "@contact.urns.0"
+              },
+              "body": "{\"difficulty\": @(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(@results.menu_d9756a51.value, \"\ud83d\udfe2 Basic\", \"1\"), \"\ud83d\udfe1 Intermediate\", \"2\"), \"\ud83d\udfe0 Advanced\", \"3\"), \"\ud83d\udd34 Mastery\", \"4\"))}",
+              "result_name": "scenario"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@results.scenario.category",
+            "cases": [
+              {
+                "uuid": "b49023cf-8dd8-402f-b402-9bc0b04d8c0d",
+                "type": "has_only_text",
+                "arguments": [
+                  "Success"
+                ],
+                "category_uuid": "947db9b2-c025-4609-8d0d-6d705cdc5667"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "947db9b2-c025-4609-8d0d-6d705cdc5667",
+                "name": "Success",
+                "exit_uuid": "1a690015-eb26-4191-a5f5-0baaf43e985e"
+              },
+              {
+                "uuid": "bbeb6b60-853f-4551-a340-7af682188c4d",
+                "name": "Failed",
+                "exit_uuid": "92dea2d3-6f73-4af9-8f9d-75ebe12d12fd"
+              }
+            ],
+            "default_category_uuid": "bbeb6b60-853f-4551-a340-7af682188c4d",
+            "result_name": "scenario"
+          },
+          "exits": [
+            {
+              "uuid": "1a690015-eb26-4191-a5f5-0baaf43e985e",
+              "destination_uuid": "84fe08c2-93f7-41c1-ad33-9d828e30dca2"
+            },
+            {
+              "uuid": "92dea2d3-6f73-4af9-8f9d-75ebe12d12fd",
+              "destination_uuid": "e58fd903-7bdd-4831-8ce2-365457896f43"
+            }
+          ]
+        },
+        {
+          "uuid": "84fe08c2-93f7-41c1-ad33-9d828e30dca2",
+          "actions": [
+            {
+              "uuid": "60026cf1-481b-4b53-8c6c-03aa28a70fd2",
+              "type": "send_msg",
+              "text": "\ud83c\udfad *@results.menu_8eaa9503.value*\n\n@webhook.json.result\n\nReply with your response \u2014 be natural!"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "9f345734-fa1d-4c50-9d95-abf9900dcfd8",
+              "destination_uuid": "b5a1e110-5606-48a1-a19e-df802cc4dc89"
+            }
+          ]
+        },
+        {
+          "uuid": "e58fd903-7bdd-4831-8ce2-365457896f43",
+          "actions": [
+            {
+              "uuid": "fdc25a5b-e31f-43f8-895e-2c665351b815",
+              "type": "send_msg",
+              "text": "\u26a0\ufe0f Could not load scenario. The golden set may not be available for this app.\n\nTip: Small Talk, Empathy Lab, and Negotiator have the richest scenario banks."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "cc274928-95e9-48f9-83ca-1d0457f4f7de",
+              "destination_uuid": "8eaa9503-7bb2-4552-9723-78bf5a797a63"
+            }
+          ]
+        },
+        {
+          "uuid": "b5a1e110-5606-48a1-a19e-df802cc4dc89",
+          "actions": [
+            {
+              "uuid": "b441b3d3-39e7-42b3-b983-1630ff08b8c8",
+              "type": "send_msg",
+              "text": "\ud83d\udcac Your turn \u2014 respond naturally:"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@input.text",
+            "wait": {
+              "type": "msg",
+              "timeout": {
+                "seconds": 600,
+                "category_uuid": "74de03ae-df55-4ebf-8384-0e98be3bb3a3"
+              }
+            },
+            "cases": [],
+            "categories": [
+              {
+                "uuid": "685e5852-74fc-4327-a3ae-44e408a6d1c9",
+                "name": "All Responses",
+                "exit_uuid": "7138b9a6-9f5c-49bc-9924-2fc7d88d2d3f"
+              },
+              {
+                "uuid": "74de03ae-df55-4ebf-8384-0e98be3bb3a3",
+                "name": "No Response",
+                "exit_uuid": "b4e57e95-8479-4fea-95d0-f5aa15ccdda3"
+              }
+            ],
+            "default_category_uuid": "685e5852-74fc-4327-a3ae-44e408a6d1c9",
+            "result_name": "drill_response"
+          },
+          "exits": [
+            {
+              "uuid": "7138b9a6-9f5c-49bc-9924-2fc7d88d2d3f",
+              "destination_uuid": "3f6b2ea8-a944-4dd2-8aae-9cbe8d8d9aa1"
+            },
+            {
+              "uuid": "b4e57e95-8479-4fea-95d0-f5aa15ccdda3",
+              "destination_uuid": "572d6f1e-fb47-4d34-b9cd-bd7a2119f42d"
+            }
+          ]
+        },
+        {
+          "uuid": "3f6b2ea8-a944-4dd2-8aae-9cbe8d8d9aa1",
+          "actions": [
+            {
+              "uuid": "3d1edfab-f70c-45fd-bbcb-e1e53ec5c588",
+              "type": "call_webhook",
+              "method": "POST",
+              "url": "https://garantie.boutique/ai/v1/tools/sim_drill_grade",
+              "headers": {
+                "Accept": "application/json",
+                "X-API-Key": "@globals.gateway_key",
+                "X-User-Id": "@contact.urns.0"
+              },
+              "body": "{\"user_input\": \"@results.drill_response.value\"}",
+              "result_name": "grade"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@results.grade.category",
+            "cases": [
+              {
+                "uuid": "32a357ad-3903-4030-88a8-59d7c8e50ecb",
+                "type": "has_only_text",
+                "arguments": [
+                  "Success"
+                ],
+                "category_uuid": "22664b91-e5f4-4881-927c-04822cfd7995"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "22664b91-e5f4-4881-927c-04822cfd7995",
+                "name": "Success",
+                "exit_uuid": "0f03b521-7dc7-4c69-8931-de82b7962b75"
+              },
+              {
+                "uuid": "20e6a48b-e70a-453e-9e8b-6a64fd6649cd",
+                "name": "Failed",
+                "exit_uuid": "b8d5c896-5779-4e4a-8c91-88e60808f29f"
+              }
+            ],
+            "default_category_uuid": "20e6a48b-e70a-453e-9e8b-6a64fd6649cd",
+            "result_name": "grade"
+          },
+          "exits": [
+            {
+              "uuid": "0f03b521-7dc7-4c69-8931-de82b7962b75",
+              "destination_uuid": "bebd4008-3fcd-4471-ae48-b6cace6c2a2d"
+            },
+            {
+              "uuid": "b8d5c896-5779-4e4a-8c91-88e60808f29f",
+              "destination_uuid": "d6b1e3b4-7f98-48bf-9534-569c3b3d054b"
+            }
+          ]
+        },
+        {
+          "uuid": "bebd4008-3fcd-4471-ae48-b6cace6c2a2d",
+          "actions": [
+            {
+              "uuid": "48dd21bd-c788-4d3a-aff0-f67da79a0295",
+              "type": "send_msg",
+              "text": "@webhook.json.result"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "170a5665-8b6e-41c8-a01e-bc151c38fb6a",
+              "destination_uuid": "f2370b9e-3d5a-46d5-b620-bf3312800059"
+            }
+          ]
+        },
+        {
+          "uuid": "d6b1e3b4-7f98-48bf-9534-569c3b3d054b",
+          "actions": [
+            {
+              "uuid": "b6d456d8-cf61-44cc-b264-a4e0932fa750",
+              "type": "send_msg",
+              "text": "\u26a0\ufe0f Grading unavailable. Let's continue to the next round."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "52cb0d32-ef94-4906-8972-aef4992ac295",
+              "destination_uuid": "f2370b9e-3d5a-46d5-b620-bf3312800059"
+            }
+          ]
+        },
+        {
+          "uuid": "f2370b9e-3d5a-46d5-b620-bf3312800059",
+          "actions": [
+            {
+              "uuid": "0834581f-1d68-4e04-90f2-0929ffa665cf",
+              "type": "send_msg",
+              "text": "What's next?",
+              "quick_replies": [
+                "\u25b6\ufe0f Next Round",
+                "\ud83d\udd04 Same Level",
+                "\ud83d\udcca Change Level",
+                "\ud83c\udfe0 Back to Menu",
+                "\u274c Exit"
+              ]
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@input.text",
+            "wait": {
+              "type": "msg",
+              "timeout": {
+                "seconds": 600,
+                "category_uuid": "593b39fb-3781-4ed5-bfcc-f33e6cab191a"
+              }
+            },
+            "cases": [
+              {
+                "uuid": "cb40dc36-ba85-48a5-b255-225a22a54a26",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\u25b6\ufe0f Next Round"
+                ],
+                "category_uuid": "d885d777-7eaf-46a0-821c-6aeb2473963e"
+              },
+              {
+                "uuid": "548fd23e-6e0d-4a14-939a-cd7e39a38bf7",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udd04 Same Level"
+                ],
+                "category_uuid": "91f983e0-af44-43cd-8881-29bab89873fc"
+              },
+              {
+                "uuid": "1ae9c03b-021e-446c-b8bd-86779bd524f0",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udcca Change Level"
+                ],
+                "category_uuid": "0c640b1b-59f1-49ea-85a5-9ae364bdb432"
+              },
+              {
+                "uuid": "91e9fefc-0e47-4408-8395-3a46d1a3edb6",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83c\udfe0 Back to Menu"
+                ],
+                "category_uuid": "2ca3549a-94b7-43d7-a63d-2cf373e6cdd1"
+              },
+              {
+                "uuid": "41cc0db5-b5d5-480b-9ba2-03318ee43a6e",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\u274c Exit"
+                ],
+                "category_uuid": "51896b68-1f84-4d40-9379-16cc22b82eca"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "d885d777-7eaf-46a0-821c-6aeb2473963e",
+                "name": "\u25b6\ufe0f Next Round",
+                "exit_uuid": "275b6e3e-8fb0-4705-946c-4ee063979fdf"
+              },
+              {
+                "uuid": "91f983e0-af44-43cd-8881-29bab89873fc",
+                "name": "\ud83d\udd04 Same Level",
+                "exit_uuid": "3adab746-1b15-43a7-ae48-f88349b786f6"
+              },
+              {
+                "uuid": "0c640b1b-59f1-49ea-85a5-9ae364bdb432",
+                "name": "\ud83d\udcca Change Level",
+                "exit_uuid": "bc1b8830-2ad2-434c-a81d-e902d197faab"
+              },
+              {
+                "uuid": "2ca3549a-94b7-43d7-a63d-2cf373e6cdd1",
+                "name": "\ud83c\udfe0 Back to Menu",
+                "exit_uuid": "7ace89af-58ac-407c-8066-d2ada6755633"
+              },
+              {
+                "uuid": "51896b68-1f84-4d40-9379-16cc22b82eca",
+                "name": "\u274c Exit",
+                "exit_uuid": "e9e80147-d6d1-4676-8d02-0ebbe6826b9c"
+              },
+              {
+                "uuid": "593b39fb-3781-4ed5-bfcc-f33e6cab191a",
+                "name": "No Response",
+                "exit_uuid": "5167945c-1570-4f14-a3fc-30d0c3fab42b"
+              },
+              {
+                "uuid": "23574d82-d440-4052-9986-576b195af9f1",
+                "name": "Other",
+                "exit_uuid": "85f385bf-e948-459c-962b-af0003b14020"
+              }
+            ],
+            "default_category_uuid": "23574d82-d440-4052-9986-576b195af9f1",
+            "result_name": "menu_f2370b9e"
+          },
+          "exits": [
+            {
+              "uuid": "275b6e3e-8fb0-4705-946c-4ee063979fdf",
+              "destination_uuid": "bfc9dce2-5ec6-4d2e-8a7e-ea3fd782e08e"
+            },
+            {
+              "uuid": "3adab746-1b15-43a7-ae48-f88349b786f6",
+              "destination_uuid": "bfc9dce2-5ec6-4d2e-8a7e-ea3fd782e08e"
+            },
+            {
+              "uuid": "bc1b8830-2ad2-434c-a81d-e902d197faab",
+              "destination_uuid": "d9756a51-57af-4f99-99af-7b1613fad67d"
+            },
+            {
+              "uuid": "7ace89af-58ac-407c-8066-d2ada6755633",
+              "destination_uuid": "8eaa9503-7bb2-4552-9723-78bf5a797a63"
+            },
+            {
+              "uuid": "e9e80147-d6d1-4676-8d02-0ebbe6826b9c",
+              "destination_uuid": "61190597-82ea-4162-974e-c521e9ad7ffe"
+            },
+            {
+              "uuid": "5167945c-1570-4f14-a3fc-30d0c3fab42b",
+              "destination_uuid": "572d6f1e-fb47-4d34-b9cd-bd7a2119f42d"
+            },
+            {
+              "uuid": "85f385bf-e948-459c-962b-af0003b14020",
+              "destination_uuid": "bfc9dce2-5ec6-4d2e-8a7e-ea3fd782e08e"
+            }
+          ]
+        }
+      ],
+      "_ui": {
+        "nodes": {
+          "ee327f3c-b049-42f4-b86f-e7c2f99782d2": {
+            "position": {
+              "left": 400,
+              "top": -220
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "8eaa9503-7bb2-4552-9723-78bf5a797a63": {
+            "position": {
+              "left": 400,
+              "top": 0
+            },
+            "type": "wait_for_response",
+            "config": {}
+          },
+          "572d6f1e-fb47-4d34-b9cd-bd7a2119f42d": {
+            "position": {
+              "left": 800,
+              "top": 0
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "61190597-82ea-4162-974e-c521e9ad7ffe": {
+            "position": {
+              "left": 800,
+              "top": 220
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "d9756a51-57af-4f99-99af-7b1613fad67d": {
+            "position": {
+              "left": 400,
+              "top": 440
+            },
+            "type": "wait_for_response",
+            "config": {}
+          },
+          "bfc9dce2-5ec6-4d2e-8a7e-ea3fd782e08e": {
+            "position": {
+              "left": 400,
+              "top": 660
+            },
+            "type": "split_by_webhook",
+            "config": {}
+          },
+          "84fe08c2-93f7-41c1-ad33-9d828e30dca2": {
+            "position": {
+              "left": 400,
+              "top": 880
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "e58fd903-7bdd-4831-8ce2-365457896f43": {
+            "position": {
+              "left": 700,
+              "top": 880
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "b5a1e110-5606-48a1-a19e-df802cc4dc89": {
+            "position": {
+              "left": 400,
+              "top": 1100
+            },
+            "type": "wait_for_response",
+            "config": {}
+          },
+          "3f6b2ea8-a944-4dd2-8aae-9cbe8d8d9aa1": {
+            "position": {
+              "left": 400,
+              "top": 1320
+            },
+            "type": "split_by_webhook",
+            "config": {}
+          },
+          "bebd4008-3fcd-4471-ae48-b6cace6c2a2d": {
+            "position": {
+              "left": 400,
+              "top": 1540
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "d6b1e3b4-7f98-48bf-9534-569c3b3d054b": {
+            "position": {
+              "left": 700,
+              "top": 1540
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "f2370b9e-3d5a-46d5-b620-bf3312800059": {
+            "position": {
+              "left": 400,
+              "top": 1760
+            },
+            "type": "wait_for_response",
+            "config": {}
+          }
+        },
+        "editor": "0.156.6"
+      }
+    }
+  ],
+  "campaigns": [],
+  "triggers": [],
+  "fields": [],
+  "groups": []
+}

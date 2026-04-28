@@ -1,8 +1,9 @@
 from typing import Any, Dict, Optional
 import asyncio
 
-from fastapi import APIRouter, Header, HTTPException, Request
+from fastapi import APIRouter, Header, HTTPException, Request, Depends
 from loguru import logger
+import os
 
 from app.hermes.tools import get_hermes_tools  # Ensures tools are registered
 
@@ -10,6 +11,19 @@ router = APIRouter(tags=["tools"])
 
 # CRM tools that benefit from typing indicators (ADR-011 T2)
 _CRM_TOOLS = {"crm_list_groups", "crm_lookup_contact", "crm_org_info", "crm_create_group"}
+
+INTERNAL_API_KEY = os.getenv("GATEWAY_INTERNAL_KEY", "")
+
+async def verify_internal_key(x_api_key: str = Header(None, alias="X-API-Key")):
+    """Validate that the caller is an authorized internal service (RiveBot).
+
+    When GATEWAY_INTERNAL_KEY is not set, auth is skipped (dev mode) —
+    matching the pattern in openai.py's _verify_api_key.
+    """
+    if not INTERNAL_API_KEY:
+        return  # Dev mode — no auth required
+    if x_api_key != INTERNAL_API_KEY:
+        raise HTTPException(status_code=403, detail="Forbidden: Invalid internal API key")
 
 
 async def _invoke_tool(tool_name: str, kwargs: Dict[str, Any], user_id: str,
@@ -69,7 +83,7 @@ async def _invoke_tool(tool_name: str, kwargs: Dict[str, Any], user_id: str,
 
 
 
-@router.post("/v1/tools/{tool_name}")
+@router.post("/v1/tools/{tool_name}", dependencies=[Depends(verify_internal_key)])
 async def call_tool_post(
     tool_name: str,
     request: Request,
@@ -100,7 +114,7 @@ async def call_tool_post(
     return {"result": result}
 
 
-@router.get("/v1/tools/{tool_name}")
+@router.get("/v1/tools/{tool_name}", dependencies=[Depends(verify_internal_key)])
 async def call_tool_get(
     tool_name: str,
     x_user_id: Optional[str] = Header(None, alias="X-User-Id"),

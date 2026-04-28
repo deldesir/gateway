@@ -20,7 +20,8 @@ from pydantic import BaseModel
 
 from app.api.middleware.message_parser import parse_rapidpro_message
 from app.logger import logger
-from app.services.auth import check_admin_permissions
+# NOTE: Legacy check_admin_permissions removed (ADR-011 migration).
+# Auth is now handled by macro_bridge._verify_access() in rivebot.
 from app.services.channel import resolve_persona, DEFAULT_PERSONA
 from app.hermes.engine import invoke_hermes
 from app.api.middleware.circuit_breaker import can_attempt, record_success, record_failure, status as breaker_status
@@ -284,38 +285,45 @@ async def openai_chat_completions(
         if model_persona == DEFAULT_PERSONA and request.model and request.model != "custom_ai":
             model_persona, system_prompt_override = await resolve_persona(request.model)
 
+        # Auto-upgrade: if user landed on the default persona but their URN is
+        # in a privileged persona's allowed_urns, assign that persona
+        # automatically.  This avoids forcing admins to say "Talk to assistant"
+        # after every service restart (the in-memory cache is volatile).
+        if model_persona == DEFAULT_PERSONA:
+            try:
+                from app.db import async_session as _as
+                from app.models import Persona
+                from sqlmodel import select as _select
+                async with _as() as session:
+                    result = await session.execute(
+                        _select(Persona).where(Persona.slug == "assistant")
+                    )
+                    assistant_p = result.scalar_one_or_none()
+                    if assistant_p and assistant_p.allowed_urns:
+                        urns = assistant_p.allowed_urns
+                        if isinstance(urns, str):
+                            import json as _json
+                            urns = _json.loads(urns)
+                        api_logger.debug(
+                            f"Auto-upgrade check: user_id={user_id!r} urns={urns!r}"
+                        )
+                        if user_id in urns:
+                            model_persona = "assistant"
+                            _user_persona[user_id] = "assistant"
+                            api_logger.info(
+                                f"Auto-upgraded {user_id} to assistant (allowed_urns match)"
+                            )
+            except Exception as e:
+                api_logger.warning(f"allowed_urns auto-upgrade check failed: {e}")
+
     # ── 3. Build persona-scoped thread ID ─────────────────────────────────────
     thread_id = f"whatsapp:{user_id}:{model_persona}"
 
-    # ── 4. Admin command dispatch ─────────────────────────────────────────────
-    if last_user_message.strip().startswith(("/", "#")):
-        parts = last_user_message.strip().split()
-        command_root = parts[0].lower().strip("/#") if parts else ""
-        is_allowed = await check_admin_permissions(user_id, command_root)
-
-        from app.commands.registry import CommandRegistry, CommandContext
-
-        if CommandRegistry.has_command(command_root):
-            if not is_allowed:
-                api_logger.warning(f"Access denied: '{command_root}' from {user_id}")
-                return _openai_response(model_persona, "🚫 Permission Denied.", id_prefix="chatcmpl-deny")
-
-        if is_allowed:
-            from app.commands.registry import CommandRegistry, CommandContext
-            ctx = CommandContext(
-                user_id=user_id,
-                thread_id=thread_id,
-                persona=model_persona,
-                args=[],
-                checkpointer=None,  # V1 checkpointer disabled in V2
-                raw_message=last_user_message,
-            )
-            admin_response = await CommandRegistry.execute(last_user_message, ctx)
-
-            if admin_response:
-                return _openai_response(
-                    model_persona, admin_response, id_prefix="chatcmpl-admin"
-                )
+    # ── 4. [REMOVED] Legacy #/command dispatch (ADR-011 migration) ─────────────
+    # Previously intercepted #/prefix messages here and dispatched to
+    # app/commands/registry.py. All admin commands now flow through
+    # RiveBot (system.rive → macro_bridge → gateway tools).
+    # See: _common/system.rive, app/graph/tools/system.py, app/graph/tools/config.py
 
     # ── 4.5 Deterministic intent router (zero tokens) ────────────────────────
     from app.api.middleware.rivebot_client import match_intent, set_var, set_vars
@@ -332,8 +340,10 @@ async def openai_chat_completions(
             except Exception:
                 pass  # non-critical: onboarding will ask for name instead
 
+        # F-6: Strip leading punctuation that breaks RiveBot matchers
+        clean_message = last_user_message.lstrip('#/')
         intent_response, rivebot_context = await match_intent(
-            last_user_message, model_persona, user_id
+            clean_message, model_persona, user_id
         )
         rivebot_context["urn"] = user_id
         # (noai/silent handling removed — replaced by circuit breaker in §5)

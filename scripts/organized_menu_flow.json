@@ -1,0 +1,82 @@
+{
+  "version": "13",
+  "site": "http://localhost",
+  "flows": [
+    {
+      "uuid": "380a69d9-7f37-4922-9f85-240a79be3103",
+      "name": "organized_menu",
+      "spec_version": "14.4.0",
+      "language": "eng",
+      "type": "messaging",
+      "revision": 1,
+      "expire_after_minutes": 5,
+      "localization": {},
+      "nodes": [
+        {
+          "uuid": "4f1612ee-5962-483d-9ed9-91ea22140f0a",
+          "actions": [
+            {
+              "uuid": "6bf9e0a2-69c7-4929-bb07-59527e429bb2",
+              "type": "set_run_result",
+              "name": "entry_guard",
+              "value": "1"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "9d0296b6-a826-4df7-ab5a-923290a1d344",
+              "destination_uuid": "06b74893-5758-455a-a8d0-fe3f8dbb8f53"
+            }
+          ]
+        },
+        {
+          "uuid": "06b74893-5758-455a-a8d0-fe3f8dbb8f53",
+          "actions": [
+            {
+              "uuid": "d964eb17-d61d-4da7-a5d9-c313055946ff",
+              "type": "send_msg",
+              "text": "\ud83d\udccb *Organized Menu*\n\nSelect an option to manage your congregation schedule:",
+              "quick_replies": [
+                "My Schedule",
+                "This Week",
+                "Next Week",
+                "Search"
+              ]
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "010e1489-9695-47ea-80eb-69bd44f11b74",
+              "destination_uuid": null
+            }
+          ]
+        }
+      ],
+      "_ui": {
+        "nodes": {
+          "4f1612ee-5962-483d-9ed9-91ea22140f0a": {
+            "position": {
+              "left": 300,
+              "top": -200
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "06b74893-5758-455a-a8d0-fe3f8dbb8f53": {
+            "position": {
+              "left": 300,
+              "top": 0
+            },
+            "type": "execute_actions",
+            "config": {}
+          }
+        },
+        "editor": "0.156.6"
+      }
+    }
+  ],
+  "campaigns": [],
+  "triggers": [],
+  "fields": [],
+  "groups": []
+}

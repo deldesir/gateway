@@ -658,3 +658,149 @@ CRM_CREATE_GROUP = {
         "required": ["name"],
     },
 }
+
+# ── System Operations (ADR-011 migration) ────────────────────────────────────
+
+MACRO_RESET = {
+    "name": "macro_reset",
+    "description": "Reset the current user's conversation session (clear Hermes memory).",
+    "parameters": {"type": "object", "properties": {}},
+}
+
+MACRO_DEBUG = {
+    "name": "macro_debug",
+    "description": "Return system diagnostics for the current user.",
+    "parameters": {"type": "object", "properties": {}},
+}
+
+MACRO_NOAI = {
+    "name": "macro_noai",
+    "description": "Disable AI for the calling user only.",
+    "parameters": {"type": "object", "properties": {}},
+}
+
+MACRO_NOAI_GLOBAL = {
+    "name": "macro_noai_global",
+    "description": "Disable AI for ALL users globally (admin only).",
+    "parameters": {"type": "object", "properties": {}},
+}
+
+MACRO_NOAI_STATUS = {
+    "name": "macro_noai_status",
+    "description": "Show current noai state: global flag and per-user overrides.",
+    "parameters": {"type": "object", "properties": {}},
+}
+
+MACRO_ENABLEAI = {
+    "name": "macro_enableai",
+    "description": "Re-enable AI for the calling user.",
+    "parameters": {"type": "object", "properties": {}},
+}
+
+MACRO_ENABLEAI_GLOBAL = {
+    "name": "macro_enableai_global",
+    "description": "Re-enable AI for ALL users globally (admin only).",
+    "parameters": {"type": "object", "properties": {}},
+}
+
+MACRO_RELOAD = {
+    "name": "macro_reload",
+    "description": "Reload all RiveBot brain files and re-initialize persona engines.",
+    "parameters": {"type": "object", "properties": {}},
+}
+
+MACRO_HEALTH = {
+    "name": "macro_health",
+    "description": "Check health of all ecosystem services (gateway, rivebot, siyuan).",
+    "parameters": {"type": "object", "properties": {}},
+}
+
+MACRO_SKILLS = {
+    "name": "macro_skills",
+    "description": "List or delete Hermes agent-created skills.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "action": {"type": "string", "description": "list or delete"},
+            "skill_name": {"type": "string", "description": "Name of skill to delete."},
+        },
+    },
+}
+
+MACRO_FLOW = {
+    "name": "macro_flow",
+    "description": "Start or stop a RapidPro flow for the calling user.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "action": {"type": "string", "description": "start or stop"},
+            "flow_uuid": {"type": "string", "description": "UUID of the flow to start."},
+        },
+        "required": ["action"],
+    },
+}
+
+# ── Config Operations (ADR-011 migration) ────────────────────────────────────
+
+MACRO_PERSONA = {
+    "name": "macro_persona",
+    "description": "Persona CRUD: list, show, create, delete.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "action": {"type": "string", "description": "list, show, create, or delete"},
+        },
+        "required": ["action"],
+    },
+}
+
+MACRO_CHANNEL = {
+    "name": "macro_channel",
+    "description": "Channel-persona mapping: list, assign.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "action": {"type": "string", "description": "list or assign"},
+        },
+        "required": ["action"],
+    },
+}
+
+MACRO_ADMIN = {
+    "name": "macro_admin",
+    "description": "Admin permission management: list, add, remove.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "action": {"type": "string", "description": "list, add, or remove"},
+        },
+        "required": ["action"],
+    },
+}
+
+MACRO_GLOBAL = {
+    "name": "macro_global",
+    "description": "RapidPro globals management: get, set.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "action": {"type": "string", "description": "get or set"},
+            "key": {"type": "string", "description": "Global variable name."},
+        },
+        "required": ["action", "key"],
+    },
+}
+
+MACRO_LABEL = {
+    "name": "macro_label",
+    "description": "Label management: add.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "action": {"type": "string", "description": "add"},
+            "name": {"type": "string", "description": "Label name."},
+        },
+        "required": ["action", "name"],
+    },
+}
+

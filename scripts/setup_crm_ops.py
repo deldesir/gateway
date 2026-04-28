@@ -360,11 +360,19 @@ def generate_router_flow(admins_uuid, sub_flow_uuids):
     """
     flow_uuid = u()
     N = {
+        "entry_guard": u(),
         "auth": u(), "denied": u(), "menu": u(), "timeout": u(),
         "enter_contacts": u(), "enter_groups": u(), "enter_messages": u(),
         "enter_flows": u(), "enter_system": u(), "exit": u(),
     }
     nodes = []
+
+    # Entry guard — absorbs keyword trigger double-fire (silent)
+    nodes.append({
+        "uuid": N["entry_guard"],
+        "actions": [_make_action("set_run_result", name="entry_guard", value="1")],
+        "exits": [_make_exit(N["auth"])],
+    })
 
     # Auth guard
     exit_ok = _make_exit(N["menu"])
@@ -426,6 +434,7 @@ def generate_router_flow(admins_uuid, sub_flow_uuids):
         "✅ CRM session ended.\n\nType *ops* to start again."))
 
     layout = {
+        N["entry_guard"]:    (400, -ROW),
         N["auth"]:           (400, 0),
         N["denied"]:         (800, 0),
         N["menu"]:           (400, ROW),
@@ -1084,9 +1093,15 @@ def generate_system_flow():
 
 def generate_exit_ops_flow():
     flow_uuid = u()
+    guard_id = u()
     nid = u()
-    nodes = [_make_msg_node(nid, "✅ CRM session ended.\n\nType *ops* to start again.")]
-    layout = {nid: (300, 0)}
+    guard = {
+        "uuid": guard_id,
+        "actions": [_make_action("set_run_result", name="entry_guard", value="1")],
+        "exits": [_make_exit(nid)],
+    }
+    nodes = [guard, _make_msg_node(nid, "✅ CRM session ended.\n\nType *ops* to start again.")]
+    layout = {guard_id: (300, -ROW), nid: (300, 0)}
     return flow_uuid, _make_flow(flow_uuid, "Exit CRM Ops", nodes, layout, expire=5)
 
 

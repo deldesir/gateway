@@ -1,0 +1,814 @@
+{
+  "version": "13",
+  "site": "http://localhost",
+  "flows": [
+    {
+      "uuid": "45a205be-4bf6-4fbf-b0d7-8506aa6166e7",
+      "name": "Konex Support Menu",
+      "spec_version": "14.4.0",
+      "language": "eng",
+      "type": "messaging",
+      "revision": 1,
+      "expire_after_minutes": 30,
+      "localization": {},
+      "nodes": [
+        {
+          "uuid": "fc21e101-538c-4ad1-a4a3-c00fbb78fbc0",
+          "actions": [
+            {
+              "uuid": "499c3f67-29cb-403c-87bc-274eb1901fa0",
+              "type": "set_run_result",
+              "name": "entry_guard",
+              "value": "1"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "111e3b5e-289f-4ddc-a300-72b409f02862",
+              "destination_uuid": "925bce21-5347-4dbe-8713-f421940e8ebe"
+            }
+          ]
+        },
+        {
+          "uuid": "925bce21-5347-4dbe-8713-f421940e8ebe",
+          "actions": [
+            {
+              "uuid": "e65d6951-a9ad-4845-ac22-8a91a66d2fa8",
+              "type": "send_msg",
+              "text": "\ud83d\udd27 *Konex Support*\n\nHow can I help?",
+              "quick_replies": [
+                "\ud83c\udfab Open Ticket",
+                "\u2753 FAQ",
+                "\ud83d\udccb My Profile",
+                "\u274c Exit"
+              ]
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@input.text",
+            "wait": {
+              "type": "msg",
+              "timeout": {
+                "seconds": 300,
+                "category_uuid": "10cc3e39-4db5-4126-a4ed-57dd1466b85f"
+              }
+            },
+            "cases": [
+              {
+                "uuid": "7ccd1cda-aa80-43a8-812e-b6f592dff981",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83c\udfab Open Ticket"
+                ],
+                "category_uuid": "b57e9957-b72d-47d7-8695-aed1b5302999"
+              },
+              {
+                "uuid": "61ba6a10-514c-4d2b-98d7-73d44ddb51de",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\u2753 FAQ"
+                ],
+                "category_uuid": "8a24c96c-35e9-4eb7-9b55-ee51d1bef379"
+              },
+              {
+                "uuid": "7664b8bb-257c-4cbe-9690-c7271dc5b542",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udccb My Profile"
+                ],
+                "category_uuid": "56960d0d-d153-4c47-91d5-70fe85c1408f"
+              },
+              {
+                "uuid": "9d122bf1-bece-4349-a5d2-8dbb7635ba6f",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\u274c Exit"
+                ],
+                "category_uuid": "c4b6ef32-07cd-4ea2-8a37-ddab48a9bf7b"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "b57e9957-b72d-47d7-8695-aed1b5302999",
+                "name": "\ud83c\udfab Open Ticket",
+                "exit_uuid": "86677d0a-bfc0-499e-bce3-975df96229ee"
+              },
+              {
+                "uuid": "8a24c96c-35e9-4eb7-9b55-ee51d1bef379",
+                "name": "\u2753 FAQ",
+                "exit_uuid": "e5e3c6d3-3e44-4203-ad71-50bf7b5fd593"
+              },
+              {
+                "uuid": "56960d0d-d153-4c47-91d5-70fe85c1408f",
+                "name": "\ud83d\udccb My Profile",
+                "exit_uuid": "ee6fb21b-b401-4e92-8b47-42e6b6a45540"
+              },
+              {
+                "uuid": "c4b6ef32-07cd-4ea2-8a37-ddab48a9bf7b",
+                "name": "\u274c Exit",
+                "exit_uuid": "aaf00791-5a94-4510-8f81-7a8c91aa982a"
+              },
+              {
+                "uuid": "10cc3e39-4db5-4126-a4ed-57dd1466b85f",
+                "name": "No Response",
+                "exit_uuid": "be032495-0fb3-44d2-b128-a9086ffe40af"
+              },
+              {
+                "uuid": "2944122d-25fb-4c36-9638-3f236569a00e",
+                "name": "Other",
+                "exit_uuid": "215ed526-fbb8-4e2e-b428-48361d189fbe"
+              }
+            ],
+            "default_category_uuid": "2944122d-25fb-4c36-9638-3f236569a00e",
+            "result_name": "menu_925bce21"
+          },
+          "exits": [
+            {
+              "uuid": "86677d0a-bfc0-499e-bce3-975df96229ee",
+              "destination_uuid": "00cd71bc-7d76-4f0a-835b-9bf836a8c17d"
+            },
+            {
+              "uuid": "e5e3c6d3-3e44-4203-ad71-50bf7b5fd593",
+              "destination_uuid": "01cf7320-c83f-446e-88f2-fdbff5b2e67d"
+            },
+            {
+              "uuid": "ee6fb21b-b401-4e92-8b47-42e6b6a45540",
+              "destination_uuid": "897f7228-9b42-4cbb-bf02-525cb5294b07"
+            },
+            {
+              "uuid": "aaf00791-5a94-4510-8f81-7a8c91aa982a",
+              "destination_uuid": "852aa598-47be-44a8-8bb6-e555af82f4a2"
+            },
+            {
+              "uuid": "be032495-0fb3-44d2-b128-a9086ffe40af",
+              "destination_uuid": "fe9722ef-b29c-423b-977c-ea57db07cfff"
+            },
+            {
+              "uuid": "215ed526-fbb8-4e2e-b428-48361d189fbe",
+              "destination_uuid": "925bce21-5347-4dbe-8713-f421940e8ebe"
+            }
+          ]
+        },
+        {
+          "uuid": "fe9722ef-b29c-423b-977c-ea57db07cfff",
+          "actions": [
+            {
+              "uuid": "ebcbff2b-98c5-4fd2-9e97-cf2cfb0c7803",
+              "type": "send_msg",
+              "text": "\u23f1\ufe0f Support session timed out.\n\nType *support* to start again."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "2ca157a5-f71e-42fd-80aa-ac4f1ff4a037",
+              "destination_uuid": null
+            }
+          ]
+        },
+        {
+          "uuid": "852aa598-47be-44a8-8bb6-e555af82f4a2",
+          "actions": [
+            {
+              "uuid": "c0cdd3c6-c2e5-4578-94c0-047ff7a1f2c7",
+              "type": "send_msg",
+              "text": "\u2705 Support session ended.\n\nType *support* anytime you need help."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "ca2141ca-239e-48e0-805c-c0a40833b0a8",
+              "destination_uuid": null
+            }
+          ]
+        },
+        {
+          "uuid": "00cd71bc-7d76-4f0a-835b-9bf836a8c17d",
+          "actions": [
+            {
+              "uuid": "69afd4b0-cb49-4ec2-b207-8c6b204b4d06",
+              "type": "send_msg",
+              "text": "\ud83c\udfab *Open Support Ticket*\n\nDescribe your issue in a few words:"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@input.text",
+            "wait": {
+              "type": "msg",
+              "timeout": {
+                "seconds": 600,
+                "category_uuid": "180cacb3-27e6-448b-a5fd-a78dedd143cc"
+              }
+            },
+            "cases": [],
+            "categories": [
+              {
+                "uuid": "cd919d50-af59-42ee-b429-8903dd718a28",
+                "name": "All Responses",
+                "exit_uuid": "2ec43ad5-6625-4789-81d5-09e25defee4d"
+              },
+              {
+                "uuid": "180cacb3-27e6-448b-a5fd-a78dedd143cc",
+                "name": "No Response",
+                "exit_uuid": "5e053212-7ce6-429b-84d9-149f222de8f3"
+              }
+            ],
+            "default_category_uuid": "cd919d50-af59-42ee-b429-8903dd718a28",
+            "result_name": "ticket_description"
+          },
+          "exits": [
+            {
+              "uuid": "2ec43ad5-6625-4789-81d5-09e25defee4d",
+              "destination_uuid": "642f25d0-41db-4ef6-aa2d-998488055a08"
+            },
+            {
+              "uuid": "5e053212-7ce6-429b-84d9-149f222de8f3",
+              "destination_uuid": "fe9722ef-b29c-423b-977c-ea57db07cfff"
+            }
+          ]
+        },
+        {
+          "uuid": "642f25d0-41db-4ef6-aa2d-998488055a08",
+          "actions": [
+            {
+              "uuid": "e1740f69-7d57-4e47-965e-ded51fd730d6",
+              "type": "send_msg",
+              "text": "\ud83d\udcc2 *Category*\n\nWhat type of issue is this?",
+              "quick_replies": [
+                "\ud83d\udcf6 Connectivity",
+                "\ud83d\udcb0 Billing",
+                "\ud83d\udcf1 Device",
+                "\ud83d\udce6 Service",
+                "\u2753 Other",
+                "\u2b05\ufe0f Cancel"
+              ]
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@input.text",
+            "wait": {
+              "type": "msg",
+              "timeout": {
+                "seconds": 300,
+                "category_uuid": "3122fc0c-c0b8-4ce1-8fb9-2ba0938571f8"
+              }
+            },
+            "cases": [
+              {
+                "uuid": "ad1085ad-4345-49cc-bbc5-3d6ff0037e59",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udcf6 Connectivity"
+                ],
+                "category_uuid": "c5d90448-a4a9-444f-8b9d-17227ab5483d"
+              },
+              {
+                "uuid": "d841762b-ba04-437a-907d-70d72c3535e8",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udcb0 Billing"
+                ],
+                "category_uuid": "80b540ec-042f-4267-9921-c1d24a2edb1e"
+              },
+              {
+                "uuid": "b589518c-421e-4cd5-a45f-49849d362d89",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udcf1 Device"
+                ],
+                "category_uuid": "fa16afb8-d9be-43ca-80e4-b2e17c26f3c6"
+              },
+              {
+                "uuid": "bb61e96c-c81e-4ecb-a0a9-5bab9cbe8909",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udce6 Service"
+                ],
+                "category_uuid": "0b350cc6-1404-4ed0-bd10-bbb07181225a"
+              },
+              {
+                "uuid": "b89c76b4-d80e-4b1f-9abf-780b893dff30",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\u2753 Other"
+                ],
+                "category_uuid": "c9b46bc8-cbd4-4a1b-a83b-f27d6d9cf641"
+              },
+              {
+                "uuid": "67058d6d-bffd-4f73-9483-996cf9305923",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\u2b05\ufe0f Cancel"
+                ],
+                "category_uuid": "a50ff322-887d-40ab-beb1-f2e9f663da49"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "c5d90448-a4a9-444f-8b9d-17227ab5483d",
+                "name": "\ud83d\udcf6 Connectivity",
+                "exit_uuid": "3180bbd9-d370-4873-a1bc-e4db5e33ece5"
+              },
+              {
+                "uuid": "80b540ec-042f-4267-9921-c1d24a2edb1e",
+                "name": "\ud83d\udcb0 Billing",
+                "exit_uuid": "dfd0f52b-9241-485a-ad34-ed6ce774a72e"
+              },
+              {
+                "uuid": "fa16afb8-d9be-43ca-80e4-b2e17c26f3c6",
+                "name": "\ud83d\udcf1 Device",
+                "exit_uuid": "5035ad03-7cb1-47bf-bd62-8d60ce423c02"
+              },
+              {
+                "uuid": "0b350cc6-1404-4ed0-bd10-bbb07181225a",
+                "name": "\ud83d\udce6 Service",
+                "exit_uuid": "8797746d-dc0d-48ac-9758-4ea46c7f3c63"
+              },
+              {
+                "uuid": "c9b46bc8-cbd4-4a1b-a83b-f27d6d9cf641",
+                "name": "\u2753 Other",
+                "exit_uuid": "f26e2ae7-472e-46de-9eb6-132fc090e2d4"
+              },
+              {
+                "uuid": "a50ff322-887d-40ab-beb1-f2e9f663da49",
+                "name": "\u2b05\ufe0f Cancel",
+                "exit_uuid": "718abe63-4ae3-428c-9aae-5eff61377956"
+              },
+              {
+                "uuid": "3122fc0c-c0b8-4ce1-8fb9-2ba0938571f8",
+                "name": "No Response",
+                "exit_uuid": "05202cf4-3bea-42de-9161-ee7db9cc54eb"
+              },
+              {
+                "uuid": "3888cf28-7232-42c3-9637-fabb8b6b1c0c",
+                "name": "Other",
+                "exit_uuid": "59899b98-59da-457f-a57b-c8cfba4b0622"
+              }
+            ],
+            "default_category_uuid": "3888cf28-7232-42c3-9637-fabb8b6b1c0c",
+            "result_name": "menu_642f25d0"
+          },
+          "exits": [
+            {
+              "uuid": "3180bbd9-d370-4873-a1bc-e4db5e33ece5",
+              "destination_uuid": "f1b5560b-ddb0-4d40-abd3-36fb42ef57df"
+            },
+            {
+              "uuid": "dfd0f52b-9241-485a-ad34-ed6ce774a72e",
+              "destination_uuid": "f1b5560b-ddb0-4d40-abd3-36fb42ef57df"
+            },
+            {
+              "uuid": "5035ad03-7cb1-47bf-bd62-8d60ce423c02",
+              "destination_uuid": "f1b5560b-ddb0-4d40-abd3-36fb42ef57df"
+            },
+            {
+              "uuid": "8797746d-dc0d-48ac-9758-4ea46c7f3c63",
+              "destination_uuid": "f1b5560b-ddb0-4d40-abd3-36fb42ef57df"
+            },
+            {
+              "uuid": "f26e2ae7-472e-46de-9eb6-132fc090e2d4",
+              "destination_uuid": "f1b5560b-ddb0-4d40-abd3-36fb42ef57df"
+            },
+            {
+              "uuid": "718abe63-4ae3-428c-9aae-5eff61377956",
+              "destination_uuid": "925bce21-5347-4dbe-8713-f421940e8ebe"
+            },
+            {
+              "uuid": "05202cf4-3bea-42de-9161-ee7db9cc54eb",
+              "destination_uuid": "fe9722ef-b29c-423b-977c-ea57db07cfff"
+            },
+            {
+              "uuid": "59899b98-59da-457f-a57b-c8cfba4b0622",
+              "destination_uuid": "642f25d0-41db-4ef6-aa2d-998488055a08"
+            }
+          ]
+        },
+        {
+          "uuid": "f1b5560b-ddb0-4d40-abd3-36fb42ef57df",
+          "actions": [
+            {
+              "uuid": "4aae95c4-f604-4d8b-a0f1-8c7d40fb388d",
+              "type": "send_msg",
+              "text": "\ud83d\udcdd *Review Ticket*\n\nIssue: @results.ticket_description.value\nCategory: @results.menu_642f25d0.value\nContact: @contact.name (@contact.urns.0)\n\nSubmit this ticket?",
+              "quick_replies": [
+                "\u2705 Submit",
+                "\u274c Cancel"
+              ]
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@input.text",
+            "wait": {
+              "type": "msg",
+              "timeout": {
+                "seconds": 300,
+                "category_uuid": "dbf92c54-8b38-4d99-b6ad-e82245fec8f1"
+              }
+            },
+            "cases": [
+              {
+                "uuid": "7aa4eeb2-a7c4-49a3-a7f4-0f0297ea6bdf",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\u2705 Submit"
+                ],
+                "category_uuid": "f3b3d783-aecd-4bb0-a94a-6399f9277297"
+              },
+              {
+                "uuid": "980900ce-7ad6-478b-9bc7-656c296040f1",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\u274c Cancel"
+                ],
+                "category_uuid": "8cc78a92-828b-4433-828a-53c5e7b21be2"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "f3b3d783-aecd-4bb0-a94a-6399f9277297",
+                "name": "\u2705 Submit",
+                "exit_uuid": "c725e27f-7ed3-47f1-8e99-4a69a5a14f90"
+              },
+              {
+                "uuid": "8cc78a92-828b-4433-828a-53c5e7b21be2",
+                "name": "\u274c Cancel",
+                "exit_uuid": "d1ae10d1-d004-4caf-b37d-12066310b24a"
+              },
+              {
+                "uuid": "dbf92c54-8b38-4d99-b6ad-e82245fec8f1",
+                "name": "No Response",
+                "exit_uuid": "8b70fe76-f319-4e46-a925-b6986b3fb289"
+              },
+              {
+                "uuid": "90886476-6206-4e40-897a-002738f8c640",
+                "name": "Other",
+                "exit_uuid": "e47ec290-486f-4cb9-bb53-a0ba2763c8cf"
+              }
+            ],
+            "default_category_uuid": "90886476-6206-4e40-897a-002738f8c640",
+            "result_name": "menu_f1b5560b"
+          },
+          "exits": [
+            {
+              "uuid": "c725e27f-7ed3-47f1-8e99-4a69a5a14f90",
+              "destination_uuid": "5924f7c9-dba7-4e87-a7b6-a618b8db29d5"
+            },
+            {
+              "uuid": "d1ae10d1-d004-4caf-b37d-12066310b24a",
+              "destination_uuid": "1a15ce9f-e597-45b4-b785-269ac1d7c5a3"
+            },
+            {
+              "uuid": "8b70fe76-f319-4e46-a925-b6986b3fb289",
+              "destination_uuid": "fe9722ef-b29c-423b-977c-ea57db07cfff"
+            },
+            {
+              "uuid": "e47ec290-486f-4cb9-bb53-a0ba2763c8cf",
+              "destination_uuid": "925bce21-5347-4dbe-8713-f421940e8ebe"
+            }
+          ]
+        },
+        {
+          "uuid": "5924f7c9-dba7-4e87-a7b6-a618b8db29d5",
+          "actions": [
+            {
+              "uuid": "9eb62090-aac0-410a-83c6-af1581bb81a8",
+              "type": "send_msg",
+              "text": "\u2705 *Ticket Submitted!*\n\nIssue: @results.ticket_description.value\nCategory: @results.menu_642f25d0.value\nStatus: \ud83d\udfe1 Open\n\nA support agent will contact you shortly.\nReference: @contact.uuid"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "637bce5f-b569-4e2f-9a6e-accadf282c4d",
+              "destination_uuid": "925bce21-5347-4dbe-8713-f421940e8ebe"
+            }
+          ]
+        },
+        {
+          "uuid": "1a15ce9f-e597-45b4-b785-269ac1d7c5a3",
+          "actions": [
+            {
+              "uuid": "664144d3-3c33-47aa-ba5f-f9da53782bf4",
+              "type": "send_msg",
+              "text": "\u274c Ticket cancelled. No issue was submitted."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "6e25fd0c-a9bf-4f53-b870-21d42958b2dd",
+              "destination_uuid": "925bce21-5347-4dbe-8713-f421940e8ebe"
+            }
+          ]
+        },
+        {
+          "uuid": "01cf7320-c83f-446e-88f2-fdbff5b2e67d",
+          "actions": [
+            {
+              "uuid": "f9caac7f-f3b6-4cc3-9d73-d72b91f44f47",
+              "type": "send_msg",
+              "text": "\u2753 *Frequently Asked Questions*\n\nSelect a topic:",
+              "quick_replies": [
+                "\ud83d\udcb0 Billing & Payments",
+                "\ud83d\udcf6 Slow Internet",
+                "\ud83d\udd04 Reset Account",
+                "\u2b05\ufe0f Back"
+              ]
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@input.text",
+            "wait": {
+              "type": "msg",
+              "timeout": {
+                "seconds": 300,
+                "category_uuid": "1263b495-d1f4-4043-b6be-197243b1da2a"
+              }
+            },
+            "cases": [
+              {
+                "uuid": "fcc69dc2-4b27-4458-81c0-98c7dfc2bfae",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udcb0 Billing & Payments"
+                ],
+                "category_uuid": "e5f333e6-8ba8-4200-b423-749655fccedf"
+              },
+              {
+                "uuid": "59e2c4f3-fde4-497f-93cb-055c7cca0992",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udcf6 Slow Internet"
+                ],
+                "category_uuid": "1b769566-f7ac-475a-86cf-7b4b03fe3804"
+              },
+              {
+                "uuid": "f0017308-80b2-43b6-a627-ba22b6cf1dc0",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udd04 Reset Account"
+                ],
+                "category_uuid": "759a5448-abd6-45d4-b5f2-a39eade44fad"
+              },
+              {
+                "uuid": "6d180ddf-1006-47ef-a28b-2242d7f80ae1",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\u2b05\ufe0f Back"
+                ],
+                "category_uuid": "fb4cebbd-3b48-4d7e-9844-5807813dcdb3"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "e5f333e6-8ba8-4200-b423-749655fccedf",
+                "name": "\ud83d\udcb0 Billing & Payments",
+                "exit_uuid": "3d499269-7ffd-4d51-b34b-c0ff5768e36c"
+              },
+              {
+                "uuid": "1b769566-f7ac-475a-86cf-7b4b03fe3804",
+                "name": "\ud83d\udcf6 Slow Internet",
+                "exit_uuid": "90431056-ceef-4317-87a1-e923931c82a1"
+              },
+              {
+                "uuid": "759a5448-abd6-45d4-b5f2-a39eade44fad",
+                "name": "\ud83d\udd04 Reset Account",
+                "exit_uuid": "1f531891-17f0-4ad9-8795-6927f013062d"
+              },
+              {
+                "uuid": "fb4cebbd-3b48-4d7e-9844-5807813dcdb3",
+                "name": "\u2b05\ufe0f Back",
+                "exit_uuid": "a247c4d0-4e56-4b5b-97d9-2f12ab041629"
+              },
+              {
+                "uuid": "1263b495-d1f4-4043-b6be-197243b1da2a",
+                "name": "No Response",
+                "exit_uuid": "7792b0c2-9b99-43f2-8daa-ae82ac8dce09"
+              },
+              {
+                "uuid": "d776ddb5-20cb-41a1-bc75-a8d41677d002",
+                "name": "Other",
+                "exit_uuid": "d255d75d-c424-4e61-873b-ba6a245b00d9"
+              }
+            ],
+            "default_category_uuid": "d776ddb5-20cb-41a1-bc75-a8d41677d002",
+            "result_name": "menu_01cf7320"
+          },
+          "exits": [
+            {
+              "uuid": "3d499269-7ffd-4d51-b34b-c0ff5768e36c",
+              "destination_uuid": "85553c7f-323e-4b8b-8fbd-1d269cb95442"
+            },
+            {
+              "uuid": "90431056-ceef-4317-87a1-e923931c82a1",
+              "destination_uuid": "5980165e-ff87-435b-9a95-71a1a75f13f6"
+            },
+            {
+              "uuid": "1f531891-17f0-4ad9-8795-6927f013062d",
+              "destination_uuid": "bb350afa-515b-4cdc-a457-77a5c87b02cd"
+            },
+            {
+              "uuid": "a247c4d0-4e56-4b5b-97d9-2f12ab041629",
+              "destination_uuid": "925bce21-5347-4dbe-8713-f421940e8ebe"
+            },
+            {
+              "uuid": "7792b0c2-9b99-43f2-8daa-ae82ac8dce09",
+              "destination_uuid": "fe9722ef-b29c-423b-977c-ea57db07cfff"
+            },
+            {
+              "uuid": "d255d75d-c424-4e61-873b-ba6a245b00d9",
+              "destination_uuid": "01cf7320-c83f-446e-88f2-fdbff5b2e67d"
+            }
+          ]
+        },
+        {
+          "uuid": "85553c7f-323e-4b8b-8fbd-1d269cb95442",
+          "actions": [
+            {
+              "uuid": "6408ac82-0fc5-4061-b3e8-04f443d9c2b0",
+              "type": "send_msg",
+              "text": "\ud83d\udcb0 *Billing & Payments*\n\n\u2022 Payments are due on the 1st of each month\n\u2022 Accepted: MonCash, NatCash, bank transfer\n\u2022 Late payment: service suspended after 5 days\n\u2022 Refunds: contact support within 48h\n\nNeed more help? Open a ticket."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "b660cd36-75e8-492a-bb7a-0ba516084ae0",
+              "destination_uuid": "01cf7320-c83f-446e-88f2-fdbff5b2e67d"
+            }
+          ]
+        },
+        {
+          "uuid": "5980165e-ff87-435b-9a95-71a1a75f13f6",
+          "actions": [
+            {
+              "uuid": "e970ea1f-d47b-4106-9b2a-4517ec94d520",
+              "type": "send_msg",
+              "text": "\ud83d\udcf6 *Slow Internet*\n\nTry these steps:\n1. Restart your router\n2. Check if other devices have the same issue\n3. Run a speed test (fast.com)\n4. Check for outages in your area\n\nStill slow? Open a ticket with your speed test results."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "5240b519-27fd-49ea-9e20-d58e78f547ae",
+              "destination_uuid": "01cf7320-c83f-446e-88f2-fdbff5b2e67d"
+            }
+          ]
+        },
+        {
+          "uuid": "bb350afa-515b-4cdc-a457-77a5c87b02cd",
+          "actions": [
+            {
+              "uuid": "ec3669a2-c358-4ce9-963f-3e0a3ba58304",
+              "type": "send_msg",
+              "text": "\ud83d\udd04 *Reset Account*\n\nTo reset your account password:\n1. Go to konex.ht/reset\n2. Enter your phone number\n3. Follow the SMS instructions\n\nIf you can't reset, open a ticket."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "08ec99c0-b10c-4d00-848e-44010d1b257f",
+              "destination_uuid": "01cf7320-c83f-446e-88f2-fdbff5b2e67d"
+            }
+          ]
+        },
+        {
+          "uuid": "897f7228-9b42-4cbb-bf02-525cb5294b07",
+          "actions": [
+            {
+              "uuid": "3129f2c9-042a-4bd6-8e7b-368781e99081",
+              "type": "send_msg",
+              "text": "\ud83d\udccb *Your Profile*\n\nName: @contact.name\nNumber: @contact.urns.0\nPlan: \u2014\nStatus: Active\n\nTo update your info, open a ticket."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "863a6042-d7d0-4e2b-b5f7-701c888c3a40",
+              "destination_uuid": "925bce21-5347-4dbe-8713-f421940e8ebe"
+            }
+          ]
+        }
+      ],
+      "_ui": {
+        "nodes": {
+          "fc21e101-538c-4ad1-a4a3-c00fbb78fbc0": {
+            "position": {
+              "left": 300,
+              "top": -220
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "925bce21-5347-4dbe-8713-f421940e8ebe": {
+            "position": {
+              "left": 300,
+              "top": 0
+            },
+            "type": "wait_for_response",
+            "config": {}
+          },
+          "fe9722ef-b29c-423b-977c-ea57db07cfff": {
+            "position": {
+              "left": 700,
+              "top": 0
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "852aa598-47be-44a8-8bb6-e555af82f4a2": {
+            "position": {
+              "left": 700,
+              "top": 220
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "00cd71bc-7d76-4f0a-835b-9bf836a8c17d": {
+            "position": {
+              "left": 0,
+              "top": 440
+            },
+            "type": "wait_for_response",
+            "config": {}
+          },
+          "642f25d0-41db-4ef6-aa2d-998488055a08": {
+            "position": {
+              "left": 0,
+              "top": 660
+            },
+            "type": "wait_for_response",
+            "config": {}
+          },
+          "f1b5560b-ddb0-4d40-abd3-36fb42ef57df": {
+            "position": {
+              "left": 0,
+              "top": 880
+            },
+            "type": "wait_for_response",
+            "config": {}
+          },
+          "5924f7c9-dba7-4e87-a7b6-a618b8db29d5": {
+            "position": {
+              "left": 0,
+              "top": 1100
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "1a15ce9f-e597-45b4-b785-269ac1d7c5a3": {
+            "position": {
+              "left": 300,
+              "top": 1100
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "01cf7320-c83f-446e-88f2-fdbff5b2e67d": {
+            "position": {
+              "left": 500,
+              "top": 440
+            },
+            "type": "wait_for_response",
+            "config": {}
+          },
+          "85553c7f-323e-4b8b-8fbd-1d269cb95442": {
+            "position": {
+              "left": 500,
+              "top": 660
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "5980165e-ff87-435b-9a95-71a1a75f13f6": {
+            "position": {
+              "left": 800,
+              "top": 660
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "bb350afa-515b-4cdc-a457-77a5c87b02cd": {
+            "position": {
+              "left": 500,
+              "top": 880
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "897f7228-9b42-4cbb-bf02-525cb5294b07": {
+            "position": {
+              "left": 800,
+              "top": 440
+            },
+            "type": "execute_actions",
+            "config": {}
+          }
+        },
+        "editor": "0.156.6"
+      }
+    }
+  ],
+  "campaigns": [],
+  "triggers": [],
+  "fields": [],
+  "groups": []
+}

@@ -13,12 +13,14 @@ from app.api.schemas import ChatRequest, ChatResponse
 from app.api.health import router as health_router
 from app.api.adapters.openai import router as openai_router
 from app.api.adapters.tools import router as tools_router
+from app.api.routers.plugins import router as plugins_router
 
 # Main router — all sub-routers are mounted with no prefix (app.py handles prefixes)
 router = APIRouter()
 router.include_router(health_router)
 router.include_router(openai_router)
 router.include_router(tools_router)
+router.include_router(plugins_router)
 
 
 # ── Legacy endpoint (kept for backwards compat) ───────────────────────────────

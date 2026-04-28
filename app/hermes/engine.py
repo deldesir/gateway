@@ -217,12 +217,15 @@ def _build_system_prompt(
             
         topic = rivebot_context.get("topic")
         mood = _sanitize_user_field(rivebot_context.get("mood", ""), max_len=20)
+        current_drill = _sanitize_user_field(rivebot_context.get("current_drill", ""))
         onboarded = rivebot_context.get("onboarded", False)
         if lang:
             parts.append(f"\nUser's preferred language: {lang}")
         if user_name:
             parts.append(f"User's display name: {user_name}")
-        if topic and topic not in ("random", "undefined"):
+        if current_drill:
+            parts.append(f"CURRENT DRILL IN PROGRESS: {current_drill}. You must act as the persona for this specific drill.")
+        elif topic and topic not in ("random", "undefined"):
             parts.append(f"Current workflow stage: {topic}")
         if mood:
             parts.append(f"User's current mood: {mood}")
@@ -289,6 +292,16 @@ def _load_session_history(session_id: str, max_messages: int = 20) -> list[dict]
         return []
 
 
+def get_session_id(urn: str, persona: str) -> str:
+    """Canonical session ID — must match the format used in _invoke_sync."""
+    clean_urn = urn
+    if ":" in urn:
+        parts = urn.split(":")
+        if parts[0] in ("whatsapp", "tel", "telegram"):
+            clean_urn = ":".join(parts[1:])
+    return f"whatsapp:{clean_urn}:{persona}"
+
+
 def _invoke_sync(
     urn: str,
     persona: str,
@@ -326,13 +339,7 @@ def _invoke_sync(
     _llm_model = model or os.getenv("LLM_MODEL", "")
 
     # ── Fix F-26: normalize URN to avoid whatsapp:whatsapp:... ───────────
-    clean_urn = urn
-    if ":" in urn:
-        parts = urn.split(":")
-        # Strip scheme prefix if present (e.g. whatsapp:+509... → +509...)
-        if parts[0] in ("whatsapp", "tel", "telegram"):
-            clean_urn = ":".join(parts[1:])
-    session_id = f"whatsapp:{clean_urn}:{persona}"
+    session_id = get_session_id(urn, persona)
 
     agent_kwargs = dict(
         model=_llm_model,

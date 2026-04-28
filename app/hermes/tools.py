@@ -2,7 +2,9 @@ import logging
 from tools.registry import registry
 from app.hermes.engine import _current_urn
 import app.hermes.schemas as schemas
-from app.graph.tools import rapidpro, mocks, talkprep, forms, upload
+from app.graph.tools import rapidpro, mocks, talkprep, forms, upload, system, config
+import app.plugins.social.schemas as social_schemas
+import app.plugins.social.tools as social
 
 logger = logging.getLogger(__name__)
 
@@ -156,8 +158,38 @@ def register_all_tools() -> None:
     registry.register("siyuan_search", "siyuan", schemas.SIYUAN_SEARCH, _handle_siyuan_search)
     registry.register("siyuan_read", "siyuan", schemas.SIYUAN_READ, _handle_siyuan_read)
 
+    # System Operations (ADR-011 migration)
+    registry.register("macro_reset", "system", schemas.MACRO_RESET, system.macro_reset)
+    registry.register("macro_debug", "system", schemas.MACRO_DEBUG, system.macro_debug)
+    registry.register("macro_noai", "system", schemas.MACRO_NOAI, system.macro_noai)
+    registry.register("macro_noai_global", "system", schemas.MACRO_NOAI_GLOBAL, system.macro_noai_global)
+    registry.register("macro_noai_status", "system", schemas.MACRO_NOAI_STATUS, system.macro_noai_status)
+    registry.register("macro_enableai", "system", schemas.MACRO_ENABLEAI, system.macro_enableai)
+    registry.register("macro_enableai_global", "system", schemas.MACRO_ENABLEAI_GLOBAL, system.macro_enableai_global)
+    registry.register("macro_reload", "system", schemas.MACRO_RELOAD, system.macro_reload)
+    registry.register("macro_health", "system", schemas.MACRO_HEALTH, system.macro_health)
+    registry.register("macro_skills", "system", schemas.MACRO_SKILLS, system.macro_skills)
+    registry.register("macro_flow", "system", schemas.MACRO_FLOW, system.macro_flow)
+
+    # Config Operations (ADR-011 migration)
+    registry.register("macro_persona", "config", schemas.MACRO_PERSONA, config.macro_persona)
+    registry.register("macro_channel", "config", schemas.MACRO_CHANNEL, config.macro_channel)
+    registry.register("macro_admin", "config", schemas.MACRO_ADMIN, config.macro_admin)
+    registry.register("macro_global", "config", schemas.MACRO_GLOBAL, config.macro_global)
+    registry.register("macro_label", "config", schemas.MACRO_LABEL, config.macro_label)
+
+    # Social-Code Simulation Tools (ADR-014)
+    registry.register("sim_update_mood", "social", social_schemas.SIM_UPDATE_MOOD, social.sim_update_mood)
+    registry.register("sim_update_trust", "social", social_schemas.SIM_UPDATE_TRUST, social.sim_update_trust)
+    registry.register("sim_update_dossier", "social", social_schemas.SIM_UPDATE_DOSSIER, social.sim_update_dossier)
+    registry.register("sim_assess_boredom", "social", social_schemas.SIM_ASSESS_BOREDOM, social.sim_assess_boredom)
+    registry.register("sim_trigger_distraction", "social", social_schemas.SIM_TRIGGER_DISTRACTION, social.sim_trigger_distraction)
+    registry.register("sim_grade_response", "social", social_schemas.SIM_GRADE_RESPONSE, social.sim_grade_response)
+    registry.register("sim_get_scenario", "social", social_schemas.SIM_GET_SCENARIO, social.sim_get_scenario)
+    registry.register("sim_drill_grade", "social", social_schemas.SIM_DRILL_GRADE, social.sim_drill_grade)
+
     _registered = True
-    logger.info("Registered 27 native Hermes-compatible tools globally.")
+    logger.info("Registered 51 native Hermes-compatible tools globally.")
 
 def get_hermes_tools() -> dict:
     """Return the global registry dict if anything needs to introspect it."""

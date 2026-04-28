@@ -1,0 +1,2507 @@
+{
+  "version": "13",
+  "site": "http://localhost",
+  "flows": [
+    {
+      "uuid": "a6b6a5e4-b7c6-440e-a967-0255e989dea8",
+      "name": "TalkPrep Menu",
+      "spec_version": "14.4.0",
+      "language": "eng",
+      "type": "messaging",
+      "revision": 1,
+      "expire_after_minutes": 30,
+      "localization": {},
+      "nodes": [
+        {
+          "uuid": "3a9c6a26-f6a1-4272-9a97-2c7ad8e8426b",
+          "actions": [
+            {
+              "uuid": "8ca565f7-cb96-48f4-919d-57732a582dd8",
+              "type": "set_run_result",
+              "name": "entry_guard",
+              "value": "1"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "9b76c81f-4a1a-40de-8bc0-5b101f95f3f1",
+              "destination_uuid": "8b02f087-247c-42bf-a80d-67720e410c43"
+            }
+          ]
+        },
+        {
+          "uuid": "8b02f087-247c-42bf-a80d-67720e410c43",
+          "actions": [
+            {
+              "uuid": "be099e6f-2ce0-498a-bf60-3e583cb0523b",
+              "type": "send_msg",
+              "text": "\ud83d\udcda *TalkPrep*\n\nSelect an option:",
+              "quick_replies": [
+                "\ud83d\udccb My Talks",
+                "\ud83d\udcda Publications",
+                "\ud83d\udcd1 Browse Topics",
+                "\u2795 Import Talk",
+                "\ud83c\udfaf Select Talk",
+                "\u270f\ufe0f Work on Talk",
+                "\ud83d\udcda Study Tools",
+                "\ud83d\udcb0 Cost Report",
+                "\u274c Exit"
+              ]
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@input.text",
+            "wait": {
+              "type": "msg",
+              "timeout": {
+                "seconds": 300,
+                "category_uuid": "09eef486-a270-4321-a6b4-194b100ba43c"
+              }
+            },
+            "cases": [
+              {
+                "uuid": "16e777d4-4160-4936-8fb5-5350e553e565",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udccb My Talks"
+                ],
+                "category_uuid": "4975fd26-abf1-4cdf-b263-dc600b485b15"
+              },
+              {
+                "uuid": "f5502585-4553-40eb-bab1-f4208fb68b43",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udcda Publications"
+                ],
+                "category_uuid": "9b08273e-a81b-46db-b07c-676c950f8219"
+              },
+              {
+                "uuid": "fb9c86b7-1c3b-4b43-93ea-e23f51dc4d52",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udcd1 Browse Topics"
+                ],
+                "category_uuid": "13f3c608-fca9-4282-a1fc-aad121183726"
+              },
+              {
+                "uuid": "c9578286-12a4-4f56-8a7e-ba2564fad56b",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\u2795 Import Talk"
+                ],
+                "category_uuid": "104e5112-44ca-4f38-843e-4550f9a96de9"
+              },
+              {
+                "uuid": "428bd28a-4370-4f5c-aced-e87a99b0ce2f",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83c\udfaf Select Talk"
+                ],
+                "category_uuid": "35f8e03a-789c-4b6a-a5c6-641286659f83"
+              },
+              {
+                "uuid": "a4fe99e0-e116-4112-b36a-822ff8ea4b20",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\u270f\ufe0f Work on Talk"
+                ],
+                "category_uuid": "ce16341c-1ddc-478a-b9da-784cb6093c2a"
+              },
+              {
+                "uuid": "32096a42-dcf2-4861-9668-1cd52bf07a82",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udcda Study Tools"
+                ],
+                "category_uuid": "8e5ac75d-f409-43bd-af14-1c3062e5f097"
+              },
+              {
+                "uuid": "57c1d476-4dfa-4988-ad72-7a0714837da7",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udcb0 Cost Report"
+                ],
+                "category_uuid": "1ae0bc0b-8890-4beb-9b56-2cc9be317847"
+              },
+              {
+                "uuid": "1c5ba2a3-6742-41e7-b56b-bcd83cc25eb8",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\u274c Exit"
+                ],
+                "category_uuid": "00f5e48f-f701-46a3-8efa-6ecc3245f472"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "4975fd26-abf1-4cdf-b263-dc600b485b15",
+                "name": "\ud83d\udccb My Talks",
+                "exit_uuid": "cd8b5b51-7bf1-43ee-8015-0cc7091da082"
+              },
+              {
+                "uuid": "9b08273e-a81b-46db-b07c-676c950f8219",
+                "name": "\ud83d\udcda Publications",
+                "exit_uuid": "785ec989-5a44-4eb5-8b15-c8e7e6fea20f"
+              },
+              {
+                "uuid": "13f3c608-fca9-4282-a1fc-aad121183726",
+                "name": "\ud83d\udcd1 Browse Topics",
+                "exit_uuid": "2831ee9f-c5aa-4bb0-a0e5-badac96281f9"
+              },
+              {
+                "uuid": "104e5112-44ca-4f38-843e-4550f9a96de9",
+                "name": "\u2795 Import Talk",
+                "exit_uuid": "14573112-c624-4898-ada6-19dc9da06be9"
+              },
+              {
+                "uuid": "35f8e03a-789c-4b6a-a5c6-641286659f83",
+                "name": "\ud83c\udfaf Select Talk",
+                "exit_uuid": "5e067c50-94ad-4f73-a936-abbadf514937"
+              },
+              {
+                "uuid": "ce16341c-1ddc-478a-b9da-784cb6093c2a",
+                "name": "\u270f\ufe0f Work on Talk",
+                "exit_uuid": "1fb7f2aa-44da-4ac5-8921-380da247c162"
+              },
+              {
+                "uuid": "8e5ac75d-f409-43bd-af14-1c3062e5f097",
+                "name": "\ud83d\udcda Study Tools",
+                "exit_uuid": "69e94c43-4281-4663-b3d2-c6c3d6c09d62"
+              },
+              {
+                "uuid": "1ae0bc0b-8890-4beb-9b56-2cc9be317847",
+                "name": "\ud83d\udcb0 Cost Report",
+                "exit_uuid": "1456c56a-9063-477d-bb14-d11ed768ae10"
+              },
+              {
+                "uuid": "00f5e48f-f701-46a3-8efa-6ecc3245f472",
+                "name": "\u274c Exit",
+                "exit_uuid": "6214b8c6-6d57-4de9-9081-e54da3c9ed4c"
+              },
+              {
+                "uuid": "09eef486-a270-4321-a6b4-194b100ba43c",
+                "name": "No Response",
+                "exit_uuid": "1c01a94b-1450-4ed8-8b39-2c05704acbee"
+              },
+              {
+                "uuid": "4d893e26-6b30-41e5-ba97-1b71c0bddf1d",
+                "name": "Other",
+                "exit_uuid": "5fd171f0-016a-4a82-9e77-fec551f9f123"
+              }
+            ],
+            "default_category_uuid": "4d893e26-6b30-41e5-ba97-1b71c0bddf1d",
+            "result_name": "menu_8b02f087"
+          },
+          "exits": [
+            {
+              "uuid": "cd8b5b51-7bf1-43ee-8015-0cc7091da082",
+              "destination_uuid": "c794ac92-1c89-4715-8073-9e2d541e390b"
+            },
+            {
+              "uuid": "785ec989-5a44-4eb5-8b15-c8e7e6fea20f",
+              "destination_uuid": "6301490b-0f6b-47ae-8af7-9be97f76cd1b"
+            },
+            {
+              "uuid": "2831ee9f-c5aa-4bb0-a0e5-badac96281f9",
+              "destination_uuid": "7bb981aa-3806-4111-8b7e-98027184dce0"
+            },
+            {
+              "uuid": "14573112-c624-4898-ada6-19dc9da06be9",
+              "destination_uuid": "08220cc1-d7f2-4676-a12c-fe1c2e38a6b3"
+            },
+            {
+              "uuid": "5e067c50-94ad-4f73-a936-abbadf514937",
+              "destination_uuid": "ebbdfffc-fe34-4a97-b024-e7c994c1f61e"
+            },
+            {
+              "uuid": "1fb7f2aa-44da-4ac5-8921-380da247c162",
+              "destination_uuid": "afdd8911-ef14-4ac2-8459-ffa6f3c5b780"
+            },
+            {
+              "uuid": "69e94c43-4281-4663-b3d2-c6c3d6c09d62",
+              "destination_uuid": "d0ca2ec3-fc82-4fef-9496-819c08c1d986"
+            },
+            {
+              "uuid": "1456c56a-9063-477d-bb14-d11ed768ae10",
+              "destination_uuid": "d5b2268c-d258-4c3c-86b9-00008c9a44bf"
+            },
+            {
+              "uuid": "6214b8c6-6d57-4de9-9081-e54da3c9ed4c",
+              "destination_uuid": "76ee01de-9b12-4c6d-9d06-bda213fab341"
+            },
+            {
+              "uuid": "1c01a94b-1450-4ed8-8b39-2c05704acbee",
+              "destination_uuid": "ce1c1925-58ed-4d59-8dc9-9ab65e8dfa3f"
+            },
+            {
+              "uuid": "5fd171f0-016a-4a82-9e77-fec551f9f123",
+              "destination_uuid": "8b02f087-247c-42bf-a80d-67720e410c43"
+            }
+          ]
+        },
+        {
+          "uuid": "ce1c1925-58ed-4d59-8dc9-9ab65e8dfa3f",
+          "actions": [
+            {
+              "uuid": "f7c4bc85-5f3b-4d21-9010-8148ca7eb8ee",
+              "type": "send_msg",
+              "text": "\u23f1\ufe0f TalkPrep session timed out.\n\nType *prep* to start again."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "f8b8872f-93bb-49ee-acbe-722b20e5b142",
+              "destination_uuid": null
+            }
+          ]
+        },
+        {
+          "uuid": "76ee01de-9b12-4c6d-9d06-bda213fab341",
+          "actions": [
+            {
+              "uuid": "f2da6d01-1436-4212-8a56-9edf1d6e3ed8",
+              "type": "send_msg",
+              "text": "\u2705 TalkPrep session ended.\n\nType *prep* to start again."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "59dd6199-1722-41b1-afa0-c86c6f857bac",
+              "destination_uuid": null
+            }
+          ]
+        },
+        {
+          "uuid": "c794ac92-1c89-4715-8073-9e2d541e390b",
+          "actions": [
+            {
+              "uuid": "47e41cd3-2350-4fcc-ab8f-2d8ff76b7b0b",
+              "type": "call_webhook",
+              "method": "GET",
+              "url": "https://garantie.boutique/ai/v1/tools/talkmaster_status",
+              "headers": {
+                "Accept": "application/json",
+                "X-API-Key": "@globals.gateway_key",
+                "X-User-Id": "@contact.urns.0"
+              },
+              "body": "",
+              "result_name": "talks_result"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@results.talks_result.category",
+            "cases": [
+              {
+                "uuid": "26f203e4-6d63-42ad-beb8-4ed2b0d1441e",
+                "type": "has_only_text",
+                "arguments": [
+                  "Success"
+                ],
+                "category_uuid": "bf517846-f09b-47ac-bc27-21d8fe8525f0"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "bf517846-f09b-47ac-bc27-21d8fe8525f0",
+                "name": "Success",
+                "exit_uuid": "7b15b765-37f4-4880-837d-520cb3625bbe"
+              },
+              {
+                "uuid": "84616dd2-fa36-42a2-982a-087cf379ca13",
+                "name": "Failed",
+                "exit_uuid": "e973de27-073d-4ae2-8f20-e8b1cc420092"
+              }
+            ],
+            "default_category_uuid": "84616dd2-fa36-42a2-982a-087cf379ca13",
+            "result_name": "talks_result"
+          },
+          "exits": [
+            {
+              "uuid": "7b15b765-37f4-4880-837d-520cb3625bbe",
+              "destination_uuid": "8d3c77d7-64b6-4f1e-b6d9-f22ccd6a1566"
+            },
+            {
+              "uuid": "e973de27-073d-4ae2-8f20-e8b1cc420092",
+              "destination_uuid": "5379855b-0fdc-4556-b4f8-c25a03c64328"
+            }
+          ]
+        },
+        {
+          "uuid": "8d3c77d7-64b6-4f1e-b6d9-f22ccd6a1566",
+          "actions": [
+            {
+              "uuid": "f26206c4-78e7-4993-86fc-76147062cc98",
+              "type": "send_msg",
+              "text": "@webhook.json.result"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "5e514b01-f921-4a88-8eaf-401a11d7cfba",
+              "destination_uuid": "8b02f087-247c-42bf-a80d-67720e410c43"
+            }
+          ]
+        },
+        {
+          "uuid": "5379855b-0fdc-4556-b4f8-c25a03c64328",
+          "actions": [
+            {
+              "uuid": "b71a72b8-a3af-4c04-8752-d7d1a1206eca",
+              "type": "send_msg",
+              "text": "\u26a0\ufe0f Could not fetch talks."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "e00e6ec2-5ebe-4660-8bed-7fd505d10e34",
+              "destination_uuid": "8b02f087-247c-42bf-a80d-67720e410c43"
+            }
+          ]
+        },
+        {
+          "uuid": "6301490b-0f6b-47ae-8af7-9be97f76cd1b",
+          "actions": [
+            {
+              "uuid": "4e4439cb-dc52-43d2-9540-699d09bdce01",
+              "type": "call_webhook",
+              "method": "GET",
+              "url": "https://garantie.boutique/ai/v1/tools/list_publications",
+              "headers": {
+                "Accept": "application/json",
+                "X-API-Key": "@globals.gateway_key",
+                "X-User-Id": "@contact.urns.0"
+              },
+              "body": "",
+              "result_name": "pubs_result"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@results.pubs_result.category",
+            "cases": [
+              {
+                "uuid": "8c05d142-1815-40ba-9966-260facfcb510",
+                "type": "has_only_text",
+                "arguments": [
+                  "Success"
+                ],
+                "category_uuid": "f398b40f-06cc-4306-b08f-99380a5305a7"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "f398b40f-06cc-4306-b08f-99380a5305a7",
+                "name": "Success",
+                "exit_uuid": "7e716876-7435-45e4-8689-f8489905da83"
+              },
+              {
+                "uuid": "6c57c45d-b4c5-43d1-85ba-f1ae30952b21",
+                "name": "Failed",
+                "exit_uuid": "f7d49fd5-00e4-4f9d-bc14-747606b09037"
+              }
+            ],
+            "default_category_uuid": "6c57c45d-b4c5-43d1-85ba-f1ae30952b21",
+            "result_name": "pubs_result"
+          },
+          "exits": [
+            {
+              "uuid": "7e716876-7435-45e4-8689-f8489905da83",
+              "destination_uuid": "d3572448-61f9-4099-9b59-7ebb2b52aa50"
+            },
+            {
+              "uuid": "f7d49fd5-00e4-4f9d-bc14-747606b09037",
+              "destination_uuid": "5cee57ef-0eb9-42d6-bca3-7073a3a59a39"
+            }
+          ]
+        },
+        {
+          "uuid": "d3572448-61f9-4099-9b59-7ebb2b52aa50",
+          "actions": [
+            {
+              "uuid": "c094b3f3-dd39-4a3f-ba6b-27c9948001ed",
+              "type": "send_msg",
+              "text": "@webhook.json.result"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "9cffcfa8-1260-4186-b0b9-52fda1c5faa1",
+              "destination_uuid": "8b02f087-247c-42bf-a80d-67720e410c43"
+            }
+          ]
+        },
+        {
+          "uuid": "5cee57ef-0eb9-42d6-bca3-7073a3a59a39",
+          "actions": [
+            {
+              "uuid": "9f03d5a1-ce45-4903-b623-cdb1c40f17a3",
+              "type": "send_msg",
+              "text": "\u26a0\ufe0f Could not fetch publications."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "00a16610-0ef3-47da-aff8-9f3935aa2616",
+              "destination_uuid": "8b02f087-247c-42bf-a80d-67720e410c43"
+            }
+          ]
+        },
+        {
+          "uuid": "d5b2268c-d258-4c3c-86b9-00008c9a44bf",
+          "actions": [
+            {
+              "uuid": "99a62184-c3f8-487c-9315-2fb1742a74bd",
+              "type": "call_webhook",
+              "method": "GET",
+              "url": "https://garantie.boutique/ai/v1/tools/cost_report",
+              "headers": {
+                "Accept": "application/json",
+                "X-API-Key": "@globals.gateway_key",
+                "X-User-Id": "@contact.urns.0"
+              },
+              "body": "",
+              "result_name": "cost_result"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@results.cost_result.category",
+            "cases": [
+              {
+                "uuid": "ad50b4fa-3af5-4183-92ae-6b958dd7dac8",
+                "type": "has_only_text",
+                "arguments": [
+                  "Success"
+                ],
+                "category_uuid": "bf068f8b-f0d8-48e1-acae-f2bd540c15ec"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "bf068f8b-f0d8-48e1-acae-f2bd540c15ec",
+                "name": "Success",
+                "exit_uuid": "b6f8272e-357d-41b8-8dfd-f54a45514c75"
+              },
+              {
+                "uuid": "7b95477a-bf01-4a89-9254-d22da6f58060",
+                "name": "Failed",
+                "exit_uuid": "3a9d0e84-f671-48f9-8392-f750a6e3cfc0"
+              }
+            ],
+            "default_category_uuid": "7b95477a-bf01-4a89-9254-d22da6f58060",
+            "result_name": "cost_result"
+          },
+          "exits": [
+            {
+              "uuid": "b6f8272e-357d-41b8-8dfd-f54a45514c75",
+              "destination_uuid": "c31e1ed9-655e-4496-b383-fae2857b7fcb"
+            },
+            {
+              "uuid": "3a9d0e84-f671-48f9-8392-f750a6e3cfc0",
+              "destination_uuid": "1d7b061a-6094-40a7-9b3f-c307bdefc2fe"
+            }
+          ]
+        },
+        {
+          "uuid": "c31e1ed9-655e-4496-b383-fae2857b7fcb",
+          "actions": [
+            {
+              "uuid": "907a3bc3-5d8b-4125-9f59-ce27e267fda6",
+              "type": "send_msg",
+              "text": "@webhook.json.result"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "0f17dd59-84c0-411d-b74a-dadfd4321ecc",
+              "destination_uuid": "8b02f087-247c-42bf-a80d-67720e410c43"
+            }
+          ]
+        },
+        {
+          "uuid": "1d7b061a-6094-40a7-9b3f-c307bdefc2fe",
+          "actions": [
+            {
+              "uuid": "c40cf46c-39c5-4032-b81c-32320c19eb7b",
+              "type": "send_msg",
+              "text": "\u26a0\ufe0f Could not fetch cost report."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "3c68ca38-3d55-4265-a97c-e0e1dfa149c5",
+              "destination_uuid": "8b02f087-247c-42bf-a80d-67720e410c43"
+            }
+          ]
+        },
+        {
+          "uuid": "7bb981aa-3806-4111-8b7e-98027184dce0",
+          "actions": [
+            {
+              "uuid": "224a6e9d-3fd4-4ba2-b8b0-eaabd5f6eb09",
+              "type": "send_msg",
+              "text": "\ud83d\udcd1 *Browse Topics*\n\nEnter a publication name (or part of it):"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@input.text",
+            "wait": {
+              "type": "msg",
+              "timeout": {
+                "seconds": 300,
+                "category_uuid": "20ebd5ea-9479-4241-84eb-294bef15a817"
+              }
+            },
+            "cases": [],
+            "categories": [
+              {
+                "uuid": "e42d5298-e5a4-428f-b49f-9723c08f7693",
+                "name": "All Responses",
+                "exit_uuid": "a987fc62-67ec-4747-8c3c-3799eb69e6bd"
+              },
+              {
+                "uuid": "20ebd5ea-9479-4241-84eb-294bef15a817",
+                "name": "No Response",
+                "exit_uuid": "24d338f9-2d10-46b3-adfc-5fc744f357b3"
+              }
+            ],
+            "default_category_uuid": "e42d5298-e5a4-428f-b49f-9723c08f7693",
+            "result_name": "topic_pub"
+          },
+          "exits": [
+            {
+              "uuid": "a987fc62-67ec-4747-8c3c-3799eb69e6bd",
+              "destination_uuid": "b257ba2d-1a60-4d4d-8d4d-50acb2ee508e"
+            },
+            {
+              "uuid": "24d338f9-2d10-46b3-adfc-5fc744f357b3",
+              "destination_uuid": "ce1c1925-58ed-4d59-8dc9-9ab65e8dfa3f"
+            }
+          ]
+        },
+        {
+          "uuid": "b257ba2d-1a60-4d4d-8d4d-50acb2ee508e",
+          "actions": [
+            {
+              "uuid": "b6a0f16f-2ffc-46f9-93a5-8000b58ae8eb",
+              "type": "call_webhook",
+              "method": "POST",
+              "url": "https://garantie.boutique/ai/v1/tools/list_topics",
+              "headers": {
+                "Accept": "application/json",
+                "X-API-Key": "@globals.gateway_key",
+                "X-User-Id": "@contact.urns.0"
+              },
+              "body": "{\"_args\": [\"@results.topic_pub.value\"]}",
+              "result_name": "topics_result"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@results.topics_result.category",
+            "cases": [
+              {
+                "uuid": "1215f317-bcfb-4b5b-92fa-8438d72f892e",
+                "type": "has_only_text",
+                "arguments": [
+                  "Success"
+                ],
+                "category_uuid": "ce5ef25d-0a9e-48f6-9f48-321cb3facefa"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "ce5ef25d-0a9e-48f6-9f48-321cb3facefa",
+                "name": "Success",
+                "exit_uuid": "fd5ff776-f2d3-4529-838f-309494922370"
+              },
+              {
+                "uuid": "3a651554-f8cd-48fa-937d-a0d2f68711d9",
+                "name": "Failed",
+                "exit_uuid": "44c99e8e-cd18-4c26-9180-7a00f05c8ccc"
+              }
+            ],
+            "default_category_uuid": "3a651554-f8cd-48fa-937d-a0d2f68711d9",
+            "result_name": "topics_result"
+          },
+          "exits": [
+            {
+              "uuid": "fd5ff776-f2d3-4529-838f-309494922370",
+              "destination_uuid": "d7ffb5bf-10db-4a29-a5dc-840a92c9288e"
+            },
+            {
+              "uuid": "44c99e8e-cd18-4c26-9180-7a00f05c8ccc",
+              "destination_uuid": "3ef2557c-b586-43cd-b30b-169006ae48dd"
+            }
+          ]
+        },
+        {
+          "uuid": "d7ffb5bf-10db-4a29-a5dc-840a92c9288e",
+          "actions": [
+            {
+              "uuid": "da7b8269-94a5-49c4-966f-59af8b797054",
+              "type": "send_msg",
+              "text": "@webhook.json.result"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "b1ca7f9f-d165-49b7-8072-a149cb8fb733",
+              "destination_uuid": "8b02f087-247c-42bf-a80d-67720e410c43"
+            }
+          ]
+        },
+        {
+          "uuid": "3ef2557c-b586-43cd-b30b-169006ae48dd",
+          "actions": [
+            {
+              "uuid": "a3e466ff-448a-48c7-b261-2d56a214e4ef",
+              "type": "send_msg",
+              "text": "\u26a0\ufe0f No topics found for that publication."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "c67e9af7-ac8a-4bed-8a55-f14248564a9e",
+              "destination_uuid": "8b02f087-247c-42bf-a80d-67720e410c43"
+            }
+          ]
+        },
+        {
+          "uuid": "08220cc1-d7f2-4676-a12c-fe1c2e38a6b3",
+          "actions": [
+            {
+              "uuid": "f925d218-8bdb-461b-a046-30529c999dd1",
+              "type": "send_msg",
+              "text": "\u2795 *Import Talk*\n\nEnter the talk name or number:"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@input.text",
+            "wait": {
+              "type": "msg",
+              "timeout": {
+                "seconds": 300,
+                "category_uuid": "7ddf7416-9397-47d8-902a-7b95c3e4907f"
+              }
+            },
+            "cases": [],
+            "categories": [
+              {
+                "uuid": "f68b95a1-71c1-45c7-95ca-2bb27f58ad39",
+                "name": "All Responses",
+                "exit_uuid": "38e9b9f4-67dc-4ac5-b1b0-b385a75f9add"
+              },
+              {
+                "uuid": "7ddf7416-9397-47d8-902a-7b95c3e4907f",
+                "name": "No Response",
+                "exit_uuid": "ddcffcc0-8ce8-4ab8-8469-e8e3ee7439e6"
+              }
+            ],
+            "default_category_uuid": "f68b95a1-71c1-45c7-95ca-2bb27f58ad39",
+            "result_name": "talk_name"
+          },
+          "exits": [
+            {
+              "uuid": "38e9b9f4-67dc-4ac5-b1b0-b385a75f9add",
+              "destination_uuid": "647a0045-7912-4907-bb25-070694c38cfa"
+            },
+            {
+              "uuid": "ddcffcc0-8ce8-4ab8-8469-e8e3ee7439e6",
+              "destination_uuid": "ce1c1925-58ed-4d59-8dc9-9ab65e8dfa3f"
+            }
+          ]
+        },
+        {
+          "uuid": "647a0045-7912-4907-bb25-070694c38cfa",
+          "actions": [
+            {
+              "uuid": "e7f8e00a-6f7d-41cc-a4a9-83a107f659ae",
+              "type": "call_webhook",
+              "method": "POST",
+              "url": "https://garantie.boutique/ai/v1/tools/import_talk",
+              "headers": {
+                "Accept": "application/json",
+                "X-API-Key": "@globals.gateway_key",
+                "X-User-Id": "@contact.urns.0"
+              },
+              "body": "{\"_args\": [\"@results.talk_name.value\"]}",
+              "result_name": "import_result"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@results.import_result.category",
+            "cases": [
+              {
+                "uuid": "4dd7aeba-7a26-4e47-a33a-3510d39170da",
+                "type": "has_only_text",
+                "arguments": [
+                  "Success"
+                ],
+                "category_uuid": "2c3a31b2-66fc-4f32-a3c2-65ec94736aa5"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "2c3a31b2-66fc-4f32-a3c2-65ec94736aa5",
+                "name": "Success",
+                "exit_uuid": "d2c00888-bc5e-44ae-adda-df5a0fad4c4d"
+              },
+              {
+                "uuid": "44e5f6c5-baa1-485a-a6a0-359a82a02650",
+                "name": "Failed",
+                "exit_uuid": "7aa1a692-9b9f-4dd5-a433-c79df3c3b7e2"
+              }
+            ],
+            "default_category_uuid": "44e5f6c5-baa1-485a-a6a0-359a82a02650",
+            "result_name": "import_result"
+          },
+          "exits": [
+            {
+              "uuid": "d2c00888-bc5e-44ae-adda-df5a0fad4c4d",
+              "destination_uuid": "2374f09e-06bf-4ad4-a815-9a392ab985d5"
+            },
+            {
+              "uuid": "7aa1a692-9b9f-4dd5-a433-c79df3c3b7e2",
+              "destination_uuid": "e735fd51-43f4-42fc-bb49-f555a436c487"
+            }
+          ]
+        },
+        {
+          "uuid": "2374f09e-06bf-4ad4-a815-9a392ab985d5",
+          "actions": [
+            {
+              "uuid": "1aec0a86-b7a0-454e-af16-54e017c0e29e",
+              "type": "send_msg",
+              "text": "@webhook.json.result"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "c6dc9fec-1d36-471b-ad1f-e4b8850c594e",
+              "destination_uuid": "8b02f087-247c-42bf-a80d-67720e410c43"
+            }
+          ]
+        },
+        {
+          "uuid": "e735fd51-43f4-42fc-bb49-f555a436c487",
+          "actions": [
+            {
+              "uuid": "6e0c2b57-00e9-42a3-b251-6f27b3a6b615",
+              "type": "send_msg",
+              "text": "\u26a0\ufe0f Could not import talk. Check the name/number."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "9b90d00f-ee3b-462f-82e9-0fffa857b720",
+              "destination_uuid": "8b02f087-247c-42bf-a80d-67720e410c43"
+            }
+          ]
+        },
+        {
+          "uuid": "ebbdfffc-fe34-4a97-b024-e7c994c1f61e",
+          "actions": [
+            {
+              "uuid": "f15125ce-a19f-41e2-8232-e19f36942ba8",
+              "type": "send_msg",
+              "text": "\ud83c\udfaf *Select Talk*\n\nEnter the talk ID number:"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@input.text",
+            "wait": {
+              "type": "msg",
+              "timeout": {
+                "seconds": 300,
+                "category_uuid": "ac71b7ce-c674-4e80-8543-949cb5f965c3"
+              }
+            },
+            "cases": [],
+            "categories": [
+              {
+                "uuid": "0c581bf1-7c12-492e-9d65-8966636886cb",
+                "name": "All Responses",
+                "exit_uuid": "f26bd18d-881b-4c2e-8034-43fd26a9290d"
+              },
+              {
+                "uuid": "ac71b7ce-c674-4e80-8543-949cb5f965c3",
+                "name": "No Response",
+                "exit_uuid": "9b816fe2-7e80-4281-b0e2-62c52e545fa4"
+              }
+            ],
+            "default_category_uuid": "0c581bf1-7c12-492e-9d65-8966636886cb",
+            "result_name": "talk_id"
+          },
+          "exits": [
+            {
+              "uuid": "f26bd18d-881b-4c2e-8034-43fd26a9290d",
+              "destination_uuid": "3883cf76-c449-4493-9541-1bec74ef1e84"
+            },
+            {
+              "uuid": "9b816fe2-7e80-4281-b0e2-62c52e545fa4",
+              "destination_uuid": "ce1c1925-58ed-4d59-8dc9-9ab65e8dfa3f"
+            }
+          ]
+        },
+        {
+          "uuid": "3883cf76-c449-4493-9541-1bec74ef1e84",
+          "actions": [
+            {
+              "uuid": "e5daa981-8bc5-47e1-91b5-a3e0d4b11964",
+              "type": "call_webhook",
+              "method": "POST",
+              "url": "https://garantie.boutique/ai/v1/tools/select_active_talk",
+              "headers": {
+                "Accept": "application/json",
+                "X-API-Key": "@globals.gateway_key",
+                "X-User-Id": "@contact.urns.0"
+              },
+              "body": "{\"_args\": [\"@results.talk_id.value\"]}",
+              "result_name": "select_result"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@results.select_result.category",
+            "cases": [
+              {
+                "uuid": "0a393f5e-c83e-4c74-b756-f1410dba3afc",
+                "type": "has_only_text",
+                "arguments": [
+                  "Success"
+                ],
+                "category_uuid": "837a9bf0-d587-4243-8fe6-4443e989ceab"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "837a9bf0-d587-4243-8fe6-4443e989ceab",
+                "name": "Success",
+                "exit_uuid": "d51b6aac-d52f-4ab6-b1cc-92b920d206d2"
+              },
+              {
+                "uuid": "863235b6-3947-4559-918d-06eec05758de",
+                "name": "Failed",
+                "exit_uuid": "776c02f5-8a48-46fa-8e89-5be04ef9c925"
+              }
+            ],
+            "default_category_uuid": "863235b6-3947-4559-918d-06eec05758de",
+            "result_name": "select_result"
+          },
+          "exits": [
+            {
+              "uuid": "d51b6aac-d52f-4ab6-b1cc-92b920d206d2",
+              "destination_uuid": "f7681357-bed2-497f-b1ef-94a16c2a0d6a"
+            },
+            {
+              "uuid": "776c02f5-8a48-46fa-8e89-5be04ef9c925",
+              "destination_uuid": "e3586e3a-2a76-4fba-bf67-23504cb34e84"
+            }
+          ]
+        },
+        {
+          "uuid": "f7681357-bed2-497f-b1ef-94a16c2a0d6a",
+          "actions": [
+            {
+              "uuid": "8dd2c958-49fe-41d2-93df-95ebfd33c54a",
+              "type": "send_msg",
+              "text": "@webhook.json.result"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "eead833b-5b30-450c-9562-40a805800a68",
+              "destination_uuid": "8b02f087-247c-42bf-a80d-67720e410c43"
+            }
+          ]
+        },
+        {
+          "uuid": "e3586e3a-2a76-4fba-bf67-23504cb34e84",
+          "actions": [
+            {
+              "uuid": "2c1151ba-5c32-4883-b682-fcc8d3136aed",
+              "type": "send_msg",
+              "text": "\u26a0\ufe0f Talk not found. Use *My Talks* to see available IDs."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "cc24509d-55e7-402a-8eba-ad339cf4e5df",
+              "destination_uuid": "8b02f087-247c-42bf-a80d-67720e410c43"
+            }
+          ]
+        },
+        {
+          "uuid": "afdd8911-ef14-4ac2-8459-ffa6f3c5b780",
+          "actions": [
+            {
+              "uuid": "e5181854-db48-4959-882e-4a2964c51a31",
+              "type": "enter_flow",
+              "flow": {
+                "uuid": "b86310cf-eb0a-4b3d-b793-2642ddbc2e6b",
+                "name": "TalkPrep Work"
+              },
+              "terminal": false
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "3748bf66-abec-4321-ba96-b5513bba796c",
+              "destination_uuid": "8b02f087-247c-42bf-a80d-67720e410c43"
+            }
+          ]
+        },
+        {
+          "uuid": "d0ca2ec3-fc82-4fef-9496-819c08c1d986",
+          "actions": [
+            {
+              "uuid": "5c1d4eb8-740c-47dc-838e-b1a060f565d2",
+              "type": "enter_flow",
+              "flow": {
+                "uuid": "130e3b31-5b28-4c6b-87ce-1cf35d9ed2d2",
+                "name": "TalkPrep Study"
+              },
+              "terminal": false
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "54b35bd3-ee71-4816-9222-94bb568acb99",
+              "destination_uuid": "8b02f087-247c-42bf-a80d-67720e410c43"
+            }
+          ]
+        }
+      ],
+      "_ui": {
+        "nodes": {
+          "3a9c6a26-f6a1-4272-9a97-2c7ad8e8426b": {
+            "position": {
+              "left": 400,
+              "top": -220
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "8b02f087-247c-42bf-a80d-67720e410c43": {
+            "position": {
+              "left": 400,
+              "top": 0
+            },
+            "type": "wait_for_response",
+            "config": {}
+          },
+          "ce1c1925-58ed-4d59-8dc9-9ab65e8dfa3f": {
+            "position": {
+              "left": 800,
+              "top": 0
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "76ee01de-9b12-4c6d-9d06-bda213fab341": {
+            "position": {
+              "left": 800,
+              "top": 220
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "c794ac92-1c89-4715-8073-9e2d541e390b": {
+            "position": {
+              "left": 0,
+              "top": 440
+            },
+            "type": "split_by_webhook",
+            "config": {}
+          },
+          "8d3c77d7-64b6-4f1e-b6d9-f22ccd6a1566": {
+            "position": {
+              "left": 0,
+              "top": 660
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "5379855b-0fdc-4556-b4f8-c25a03c64328": {
+            "position": {
+              "left": 250,
+              "top": 660
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "6301490b-0f6b-47ae-8af7-9be97f76cd1b": {
+            "position": {
+              "left": 400,
+              "top": 440
+            },
+            "type": "split_by_webhook",
+            "config": {}
+          },
+          "d3572448-61f9-4099-9b59-7ebb2b52aa50": {
+            "position": {
+              "left": 400,
+              "top": 660
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "5cee57ef-0eb9-42d6-bca3-7073a3a59a39": {
+            "position": {
+              "left": 650,
+              "top": 660
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "d5b2268c-d258-4c3c-86b9-00008c9a44bf": {
+            "position": {
+              "left": 800,
+              "top": 440
+            },
+            "type": "split_by_webhook",
+            "config": {}
+          },
+          "c31e1ed9-655e-4496-b383-fae2857b7fcb": {
+            "position": {
+              "left": 800,
+              "top": 660
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "1d7b061a-6094-40a7-9b3f-c307bdefc2fe": {
+            "position": {
+              "left": 1050,
+              "top": 660
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "7bb981aa-3806-4111-8b7e-98027184dce0": {
+            "position": {
+              "left": 0,
+              "top": 880
+            },
+            "type": "wait_for_response",
+            "config": {}
+          },
+          "b257ba2d-1a60-4d4d-8d4d-50acb2ee508e": {
+            "position": {
+              "left": 0,
+              "top": 1100
+            },
+            "type": "split_by_webhook",
+            "config": {}
+          },
+          "d7ffb5bf-10db-4a29-a5dc-840a92c9288e": {
+            "position": {
+              "left": 0,
+              "top": 1320
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "3ef2557c-b586-43cd-b30b-169006ae48dd": {
+            "position": {
+              "left": 250,
+              "top": 1320
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "08220cc1-d7f2-4676-a12c-fe1c2e38a6b3": {
+            "position": {
+              "left": 400,
+              "top": 880
+            },
+            "type": "wait_for_response",
+            "config": {}
+          },
+          "647a0045-7912-4907-bb25-070694c38cfa": {
+            "position": {
+              "left": 400,
+              "top": 1100
+            },
+            "type": "split_by_webhook",
+            "config": {}
+          },
+          "2374f09e-06bf-4ad4-a815-9a392ab985d5": {
+            "position": {
+              "left": 400,
+              "top": 1320
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "e735fd51-43f4-42fc-bb49-f555a436c487": {
+            "position": {
+              "left": 650,
+              "top": 1320
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "ebbdfffc-fe34-4a97-b024-e7c994c1f61e": {
+            "position": {
+              "left": 800,
+              "top": 880
+            },
+            "type": "wait_for_response",
+            "config": {}
+          },
+          "3883cf76-c449-4493-9541-1bec74ef1e84": {
+            "position": {
+              "left": 800,
+              "top": 1100
+            },
+            "type": "split_by_webhook",
+            "config": {}
+          },
+          "f7681357-bed2-497f-b1ef-94a16c2a0d6a": {
+            "position": {
+              "left": 800,
+              "top": 1320
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "e3586e3a-2a76-4fba-bf67-23504cb34e84": {
+            "position": {
+              "left": 1050,
+              "top": 1320
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "afdd8911-ef14-4ac2-8459-ffa6f3c5b780": {
+            "position": {
+              "left": 200,
+              "top": 1540
+            },
+            "type": "split_by_subflow",
+            "config": {}
+          },
+          "d0ca2ec3-fc82-4fef-9496-819c08c1d986": {
+            "position": {
+              "left": 600,
+              "top": 1540
+            },
+            "type": "split_by_subflow",
+            "config": {}
+          }
+        },
+        "editor": "0.156.6"
+      }
+    },
+    {
+      "uuid": "b86310cf-eb0a-4b3d-b793-2642ddbc2e6b",
+      "name": "TalkPrep Work",
+      "spec_version": "14.4.0",
+      "language": "eng",
+      "type": "messaging",
+      "revision": 1,
+      "expire_after_minutes": 30,
+      "localization": {},
+      "nodes": [
+        {
+          "uuid": "6601646c-c09c-4a6d-a879-c8258e6bf371",
+          "actions": [
+            {
+              "uuid": "26554d5f-2261-445a-8785-89ad321ce235",
+              "type": "send_msg",
+              "text": "\u270f\ufe0f *Work on Talk*\n\nSelect an operation:",
+              "quick_replies": [
+                "Create Revision",
+                "Develop Section",
+                "Evaluate Talk",
+                "Rehearsal",
+                "Export Manuscript",
+                "\u2b05\ufe0f Back"
+              ]
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@input.text",
+            "wait": {
+              "type": "msg",
+              "timeout": {
+                "seconds": 300,
+                "category_uuid": "7d899aa4-554d-45ba-8eb6-da2af07e2558"
+              }
+            },
+            "cases": [
+              {
+                "uuid": "fd67a609-c5df-4513-a04e-55e9834a6725",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "Create Revision"
+                ],
+                "category_uuid": "aa55138c-d2ac-4b1d-93ae-d7b4b21c4905"
+              },
+              {
+                "uuid": "952970c9-92d5-4ea5-882f-50d00ae2bfbe",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "Develop Section"
+                ],
+                "category_uuid": "3f7a82ed-58c9-4c27-b0d8-e61342502233"
+              },
+              {
+                "uuid": "0ad4819a-ef74-4d9f-9cec-36f035bbd760",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "Evaluate Talk"
+                ],
+                "category_uuid": "6478bfcd-ac13-4d86-907f-78a00d320fbf"
+              },
+              {
+                "uuid": "a2c126ab-9307-4b71-9e11-e420cea63345",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "Rehearsal"
+                ],
+                "category_uuid": "a55505d5-92b3-47fd-b1c2-9144752b03f6"
+              },
+              {
+                "uuid": "a50deb15-26ef-414c-8660-43c22022ca48",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "Export Manuscript"
+                ],
+                "category_uuid": "337fcabb-b475-482b-a4d0-d0560b014e12"
+              },
+              {
+                "uuid": "b5af5e37-89fd-4a3a-afc1-368fe5850c98",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\u2b05\ufe0f Back"
+                ],
+                "category_uuid": "270f8eb8-b181-47b9-a4db-133fec7f6ada"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "aa55138c-d2ac-4b1d-93ae-d7b4b21c4905",
+                "name": "Create Revision",
+                "exit_uuid": "54e8710b-413b-431f-ada1-283000d642ee"
+              },
+              {
+                "uuid": "3f7a82ed-58c9-4c27-b0d8-e61342502233",
+                "name": "Develop Section",
+                "exit_uuid": "71b146a7-65ca-4322-9f20-da2175f47685"
+              },
+              {
+                "uuid": "6478bfcd-ac13-4d86-907f-78a00d320fbf",
+                "name": "Evaluate Talk",
+                "exit_uuid": "714f7ec5-9799-4751-9c0f-11e720c68722"
+              },
+              {
+                "uuid": "a55505d5-92b3-47fd-b1c2-9144752b03f6",
+                "name": "Rehearsal",
+                "exit_uuid": "88fb3e44-f5ef-4e62-b0c7-0b39e470ead9"
+              },
+              {
+                "uuid": "337fcabb-b475-482b-a4d0-d0560b014e12",
+                "name": "Export Manuscript",
+                "exit_uuid": "3aaecc8e-591f-4955-a3fc-ce4da624c2df"
+              },
+              {
+                "uuid": "270f8eb8-b181-47b9-a4db-133fec7f6ada",
+                "name": "\u2b05\ufe0f Back",
+                "exit_uuid": "28d64c05-0d6b-4028-a9fb-b191055463b1"
+              },
+              {
+                "uuid": "7d899aa4-554d-45ba-8eb6-da2af07e2558",
+                "name": "No Response",
+                "exit_uuid": "15da243e-db14-4611-9fb7-7dd1c93b2523"
+              },
+              {
+                "uuid": "cb2b024d-99c4-4ca1-91de-c4c69d0bf968",
+                "name": "Other",
+                "exit_uuid": "50e32c0b-b950-4e0a-a4bd-e13b7c16db21"
+              }
+            ],
+            "default_category_uuid": "cb2b024d-99c4-4ca1-91de-c4c69d0bf968",
+            "result_name": "menu_6601646c"
+          },
+          "exits": [
+            {
+              "uuid": "54e8710b-413b-431f-ada1-283000d642ee",
+              "destination_uuid": "f0a52eb2-3d86-40c4-bd4e-1d9164ab2218"
+            },
+            {
+              "uuid": "71b146a7-65ca-4322-9f20-da2175f47685",
+              "destination_uuid": "58094709-8c86-4698-aa91-2e1e60baa154"
+            },
+            {
+              "uuid": "714f7ec5-9799-4751-9c0f-11e720c68722",
+              "destination_uuid": "be7f7056-50fe-464a-8944-b4977e8d5ae4"
+            },
+            {
+              "uuid": "88fb3e44-f5ef-4e62-b0c7-0b39e470ead9",
+              "destination_uuid": "177d3f03-4176-455c-9c86-65cbcd15fbc3"
+            },
+            {
+              "uuid": "3aaecc8e-591f-4955-a3fc-ce4da624c2df",
+              "destination_uuid": "c67baf6d-9f5c-417a-8bdd-ba048c6997c3"
+            },
+            {
+              "uuid": "28d64c05-0d6b-4028-a9fb-b191055463b1",
+              "destination_uuid": "ac3270a0-bf21-44e3-b46d-f7d8e8c16a2d"
+            },
+            {
+              "uuid": "15da243e-db14-4611-9fb7-7dd1c93b2523",
+              "destination_uuid": "47baa409-e5f7-417a-8269-c545cb8cf7cf"
+            },
+            {
+              "uuid": "50e32c0b-b950-4e0a-a4bd-e13b7c16db21",
+              "destination_uuid": "6601646c-c09c-4a6d-a879-c8258e6bf371"
+            }
+          ]
+        },
+        {
+          "uuid": "47baa409-e5f7-417a-8269-c545cb8cf7cf",
+          "actions": [
+            {
+              "uuid": "b59d29bc-f708-415c-94a8-db0f67eba823",
+              "type": "send_msg",
+              "text": "\u23f1\ufe0f Work session timed out."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "913d245e-bb9c-4c94-92a3-f8c2029a6787",
+              "destination_uuid": null
+            }
+          ]
+        },
+        {
+          "uuid": "ac3270a0-bf21-44e3-b46d-f7d8e8c16a2d",
+          "actions": [
+            {
+              "uuid": "c6ff6951-f49a-48a4-b23b-ac868e1912f2",
+              "type": "send_msg",
+              "text": "\u2b05\ufe0f Returning to TalkPrep menu..."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "72b60267-3246-43f2-b55d-0fcbac74245c",
+              "destination_uuid": null
+            }
+          ]
+        },
+        {
+          "uuid": "f0a52eb2-3d86-40c4-bd4e-1d9164ab2218",
+          "actions": [
+            {
+              "uuid": "7326e965-04e3-490d-b26d-2f0b30316e1f",
+              "type": "send_msg",
+              "text": "\ud83d\udcdd *Create Revision*\n\nEnter the audience and style:\n_Example: youth talk, encouraging tone_"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@input.text",
+            "wait": {
+              "type": "msg",
+              "timeout": {
+                "seconds": 300,
+                "category_uuid": "c6896ec9-1c34-405f-b9c2-9d1b6b5f8418"
+              }
+            },
+            "cases": [],
+            "categories": [
+              {
+                "uuid": "5dc29bab-3959-4af7-8ee9-3ceba8f73ddc",
+                "name": "All Responses",
+                "exit_uuid": "29ac6636-ec3e-44c7-ba03-b095d2bb9a23"
+              },
+              {
+                "uuid": "c6896ec9-1c34-405f-b9c2-9d1b6b5f8418",
+                "name": "No Response",
+                "exit_uuid": "43c29b61-4a92-4d5e-ae1c-039d1333c0f5"
+              }
+            ],
+            "default_category_uuid": "5dc29bab-3959-4af7-8ee9-3ceba8f73ddc",
+            "result_name": "revision_spec"
+          },
+          "exits": [
+            {
+              "uuid": "29ac6636-ec3e-44c7-ba03-b095d2bb9a23",
+              "destination_uuid": "1a432131-8637-493f-8945-469b1d1210e5"
+            },
+            {
+              "uuid": "43c29b61-4a92-4d5e-ae1c-039d1333c0f5",
+              "destination_uuid": "47baa409-e5f7-417a-8269-c545cb8cf7cf"
+            }
+          ]
+        },
+        {
+          "uuid": "1a432131-8637-493f-8945-469b1d1210e5",
+          "actions": [
+            {
+              "uuid": "68f7a178-529a-41bb-a997-6dc856f99b16",
+              "type": "call_webhook",
+              "method": "POST",
+              "url": "https://garantie.boutique/ai/v1/tools/create_revision",
+              "headers": {
+                "Accept": "application/json",
+                "X-API-Key": "@globals.gateway_key",
+                "X-User-Id": "@contact.urns.0"
+              },
+              "body": "{\"_args\": [\"@results.revision_spec.value\"]}",
+              "result_name": "rev_result"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@results.rev_result.category",
+            "cases": [
+              {
+                "uuid": "b9373476-7054-46ad-8a7c-5ad8a60d9635",
+                "type": "has_only_text",
+                "arguments": [
+                  "Success"
+                ],
+                "category_uuid": "819681e5-fe51-47ac-a83b-bf3eb3d509ea"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "819681e5-fe51-47ac-a83b-bf3eb3d509ea",
+                "name": "Success",
+                "exit_uuid": "15db8931-0c2c-4675-8647-ccbe838a241f"
+              },
+              {
+                "uuid": "bd0cff0d-8b5f-4d47-992a-8e247f9c5bd3",
+                "name": "Failed",
+                "exit_uuid": "c7761433-c69d-47c1-8152-e72c2d012925"
+              }
+            ],
+            "default_category_uuid": "bd0cff0d-8b5f-4d47-992a-8e247f9c5bd3",
+            "result_name": "rev_result"
+          },
+          "exits": [
+            {
+              "uuid": "15db8931-0c2c-4675-8647-ccbe838a241f",
+              "destination_uuid": "fdc041d8-ef59-4e18-b13d-89a279a9fc94"
+            },
+            {
+              "uuid": "c7761433-c69d-47c1-8152-e72c2d012925",
+              "destination_uuid": "f514e9df-3d52-4767-b2bc-ef2c7903bb60"
+            }
+          ]
+        },
+        {
+          "uuid": "fdc041d8-ef59-4e18-b13d-89a279a9fc94",
+          "actions": [
+            {
+              "uuid": "77a7b947-ba8e-44bd-aae9-f7e7ec04fb74",
+              "type": "send_msg",
+              "text": "@webhook.json.result"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "1cd72978-fbcc-475d-9868-f198d3174dcd",
+              "destination_uuid": "6601646c-c09c-4a6d-a879-c8258e6bf371"
+            }
+          ]
+        },
+        {
+          "uuid": "f514e9df-3d52-4767-b2bc-ef2c7903bb60",
+          "actions": [
+            {
+              "uuid": "1b4c5b62-3b50-4992-af1e-207b5c8fb4d5",
+              "type": "send_msg",
+              "text": "\u26a0\ufe0f Could not create revision. Make sure you have an active talk selected."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "4bbdfb14-492f-4bff-b449-d007eac5da21",
+              "destination_uuid": "6601646c-c09c-4a6d-a879-c8258e6bf371"
+            }
+          ]
+        },
+        {
+          "uuid": "58094709-8c86-4698-aa91-2e1e60baa154",
+          "actions": [
+            {
+              "uuid": "ad5ed69d-d104-43c0-985b-c94af0bb744c",
+              "type": "send_msg",
+              "text": "\ud83d\udcd6 *Develop Section*\n\nEnter the section name:\n_Example: Introduction_"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@input.text",
+            "wait": {
+              "type": "msg",
+              "timeout": {
+                "seconds": 300,
+                "category_uuid": "049d811f-9330-4343-aad7-c8604a489b28"
+              }
+            },
+            "cases": [],
+            "categories": [
+              {
+                "uuid": "0ddbde2e-32ad-431e-a3b7-4390e42a6b07",
+                "name": "All Responses",
+                "exit_uuid": "3f4bfdac-cb9d-435a-a823-3f1ae7750c80"
+              },
+              {
+                "uuid": "049d811f-9330-4343-aad7-c8604a489b28",
+                "name": "No Response",
+                "exit_uuid": "93efedca-e9f6-4499-a978-2a3312802129"
+              }
+            ],
+            "default_category_uuid": "0ddbde2e-32ad-431e-a3b7-4390e42a6b07",
+            "result_name": "section_name"
+          },
+          "exits": [
+            {
+              "uuid": "3f4bfdac-cb9d-435a-a823-3f1ae7750c80",
+              "destination_uuid": "7fafaae5-6642-4a2f-8ef8-685e20ad4890"
+            },
+            {
+              "uuid": "93efedca-e9f6-4499-a978-2a3312802129",
+              "destination_uuid": "47baa409-e5f7-417a-8269-c545cb8cf7cf"
+            }
+          ]
+        },
+        {
+          "uuid": "7fafaae5-6642-4a2f-8ef8-685e20ad4890",
+          "actions": [
+            {
+              "uuid": "c8697b77-0424-4771-bf9d-6e37926c9d8d",
+              "type": "call_webhook",
+              "method": "POST",
+              "url": "https://garantie.boutique/ai/v1/tools/develop_section",
+              "headers": {
+                "Accept": "application/json",
+                "X-API-Key": "@globals.gateway_key",
+                "X-User-Id": "@contact.urns.0"
+              },
+              "body": "{\"_args\": [\"@results.section_name.value\"]}",
+              "result_name": "dev_result"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@results.dev_result.category",
+            "cases": [
+              {
+                "uuid": "c8b55608-b181-48b6-a946-ddef96b40ac5",
+                "type": "has_only_text",
+                "arguments": [
+                  "Success"
+                ],
+                "category_uuid": "3d29bc96-b4bc-4dc5-a74d-42706d482dc9"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "3d29bc96-b4bc-4dc5-a74d-42706d482dc9",
+                "name": "Success",
+                "exit_uuid": "5c6c046f-b093-4778-add9-b8f4c414d3d6"
+              },
+              {
+                "uuid": "936eb337-74a0-4139-9eb6-9b918cb3d91d",
+                "name": "Failed",
+                "exit_uuid": "1d81c47a-7808-4327-a7be-2a784c088e76"
+              }
+            ],
+            "default_category_uuid": "936eb337-74a0-4139-9eb6-9b918cb3d91d",
+            "result_name": "dev_result"
+          },
+          "exits": [
+            {
+              "uuid": "5c6c046f-b093-4778-add9-b8f4c414d3d6",
+              "destination_uuid": "5c99885d-79da-42e9-8b64-106247d39058"
+            },
+            {
+              "uuid": "1d81c47a-7808-4327-a7be-2a784c088e76",
+              "destination_uuid": "ca2bbb20-1f8b-4070-a22b-6dde3c5e7017"
+            }
+          ]
+        },
+        {
+          "uuid": "5c99885d-79da-42e9-8b64-106247d39058",
+          "actions": [
+            {
+              "uuid": "dca6b38e-1346-482b-8a48-7cfeb9ebb554",
+              "type": "send_msg",
+              "text": "@webhook.json.result"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "a73ac0cd-02ae-467e-8afb-b4a1059670d3",
+              "destination_uuid": "6601646c-c09c-4a6d-a879-c8258e6bf371"
+            }
+          ]
+        },
+        {
+          "uuid": "ca2bbb20-1f8b-4070-a22b-6dde3c5e7017",
+          "actions": [
+            {
+              "uuid": "0f49a566-3d09-4109-b3b5-b9c2b7e28f90",
+              "type": "send_msg",
+              "text": "\u26a0\ufe0f Could not develop section. Create a revision first."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "a234f8a4-6f25-40a4-843d-4124f8c6f307",
+              "destination_uuid": "6601646c-c09c-4a6d-a879-c8258e6bf371"
+            }
+          ]
+        },
+        {
+          "uuid": "be7f7056-50fe-464a-8944-b4977e8d5ae4",
+          "actions": [
+            {
+              "uuid": "b26193fa-e552-48f1-ad44-0661ec0f018a",
+              "type": "call_webhook",
+              "method": "GET",
+              "url": "https://garantie.boutique/ai/v1/tools/evaluate_talk",
+              "headers": {
+                "Accept": "application/json",
+                "X-API-Key": "@globals.gateway_key",
+                "X-User-Id": "@contact.urns.0"
+              },
+              "body": "",
+              "result_name": "eval_result"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@results.eval_result.category",
+            "cases": [
+              {
+                "uuid": "2084d5c2-887e-4264-9a64-28e0c5ec7f6e",
+                "type": "has_only_text",
+                "arguments": [
+                  "Success"
+                ],
+                "category_uuid": "ed0cfab6-f0ab-446b-8f95-110831f9925b"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "ed0cfab6-f0ab-446b-8f95-110831f9925b",
+                "name": "Success",
+                "exit_uuid": "46351e2a-0da1-4815-ba89-3dd890219ef7"
+              },
+              {
+                "uuid": "9847fc67-b07b-4b14-97b3-76a2b902b4df",
+                "name": "Failed",
+                "exit_uuid": "86d7e0d2-a1eb-48f0-8d3f-59a0967fdf7a"
+              }
+            ],
+            "default_category_uuid": "9847fc67-b07b-4b14-97b3-76a2b902b4df",
+            "result_name": "eval_result"
+          },
+          "exits": [
+            {
+              "uuid": "46351e2a-0da1-4815-ba89-3dd890219ef7",
+              "destination_uuid": "a1593106-c525-4fcd-8265-3467f3558b9b"
+            },
+            {
+              "uuid": "86d7e0d2-a1eb-48f0-8d3f-59a0967fdf7a",
+              "destination_uuid": "9c510128-0d7b-4b4d-a668-e211da8d8af5"
+            }
+          ]
+        },
+        {
+          "uuid": "a1593106-c525-4fcd-8265-3467f3558b9b",
+          "actions": [
+            {
+              "uuid": "1db8aa37-e779-42f0-9bdd-47233ffc67db",
+              "type": "send_msg",
+              "text": "@webhook.json.result"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "4c78f7ed-2b16-4c4b-b397-aa50db4eaee6",
+              "destination_uuid": "6601646c-c09c-4a6d-a879-c8258e6bf371"
+            }
+          ]
+        },
+        {
+          "uuid": "9c510128-0d7b-4b4d-a668-e211da8d8af5",
+          "actions": [
+            {
+              "uuid": "5a80a5fb-4f89-41b9-b69b-77498f596147",
+              "type": "send_msg",
+              "text": "\u26a0\ufe0f Could not evaluate. Make sure you have developed sections first."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "009a94fd-b703-46a2-a110-0b4c97901902",
+              "destination_uuid": "6601646c-c09c-4a6d-a879-c8258e6bf371"
+            }
+          ]
+        },
+        {
+          "uuid": "177d3f03-4176-455c-9c86-65cbcd15fbc3",
+          "actions": [
+            {
+              "uuid": "85efdc48-c210-4fc3-a4ce-62b41781c1d7",
+              "type": "call_webhook",
+              "method": "GET",
+              "url": "https://garantie.boutique/ai/v1/tools/rehearsal_cue",
+              "headers": {
+                "Accept": "application/json",
+                "X-API-Key": "@globals.gateway_key",
+                "X-User-Id": "@contact.urns.0"
+              },
+              "body": "",
+              "result_name": "reh_result"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@results.reh_result.category",
+            "cases": [
+              {
+                "uuid": "5f35fafe-d339-4523-b0af-ae155c1dc276",
+                "type": "has_only_text",
+                "arguments": [
+                  "Success"
+                ],
+                "category_uuid": "1f2c8b25-2078-4fd8-986c-a5b74c470ae9"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "1f2c8b25-2078-4fd8-986c-a5b74c470ae9",
+                "name": "Success",
+                "exit_uuid": "abf5cadd-88b4-4397-aea4-42fb36406a5b"
+              },
+              {
+                "uuid": "503d25bb-f931-4034-a6d2-d83af7d2f164",
+                "name": "Failed",
+                "exit_uuid": "4f26c495-6de6-4606-b649-5948b7b531f8"
+              }
+            ],
+            "default_category_uuid": "503d25bb-f931-4034-a6d2-d83af7d2f164",
+            "result_name": "reh_result"
+          },
+          "exits": [
+            {
+              "uuid": "abf5cadd-88b4-4397-aea4-42fb36406a5b",
+              "destination_uuid": "3aeabed9-cd67-4e92-8b7c-e8dc4f9312d9"
+            },
+            {
+              "uuid": "4f26c495-6de6-4606-b649-5948b7b531f8",
+              "destination_uuid": "a0893f90-0997-4c18-8ae5-abd2a280969f"
+            }
+          ]
+        },
+        {
+          "uuid": "3aeabed9-cd67-4e92-8b7c-e8dc4f9312d9",
+          "actions": [
+            {
+              "uuid": "8aa35b05-dda9-4ecd-9689-aaaaa64f35bc",
+              "type": "send_msg",
+              "text": "@webhook.json.result"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "0244e155-c76c-4cc1-b164-e66c7c7c6a36",
+              "destination_uuid": "6601646c-c09c-4a6d-a879-c8258e6bf371"
+            }
+          ]
+        },
+        {
+          "uuid": "a0893f90-0997-4c18-8ae5-abd2a280969f",
+          "actions": [
+            {
+              "uuid": "d7bd104b-a4c5-43ea-a5f3-6ae7ecfda053",
+              "type": "send_msg",
+              "text": "\u26a0\ufe0f Could not generate rehearsal tips."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "d430dd0b-14a4-4867-9a7e-b990a71d0a1b",
+              "destination_uuid": "6601646c-c09c-4a6d-a879-c8258e6bf371"
+            }
+          ]
+        },
+        {
+          "uuid": "c67baf6d-9f5c-417a-8bdd-ba048c6997c3",
+          "actions": [
+            {
+              "uuid": "532522e8-a782-41d7-970e-eff43b1c1754",
+              "type": "call_webhook",
+              "method": "GET",
+              "url": "https://garantie.boutique/ai/v1/tools/export_talk_summary",
+              "headers": {
+                "Accept": "application/json",
+                "X-API-Key": "@globals.gateway_key",
+                "X-User-Id": "@contact.urns.0"
+              },
+              "body": "",
+              "result_name": "exp_result"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@results.exp_result.category",
+            "cases": [
+              {
+                "uuid": "156b521e-e9d1-4dcc-8f9b-2939496463a1",
+                "type": "has_only_text",
+                "arguments": [
+                  "Success"
+                ],
+                "category_uuid": "aec7baec-cbc2-41cc-b4f7-4acde39df2fa"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "aec7baec-cbc2-41cc-b4f7-4acde39df2fa",
+                "name": "Success",
+                "exit_uuid": "b5fbe1cb-4b35-4236-b9e9-093e89afd193"
+              },
+              {
+                "uuid": "be43e950-f3ee-4001-8b5a-cb63328534ea",
+                "name": "Failed",
+                "exit_uuid": "87979164-75d7-4cea-a832-56816d92cfdc"
+              }
+            ],
+            "default_category_uuid": "be43e950-f3ee-4001-8b5a-cb63328534ea",
+            "result_name": "exp_result"
+          },
+          "exits": [
+            {
+              "uuid": "b5fbe1cb-4b35-4236-b9e9-093e89afd193",
+              "destination_uuid": "9827c562-6ece-4c68-bd81-e712ab0e4b3c"
+            },
+            {
+              "uuid": "87979164-75d7-4cea-a832-56816d92cfdc",
+              "destination_uuid": "5fb32180-e544-4d22-96e3-12b55aa8c06d"
+            }
+          ]
+        },
+        {
+          "uuid": "9827c562-6ece-4c68-bd81-e712ab0e4b3c",
+          "actions": [
+            {
+              "uuid": "8b0178c3-93ad-4e17-9f92-6a8e939e0624",
+              "type": "send_msg",
+              "text": "@webhook.json.result"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "b012e989-b1f9-49cb-af6b-63d7f3631b0a",
+              "destination_uuid": "6601646c-c09c-4a6d-a879-c8258e6bf371"
+            }
+          ]
+        },
+        {
+          "uuid": "5fb32180-e544-4d22-96e3-12b55aa8c06d",
+          "actions": [
+            {
+              "uuid": "75b1e719-0fa8-431b-b0e8-635acd01f9c1",
+              "type": "send_msg",
+              "text": "\u26a0\ufe0f Could not export. Develop and evaluate first."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "07d8cc11-f36f-46e4-914b-72abbc80f427",
+              "destination_uuid": "6601646c-c09c-4a6d-a879-c8258e6bf371"
+            }
+          ]
+        }
+      ],
+      "_ui": {
+        "nodes": {
+          "6601646c-c09c-4a6d-a879-c8258e6bf371": {
+            "position": {
+              "left": 300,
+              "top": 0
+            },
+            "type": "wait_for_response",
+            "config": {}
+          },
+          "47baa409-e5f7-417a-8269-c545cb8cf7cf": {
+            "position": {
+              "left": 700,
+              "top": 0
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "ac3270a0-bf21-44e3-b46d-f7d8e8c16a2d": {
+            "position": {
+              "left": 700,
+              "top": 220
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "f0a52eb2-3d86-40c4-bd4e-1d9164ab2218": {
+            "position": {
+              "left": 0,
+              "top": 440
+            },
+            "type": "wait_for_response",
+            "config": {}
+          },
+          "1a432131-8637-493f-8945-469b1d1210e5": {
+            "position": {
+              "left": 0,
+              "top": 660
+            },
+            "type": "split_by_webhook",
+            "config": {}
+          },
+          "fdc041d8-ef59-4e18-b13d-89a279a9fc94": {
+            "position": {
+              "left": 0,
+              "top": 880
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "f514e9df-3d52-4767-b2bc-ef2c7903bb60": {
+            "position": {
+              "left": 300,
+              "top": 880
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "58094709-8c86-4698-aa91-2e1e60baa154": {
+            "position": {
+              "left": 500,
+              "top": 440
+            },
+            "type": "wait_for_response",
+            "config": {}
+          },
+          "7fafaae5-6642-4a2f-8ef8-685e20ad4890": {
+            "position": {
+              "left": 500,
+              "top": 660
+            },
+            "type": "split_by_webhook",
+            "config": {}
+          },
+          "5c99885d-79da-42e9-8b64-106247d39058": {
+            "position": {
+              "left": 500,
+              "top": 880
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "ca2bbb20-1f8b-4070-a22b-6dde3c5e7017": {
+            "position": {
+              "left": 800,
+              "top": 880
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "be7f7056-50fe-464a-8944-b4977e8d5ae4": {
+            "position": {
+              "left": 0,
+              "top": 1100
+            },
+            "type": "split_by_webhook",
+            "config": {}
+          },
+          "a1593106-c525-4fcd-8265-3467f3558b9b": {
+            "position": {
+              "left": 0,
+              "top": 1320
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "9c510128-0d7b-4b4d-a668-e211da8d8af5": {
+            "position": {
+              "left": 300,
+              "top": 1320
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "177d3f03-4176-455c-9c86-65cbcd15fbc3": {
+            "position": {
+              "left": 500,
+              "top": 1100
+            },
+            "type": "split_by_webhook",
+            "config": {}
+          },
+          "3aeabed9-cd67-4e92-8b7c-e8dc4f9312d9": {
+            "position": {
+              "left": 500,
+              "top": 1320
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "a0893f90-0997-4c18-8ae5-abd2a280969f": {
+            "position": {
+              "left": 800,
+              "top": 1320
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "c67baf6d-9f5c-417a-8bdd-ba048c6997c3": {
+            "position": {
+              "left": 0,
+              "top": 1540
+            },
+            "type": "split_by_webhook",
+            "config": {}
+          },
+          "9827c562-6ece-4c68-bd81-e712ab0e4b3c": {
+            "position": {
+              "left": 0,
+              "top": 1760
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "5fb32180-e544-4d22-96e3-12b55aa8c06d": {
+            "position": {
+              "left": 300,
+              "top": 1760
+            },
+            "type": "execute_actions",
+            "config": {}
+          }
+        },
+        "editor": "0.156.6"
+      }
+    },
+    {
+      "uuid": "130e3b31-5b28-4c6b-87ce-1cf35d9ed2d2",
+      "name": "TalkPrep Study",
+      "spec_version": "14.4.0",
+      "language": "eng",
+      "type": "messaging",
+      "revision": 1,
+      "expire_after_minutes": 30,
+      "localization": {},
+      "nodes": [
+        {
+          "uuid": "a5d521b4-f0f5-4819-974c-29be67a94cd0",
+          "actions": [
+            {
+              "uuid": "ee369bd1-3e2f-4873-9254-5ff2b07f9f09",
+              "type": "send_msg",
+              "text": "\ud83d\udcda *Study Tools*\n\nSelect a tool:",
+              "quick_replies": [
+                "\ud83c\udccf Anki Deck",
+                "\ud83d\udcd3 Push to SiYuan",
+                "\u2b05\ufe0f Back"
+              ]
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@input.text",
+            "wait": {
+              "type": "msg",
+              "timeout": {
+                "seconds": 300,
+                "category_uuid": "98b5d598-8a05-4e40-897c-7840685c0343"
+              }
+            },
+            "cases": [
+              {
+                "uuid": "aa18373e-e207-42fd-a172-24dc284d8301",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83c\udccf Anki Deck"
+                ],
+                "category_uuid": "3970a408-49e6-4eb3-8fb7-2a3543e1ec19"
+              },
+              {
+                "uuid": "9ab220ac-bede-425b-aef4-a2ca46cbe443",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\ud83d\udcd3 Push to SiYuan"
+                ],
+                "category_uuid": "3d0f31d7-9f22-4b29-9762-7d32389560f7"
+              },
+              {
+                "uuid": "6f7a856d-d266-449a-b74a-f201c336945e",
+                "type": "has_only_phrase",
+                "arguments": [
+                  "\u2b05\ufe0f Back"
+                ],
+                "category_uuid": "a41d39d1-190e-4725-ac5d-e39b9b4a6789"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "3970a408-49e6-4eb3-8fb7-2a3543e1ec19",
+                "name": "\ud83c\udccf Anki Deck",
+                "exit_uuid": "592a5b89-46a8-43e8-9831-3d390af14f60"
+              },
+              {
+                "uuid": "3d0f31d7-9f22-4b29-9762-7d32389560f7",
+                "name": "\ud83d\udcd3 Push to SiYuan",
+                "exit_uuid": "f598bbce-bc36-470d-a27a-0190172f9d80"
+              },
+              {
+                "uuid": "a41d39d1-190e-4725-ac5d-e39b9b4a6789",
+                "name": "\u2b05\ufe0f Back",
+                "exit_uuid": "a4ea4ae7-a03a-427b-86e5-15b3505564f0"
+              },
+              {
+                "uuid": "98b5d598-8a05-4e40-897c-7840685c0343",
+                "name": "No Response",
+                "exit_uuid": "1bdaade5-4578-4821-acc2-8f280ba7c01f"
+              },
+              {
+                "uuid": "b9fe5e41-b1b0-4758-854c-0314e2709678",
+                "name": "Other",
+                "exit_uuid": "86bb5c57-d351-43ec-bda3-62e1bd96c1bc"
+              }
+            ],
+            "default_category_uuid": "b9fe5e41-b1b0-4758-854c-0314e2709678",
+            "result_name": "menu_a5d521b4"
+          },
+          "exits": [
+            {
+              "uuid": "592a5b89-46a8-43e8-9831-3d390af14f60",
+              "destination_uuid": "53cb6db8-80d2-433d-a39d-3d15213bc8ed"
+            },
+            {
+              "uuid": "f598bbce-bc36-470d-a27a-0190172f9d80",
+              "destination_uuid": "97bc9303-8e97-4470-ab9c-ae7379bfb55b"
+            },
+            {
+              "uuid": "a4ea4ae7-a03a-427b-86e5-15b3505564f0",
+              "destination_uuid": "ea302edf-94fa-4aca-8105-01e4f073520b"
+            },
+            {
+              "uuid": "1bdaade5-4578-4821-acc2-8f280ba7c01f",
+              "destination_uuid": "1061db3c-ac57-4b54-ada4-9e1d19213000"
+            },
+            {
+              "uuid": "86bb5c57-d351-43ec-bda3-62e1bd96c1bc",
+              "destination_uuid": "a5d521b4-f0f5-4819-974c-29be67a94cd0"
+            }
+          ]
+        },
+        {
+          "uuid": "1061db3c-ac57-4b54-ada4-9e1d19213000",
+          "actions": [
+            {
+              "uuid": "f2e663ab-7d20-474c-b3e3-faaee5ea725c",
+              "type": "send_msg",
+              "text": "\u23f1\ufe0f Study tools timed out."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "9363e61b-c1b8-4b10-88e9-7fad1cae4bc0",
+              "destination_uuid": null
+            }
+          ]
+        },
+        {
+          "uuid": "ea302edf-94fa-4aca-8105-01e4f073520b",
+          "actions": [
+            {
+              "uuid": "a188aec9-706d-40b9-9fac-1718a27d3859",
+              "type": "send_msg",
+              "text": "\u2b05\ufe0f Returning to TalkPrep menu..."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "918ee1c6-6caa-4ff8-a71b-381d53dadae6",
+              "destination_uuid": null
+            }
+          ]
+        },
+        {
+          "uuid": "53cb6db8-80d2-433d-a39d-3d15213bc8ed",
+          "actions": [
+            {
+              "uuid": "5266104e-947d-4efd-b5c7-d987340d88b2",
+              "type": "call_webhook",
+              "method": "GET",
+              "url": "https://garantie.boutique/ai/v1/tools/generate_anki_deck",
+              "headers": {
+                "Accept": "application/json",
+                "X-API-Key": "@globals.gateway_key",
+                "X-User-Id": "@contact.urns.0"
+              },
+              "body": "",
+              "result_name": "anki_result"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@results.anki_result.category",
+            "cases": [
+              {
+                "uuid": "814a3492-3294-4e7e-9cfb-9b9316bcaabc",
+                "type": "has_only_text",
+                "arguments": [
+                  "Success"
+                ],
+                "category_uuid": "48e7a311-4112-4acc-a5bf-aeceeb2f27bd"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "48e7a311-4112-4acc-a5bf-aeceeb2f27bd",
+                "name": "Success",
+                "exit_uuid": "50d07203-0f12-4fc7-a394-546d09f653af"
+              },
+              {
+                "uuid": "dc1392ba-8274-4dd7-9752-8f8e3fa19210",
+                "name": "Failed",
+                "exit_uuid": "9b2a0692-4605-4802-8df5-36a425ead44c"
+              }
+            ],
+            "default_category_uuid": "dc1392ba-8274-4dd7-9752-8f8e3fa19210",
+            "result_name": "anki_result"
+          },
+          "exits": [
+            {
+              "uuid": "50d07203-0f12-4fc7-a394-546d09f653af",
+              "destination_uuid": "229b6271-ea2b-49ad-948a-98f8a6b51cba"
+            },
+            {
+              "uuid": "9b2a0692-4605-4802-8df5-36a425ead44c",
+              "destination_uuid": "ed3a1ec5-23d0-40d8-aa3d-22064fb9c6c5"
+            }
+          ]
+        },
+        {
+          "uuid": "229b6271-ea2b-49ad-948a-98f8a6b51cba",
+          "actions": [
+            {
+              "uuid": "fcca0f90-5e7f-4aab-bc5a-f7f5688bcd08",
+              "type": "send_msg",
+              "text": "@webhook.json.result"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "abb4ef5b-9375-41cc-b3a9-480f703c7a11",
+              "destination_uuid": "a5d521b4-f0f5-4819-974c-29be67a94cd0"
+            }
+          ]
+        },
+        {
+          "uuid": "ed3a1ec5-23d0-40d8-aa3d-22064fb9c6c5",
+          "actions": [
+            {
+              "uuid": "7bcefc31-2e2a-4471-8dbc-533d858be2f5",
+              "type": "send_msg",
+              "text": "\u26a0\ufe0f Could not generate Anki deck."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "f04fa780-5e62-426e-b2b4-e88f4f3eb01f",
+              "destination_uuid": "a5d521b4-f0f5-4819-974c-29be67a94cd0"
+            }
+          ]
+        },
+        {
+          "uuid": "97bc9303-8e97-4470-ab9c-ae7379bfb55b",
+          "actions": [
+            {
+              "uuid": "8fdbde20-e3af-4263-b1e8-8b85733d8f0c",
+              "type": "call_webhook",
+              "method": "GET",
+              "url": "https://garantie.boutique/ai/v1/tools/push_to_siyuan",
+              "headers": {
+                "Accept": "application/json",
+                "X-API-Key": "@globals.gateway_key",
+                "X-User-Id": "@contact.urns.0"
+              },
+              "body": "",
+              "result_name": "siyuan_result"
+            }
+          ],
+          "router": {
+            "type": "switch",
+            "operand": "@results.siyuan_result.category",
+            "cases": [
+              {
+                "uuid": "a948bb3a-071b-45e5-89a1-3d21a82a4621",
+                "type": "has_only_text",
+                "arguments": [
+                  "Success"
+                ],
+                "category_uuid": "9d0a1f5e-73a9-4751-8c0e-d03937a58243"
+              }
+            ],
+            "categories": [
+              {
+                "uuid": "9d0a1f5e-73a9-4751-8c0e-d03937a58243",
+                "name": "Success",
+                "exit_uuid": "30cae23c-9c24-4d69-9e48-1d280c582a6c"
+              },
+              {
+                "uuid": "a9666c85-647b-485e-b35c-32cea6ab3a7f",
+                "name": "Failed",
+                "exit_uuid": "443edc58-c8ff-40b8-8490-efee1f11911d"
+              }
+            ],
+            "default_category_uuid": "a9666c85-647b-485e-b35c-32cea6ab3a7f",
+            "result_name": "siyuan_result"
+          },
+          "exits": [
+            {
+              "uuid": "30cae23c-9c24-4d69-9e48-1d280c582a6c",
+              "destination_uuid": "19d04e91-4887-4fc0-8561-dbcc273b5bd5"
+            },
+            {
+              "uuid": "443edc58-c8ff-40b8-8490-efee1f11911d",
+              "destination_uuid": "d717457c-c622-40c1-949c-da9f8d734672"
+            }
+          ]
+        },
+        {
+          "uuid": "19d04e91-4887-4fc0-8561-dbcc273b5bd5",
+          "actions": [
+            {
+              "uuid": "22d19ad5-ac7d-4667-b34b-72ea784bfdfd",
+              "type": "send_msg",
+              "text": "@webhook.json.result"
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "6653cb34-2047-46b2-a9ae-e956e0583767",
+              "destination_uuid": "a5d521b4-f0f5-4819-974c-29be67a94cd0"
+            }
+          ]
+        },
+        {
+          "uuid": "d717457c-c622-40c1-949c-da9f8d734672",
+          "actions": [
+            {
+              "uuid": "b2519227-6da5-4b9a-8a4b-6c337d498f57",
+              "type": "send_msg",
+              "text": "\u26a0\ufe0f Could not push to SiYuan."
+            }
+          ],
+          "exits": [
+            {
+              "uuid": "69716451-bf46-461a-a516-e5f690866570",
+              "destination_uuid": "a5d521b4-f0f5-4819-974c-29be67a94cd0"
+            }
+          ]
+        }
+      ],
+      "_ui": {
+        "nodes": {
+          "a5d521b4-f0f5-4819-974c-29be67a94cd0": {
+            "position": {
+              "left": 300,
+              "top": 0
+            },
+            "type": "wait_for_response",
+            "config": {}
+          },
+          "1061db3c-ac57-4b54-ada4-9e1d19213000": {
+            "position": {
+              "left": 700,
+              "top": 0
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "ea302edf-94fa-4aca-8105-01e4f073520b": {
+            "position": {
+              "left": 700,
+              "top": 220
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "53cb6db8-80d2-433d-a39d-3d15213bc8ed": {
+            "position": {
+              "left": 0,
+              "top": 440
+            },
+            "type": "split_by_webhook",
+            "config": {}
+          },
+          "229b6271-ea2b-49ad-948a-98f8a6b51cba": {
+            "position": {
+              "left": 0,
+              "top": 660
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "ed3a1ec5-23d0-40d8-aa3d-22064fb9c6c5": {
+            "position": {
+              "left": 300,
+              "top": 660
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "97bc9303-8e97-4470-ab9c-ae7379bfb55b": {
+            "position": {
+              "left": 500,
+              "top": 440
+            },
+            "type": "split_by_webhook",
+            "config": {}
+          },
+          "19d04e91-4887-4fc0-8561-dbcc273b5bd5": {
+            "position": {
+              "left": 500,
+              "top": 660
+            },
+            "type": "execute_actions",
+            "config": {}
+          },
+          "d717457c-c622-40c1-949c-da9f8d734672": {
+            "position": {
+              "left": 800,
+              "top": 660
+            },
+            "type": "execute_actions",
+            "config": {}
+          }
+        },
+        "editor": "0.156.6"
+      }
+    }
+  ],
+  "campaigns": [],
+  "triggers": [],
+  "fields": [],
+  "groups": []
+}

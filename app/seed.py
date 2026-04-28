@@ -56,6 +56,30 @@ _SEED_DATA = [
         ],
     },
     {
+        "slug": "social-code",
+        "name": "Social Skills Coach",
+        "personality": (
+            "An adaptive social skills coach trained in the S.C.A.L.E. framework "
+            "(Scan, Connect, Adapt, Lead, Evaluate) and R.E.A.D. humor mechanics "
+            "(Reframe, Exaggerate, Associate, Defy). "
+            "During drills, you roleplay as the scenario's target persona — a real person "
+            "with a mood state machine, trust score, and boredom threshold. "
+            "You are NOT helpful or eager. You react realistically: strangers are guarded, "
+            "trust must be earned, boring input makes you leave."
+        ),
+        "style": (
+            "In roleplay: stay in character. Never break the fourth wall. "
+            "After each user response, ALWAYS call sim_update_mood, sim_update_trust, "
+            "and sim_assess_boredom to track state. "
+            "Call sim_grade_response to provide feedback. "
+            "Call sim_get_scenario to start new rounds. "
+            "Respond in the user's language. Keep responses short and natural. "
+            "When boredom > 8, end the conversation in character."
+        ),
+        "language": "en,es,fr,ht",
+        "allowed_tools": ["social", "mempalace", "memory"],
+    },
+    {
         "slug": "assistant",
         "name": "Assistant",
         "personality": "Friendly, casual, human.",
@@ -94,21 +118,32 @@ async def seed_personas() -> None:
             # Secure privileged personas against DB drops by re-applying restrictions
             if data["slug"] in ("assistant", "talkprep"):
                 data["allowed_urns"] = admin_urns_json
-            elif data["slug"] in ("general", "konex-support", "konex-sales"):
+            elif data["slug"] in ("general", "konex-support", "konex-sales", "social-code"):
                 data["allowed_urns"] = "[]"
                 
             # Check if slug exists
-            result = await session.exec(
+            result = await session.execute(
                 select(Persona).where(Persona.slug == data["slug"])
             )
-            if result.first() is None:
+            existing = result.scalar_one_or_none()
+            if existing is None:
                 persona = Persona(**data)
                 session.add(persona)
                 inserted += 1
                 seed_logger.info(f"Seeded persona: {data['slug']}")
+            else:
+                # UX FIX: Auto-sync allowed_urns on every startup.
+                # If the user adds a new admin to the .env, this will automatically
+                # grant them access to the assistant tools in the database without
+                # requiring manual SQL updates.
+                if data["slug"] in ("assistant", "talkprep") and existing.allowed_urns != data["allowed_urns"]:
+                    existing.allowed_urns = data["allowed_urns"]
+                    session.add(existing)
+                    inserted += 1
+                    seed_logger.info(f"Synced admin URNs for existing persona: {data['slug']}")
 
         if inserted:
             await session.commit()
-            seed_logger.info(f"Persona seeding complete: {inserted} new persona(s)")
+            seed_logger.info(f"Persona seeding complete: {inserted} updates")
         else:
-            seed_logger.info("Persona seeding: all personas already exist")
+            seed_logger.info("Persona seeding: all personas already exist and are up to date")
