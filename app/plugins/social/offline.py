@@ -357,35 +357,134 @@ def analyze_response_offline(
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-#  Ideal Response Templates
+#  Ideal Response Generator — context-adaptive
 # ═══════════════════════════════════════════════════════════════════════════
+
+# Setting-specific reactions keyed by keywords found in the scenario context.
+# Multiple keywords can match; the first hit wins.
+_CONTEXT_HINTS = [
+    # Workplace
+    ({"meeting", "conference room", "boardroom"}, "Meetings can be intense!", "it's a tense moment", "the meeting"),
+    ({"office", "desk", "cubicle", "coworker", "colleague"}, "Office dynamics, right?", "you're dealing with something at work", "the situation"),
+    ({"manager", "boss", "supervisor"}, "Navigating leadership can be tricky!", "you're talking to someone in charge", "how things are going"),
+    ({"presentation", "pitch", "demo"}, "Public speaking takes courage!", "you're about to present", "your approach"),
+    ({"review", "feedback", "performance"}, "Feedback conversations are always loaded!", "it's evaluation time", "your goals"),
+    ({"deadline", "project", "report"}, "Deadlines can be stressful!", "you're under pressure", "the timeline"),
+    ({"promotion", "raise", "salary"}, "Career moves take confidence!", "you're thinking about your career", "what you want"),
+    ({"layoff", "fired", "restructuring"}, "That's a really tough situation.", "someone's facing bad news", "how to handle it"),
+    # Social
+    ({"party", "gathering", "dinner", "wedding", "celebration"}, "Social events can be tricky to navigate!", "you're at a social event", "the vibe"),
+    ({"restaurant", "café", "coffee", "bar", "drink"}, "Great spot!", "you're out for a bite or drink", "this place"),
+    ({"elevator", "lobby", "hallway"}, "Those brief encounters can be surprisingly meaningful!", "you're in a quick encounter", "small talk"),
+    ({"gym", "equipment", "workout", "exercise"}, "Getting in shape takes dedication!", "you're at the gym", "working out"),
+    ({"bus", "train", "transit", "commute", "flight", "seat"}, "Travel always brings unexpected moments!", "you're on the move", "the journey"),
+    ({"park", "dog", "walk", "outside", "bench"}, "Nothing like fresh air!", "you're enjoying the outdoors", "the neighborhood"),
+    ({"store", "shop", "market", "flea market", "price", "buy"}, "Shopping can be an adventure!", "you're looking at something interesting", "the deal"),
+    ({"book", "read", "library"}, "A fellow reader!", "you've got something good to read", "what you're reading"),
+    ({"phone", "text", "call", "message"}, "Communication can be tricky!", "there's a message to deal with", "the conversation"),
+    # Emotional
+    ({"breakup", "divorce", "goodbye", "leaving"}, "That sounds really hard.", "someone's going through a tough time", "feelings"),
+    ({"loss", "died", "funeral", "grief", "lost a"}, "I'm so sorry about that.", "someone is grieving", "how they're doing"),
+    ({"argue", "argument", "conflict", "fight", "shout"}, "Conflict is never easy.", "tensions are running high", "finding common ground"),
+    ({"panic", "anxiety", "overwhelm", "stress", "crying"}, "That looks overwhelming.", "someone needs support", "how to help"),
+    ({"gossip", "rumor", "personal question"}, "Boundaries are important!", "someone's getting too personal", "where to draw the line"),
+    ({"interrupt", "dismiss", "sarcastic", "passive-aggressive"}, "Handling that gracefully is a real skill!", "someone's being difficult", "the best response"),
+    ({"conspiracy", "theory", "disagree"}, "Tricky topic!", "someone has a strong opinion", "how to respond without conflict"),
+    ({"housemate", "roommate", "dishes", "chores"}, "Living together takes diplomacy!", "there's a household issue", "keeping the peace"),
+    ({"neighbor", "door", "knock"}, "Neighbor situations can be delicate!", "someone's at your door", "the right approach"),
+    # Places & activities
+    ({"museum", "gallery", "art", "painting", "exhibit"}, "Art can spark great conversations!", "you're at a cultural spot", "the artwork"),
+    ({"garden", "plant", "weed", "flower"}, "Gardening brings people together!", "you're working alongside someone", "the shared activity"),
+    ({"networking", "linkedin", "event", "conference"}, "Networking takes skill!", "you're meeting new people", "making connections"),
+    ({"friend", "success", "sharing"}, "Friendships need balance!", "you're sharing something personal", "the dynamic"),
+    # Professional
+    ({"negotiate", "deal", "contract", "stakeholder"}, "Negotiation is an art!", "you're working out a deal", "the terms"),
+    ({"customer", "client", "service"}, "Customer interactions take patience!", "you're helping someone", "their needs"),
+    ({"celebrity", "famous", "VIP"}, "What a moment!", "you've run into someone special", "the encounter"),
+    ({"alarm", "emergency", "fire", "panic"}, "Stay calm — that's the key!", "there's an emergency", "what to do"),
+]
+
+
+def _extract_context_hints(context: str, lang: str = "en"):
+    """Extract setting-specific reaction, observation, and topic from scenario context."""
+    ctx_lower = context.lower() if context else ""
+
+    for keywords, reaction, observation, topic in _CONTEXT_HINTS:
+        if any(kw in ctx_lower for kw in keywords):
+            return reaction, observation, topic
+
+    # Dynamic fallback: extract the setting from the first sentence
+    first_sentence = context.split(".")[0].strip() if context else ""
+    if first_sentence and len(first_sentence) > 20:
+        # Shorten for template use
+        short = first_sentence[:80].rstrip()
+        if not short.endswith((".", "!", "?")):
+            short += "..."
+        return "What a situation!", f"{short.lower()}", "how you'd handle it"
+
+    return "That's quite the scenario!", "you're in an interesting situation", "the best approach"
+
 
 _IDEAL_TEMPLATES = {
     "en": {
         "default": [
-            "Hey! {context_reaction} What brings you here today?",
-            "Hi there! I noticed {context_observation}. Need a hand?",
-            "That looks interesting! {context_reaction} How's it going for you?",
+            "Hey! {reaction} What brings you here today?",
+            "Hi! I noticed {observation}. {reaction} How's it going?",
+            "{reaction} So, what do you think about {topic}?",
+            "Hey there! {reaction} I'm curious — how are you handling {topic}?",
         ],
         "empathy": [
-            "Hey, that must be frustrating! {context_reaction} Can I help?",
-            "I can see you're having a tough time with that. Want me to give you a hand?",
+            "Hey, {observation}. {reaction} Is there anything I can do?",
+            "I can tell {observation}. That sounds tough. Want to talk about it?",
+            "{reaction} I've been there. What's on your mind about {topic}?",
         ],
         "question": [
-            "Hi! {context_reaction} I'm curious — what do you think about {context_topic}?",
-            "Hey! {context_observation}. What's your take on it?",
+            "Hi! {reaction} I was wondering — what's your take on {topic}?",
+            "Hey! I noticed {observation}. What do you think about {topic}?",
+            "{reaction} Just curious — have you thought about {topic} before?",
         ],
     },
     "ht": {
         "default": [
-            "Sak pase! {context_reaction} Kisa ki mennen w isit la jodi a?",
-            "Bonswa! M remake {context_observation}. Ou bezwen yon kout men?",
+            "Sak pase! {reaction} Kisa ki mennen w isit la?",
+            "Bonswa! M wè {observation}. {reaction} Kijan sa ap mache?",
+            "{reaction} Kisa ou panse de {topic}?",
         ],
         "empathy": [
-            "Ay, sa dwe difisil! {context_reaction} M ka ede w?",
+            "Ay, {observation}. {reaction} M ka ede w?",
+            "M wè {observation}. Sa sanble difisil. Ou vle pale de sa?",
         ],
         "question": [
-            "Sak pase! {context_reaction} M ta renmen konnen — kisa ou panse de {context_topic}?",
+            "Sak pase! {reaction} Kisa ou panse de {topic}?",
+            "Bonswa! M remake {observation}. Ki opinyon ou sou {topic}?",
+        ],
+    },
+    "es": {
+        "default": [
+            "¡Hola! {reaction} ¿Qué tal va {topic}?",
+            "¡Oye! Noté que {observation}. {reaction} ¿Cómo va?",
+            "{reaction} Entonces, ¿qué piensas de {topic}?",
+        ],
+        "empathy": [
+            "Oye, {observation}. {reaction} ¿Puedo ayudar?",
+            "Veo que {observation}. Eso suena difícil. ¿Quieres hablar?",
+        ],
+        "question": [
+            "¡Hola! {reaction} Me pregunto — ¿qué opinas sobre {topic}?",
+        ],
+    },
+    "fr": {
+        "default": [
+            "Salut ! {reaction} Comment ça va avec {topic} ?",
+            "Bonjour ! J'ai remarqué que {observation}. {reaction}",
+            "{reaction} Alors, qu'est-ce que tu penses de {topic} ?",
+        ],
+        "empathy": [
+            "Eh, {observation}. {reaction} Je peux aider ?",
+            "Je vois que {observation}. Ça a l'air difficile. Tu veux en parler ?",
+        ],
+        "question": [
+            "Salut ! {reaction} Je suis curieux — qu'est-ce que tu penses de {topic} ?",
         ],
     },
 }
@@ -393,9 +492,8 @@ _IDEAL_TEMPLATES = {
 
 def _generate_ideal_response(context: str, lang: str,
                               skill_misses: list, warmth_misses: list) -> str:
-    """Generate an ideal response based on the scenario context and detected gaps."""
+    """Generate a context-aware ideal response based on the scenario and detected gaps."""
     templates = _IDEAL_TEMPLATES.get(lang, _IDEAL_TEMPLATES["en"])
-    ctx_lower = context.lower() if context else ""
 
     # Pick template category based on gaps
     if "show empathy" in warmth_misses:
@@ -407,39 +505,12 @@ def _generate_ideal_response(context: str, lang: str,
 
     template = random.choice(templates.get(category, templates["default"]))
 
-    # Extract context hints
-    context_reaction = ""
-    context_observation = ""
-    context_topic = "this"
-
-    if "map" in ctx_lower or "lost" in ctx_lower:
-        context_reaction = "Maps can be tricky!"
-        context_observation = "you're trying to find your way"
-        context_topic = "the area"
-    elif "gym" in ctx_lower or "equipment" in ctx_lower:
-        context_reaction = "Those machines can be confusing at first!"
-        context_observation = "you're checking out the equipment"
-        context_topic = "working out"
-    elif "coffee" in ctx_lower or "café" in ctx_lower:
-        context_reaction = "Great taste in coffee!"
-        context_observation = "you're here for a drink too"
-        context_topic = "this place"
-    elif "bus" in ctx_lower or "transit" in ctx_lower:
-        context_reaction = "Gotta love public transit!"
-        context_observation = "you're heading somewhere"
-        context_topic = "the route"
-    elif "book" in ctx_lower or "read" in ctx_lower:
-        context_reaction = "Oh nice, a fellow reader!"
-        context_observation = "you've got a good book there"
-        context_topic = "what you're reading"
-    else:
-        context_reaction = "Interesting situation!"
-        context_observation = "something going on here"
-        context_topic = "what's happening"
+    # Extract context-specific elements
+    reaction, observation, topic = _extract_context_hints(context, lang)
 
     return template.format(
-        context_reaction=context_reaction,
-        context_observation=context_observation,
-        context_topic=context_topic,
+        reaction=reaction,
+        observation=observation,
+        topic=topic,
     )
 
