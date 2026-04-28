@@ -11,7 +11,7 @@ Provisions the Social-Code training suite for WhatsApp integration:
 
 Prerequisites:
   - Gateway and RiveBot must be running
-  - python scripts/setup_gateway.py must have been run first
+  - python scripts/core/setup_gateway.py must have been run first
 
 Usage:
     cd /opt/iiab/ai-gateway

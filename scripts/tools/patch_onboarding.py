@@ -212,7 +212,7 @@ def patch_expiry(flow, minutes=720):
 
 def import_flow(export_json):
     """Import a flow definition via Django ORM."""
-    json_path = Path(__file__).parent / "patched_onboarding.json"
+    json_path = Path(__file__).parent.parent / "exports" / "patched_onboarding.json"
     with open(json_path, "w") as f:
         json.dump(export_json, f, indent=2)
     print(f"   📁 Saved patched flow to {json_path}")

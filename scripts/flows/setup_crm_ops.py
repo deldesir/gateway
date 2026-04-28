@@ -1119,7 +1119,7 @@ def generate_export(*flows):
 
 
 def import_flows(export_json):
-    json_path = Path(__file__).parent / "crm_ops_flows.json"
+    json_path = Path(__file__).parent.parent / "exports" / "crm_ops_flows.json"
     with open(json_path, "w") as f:
         json.dump(export_json, f, indent=2)
     print(f"   📁 Saved {len(export_json['flows'])} flows to {json_path}")

@@ -387,7 +387,7 @@ def main():
     # Step 3: Import
     print("\n── Step 3: Import Flows ──")
     export = make_export(*all_flows)
-    json_path = Path(__file__).parent / "talkprep_flows.json"
+    json_path = Path(__file__).parent.parent / "exports" / "talkprep_flows.json"
     if not import_flows(export, json_path):
         print("   ❌ Import failed.")
         sys.exit(1)

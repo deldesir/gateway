@@ -263,7 +263,7 @@ def main():
 
     print("\n── Step 3: Import Flow ──")
     export = make_export(flow)
-    json_path = Path(__file__).parent / "social_code_flow.json"
+    json_path = Path(__file__).parent.parent / "exports" / "social_code_flow.json"
     if not import_flows(export, json_path):
         print("   ❌ Import failed.")
         sys.exit(1)

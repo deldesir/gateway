@@ -73,7 +73,7 @@ def generate_export():
 
 
 def import_flows(export_json):
-    json_path = Path(__file__).parent / "organized_menu_flow.json"
+    json_path = Path(__file__).parent.parent / "exports" / "organized_menu_flow.json"
     with open(json_path, "w") as f:
         json.dump(export_json, f, indent=2)
     print(f"   📁 Saved export to {json_path}")

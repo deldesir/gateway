@@ -198,7 +198,7 @@ def main():
 
     print("\n── Step 2: Import Flow ──")
     export = make_export(flow)
-    json_path = Path(__file__).parent / "konex_support_flow.json"
+    json_path = Path(__file__).parent.parent / "exports" / "konex_support_flow.json"
     if not import_flows(export, json_path):
         print("   ❌ Import failed.")
         sys.exit(1)

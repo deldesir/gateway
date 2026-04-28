@@ -184,7 +184,7 @@ def generate_and_import(webhook_endpoint_path):
     export = make_export(flow)
 
     # Save to disk
-    json_path = Path(__file__).parent / "organized_menu_flow.json"
+    json_path = Path(__file__).parent.parent / "exports" / "organized_menu_flow.json"
     with open(json_path, "w") as f:
         json.dump(export, f, indent=2)
     print(f"   📁 Saved to {json_path}")
