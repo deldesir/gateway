@@ -272,6 +272,12 @@ def sim_get_scenario(args: dict, **kw) -> str:
     _set_sim_var(urn, "current_persona", scenario["target_persona"])
     _set_sim_var(urn, "difficulty", str(difficulty))
 
+    # Store golden ideal_links for use during grading
+    import json as _json
+    ideal_links = scenario.get("ideal_links", [])
+    if ideal_links:
+        _set_sim_var(urn, "ideal_links", _json.dumps(ideal_links)[:500])
+
     return format_scenario_whatsapp(scenario)
 
 
@@ -303,6 +309,21 @@ def sim_drill_grade(args: dict, **kw) -> str:
     current_trust = int(_get_sim_var(urn, "trust", "20"))
     current_boredom = int(_get_sim_var(urn, "boredom", "0"))
     lang = _get_rivebot_var(urn, "lang", "en") or "en"
+
+    # ── Read golden ideal_links from state (stored during scenario load) ──
+    import json as _json
+    ideal_links_raw = _get_sim_var(urn, "ideal_links", "")
+    golden_ideal = None
+    golden_explanation = None
+    if ideal_links_raw and ideal_links_raw != "undefined":
+        try:
+            ideal_links = _json.loads(ideal_links_raw)
+            if ideal_links and isinstance(ideal_links, list):
+                link = ideal_links[0]  # Primary ideal response
+                golden_ideal = link.get("link_text", "")
+                golden_explanation = link.get("explanation", "")
+        except (ValueError, KeyError):
+            pass
 
     # ── Grade with offline engine ──
     grade = analyze_response_offline(context, user_input, lang)
@@ -357,7 +378,12 @@ def sim_drill_grade(args: dict, **kw) -> str:
     if grade.get("critique"):
         card += f"\n{grade['critique']}\n"
 
-    if grade.get("better_version"):
+    # Use golden ideal_links (expert-crafted) over template-generated suggestions
+    if golden_ideal:
+        card += f"\n✨ *Try this:* _{golden_ideal}_\n"
+        if golden_explanation:
+            card += f"💡 _{golden_explanation}_\n"
+    elif grade.get("better_version"):
         card += f"\n✨ *Try this:* _{grade['better_version']}_\n"
 
     if new_boredom >= 8:
