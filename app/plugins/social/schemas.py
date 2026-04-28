@@ -192,3 +192,45 @@ SIM_DRILL_GRADE = {
     },
 }
 
+SIM_FREETEXT = {
+    "name": "sim_freetext",
+    "description": (
+        "Handle free-text input that doesn't match a menu option. "
+        "Routes to RiveBot first; if no match, forwards to Hermes AI."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "user_input": {
+                "type": "string",
+                "description": "The user's free-text message.",
+            },
+        },
+        "required": ["user_input"],
+    },
+}
+
+SIM_SET_LANGUAGE = {
+    "name": "sim_set_language",
+    "description": "Set the user's preferred language for Social-Code training.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "language": {
+                "type": "string",
+                "description": "Language name or ISO code (English, Kreyòl, Español, Français, en, ht, es, fr).",
+            },
+        },
+        "required": ["language"],
+    },
+}
+
+SIM_SESSION_SUMMARY = {
+    "name": "sim_session_summary",
+    "description": "Show aggregated stats for the current training session.",
+    "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+    },
+}

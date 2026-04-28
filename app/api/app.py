@@ -22,6 +22,10 @@ async def lifespan(app: FastAPI):
     # V2 Init: Pre-load SiYuan configuration and register Hermes tools
     _init_notebook_map()
     register_all_tools()
+
+    # V3 Init: Ensure FSRS mastery tables exist in PostgreSQL
+    from app.plugins.social.mastery import ensure_tables as ensure_mastery_tables
+    ensure_mastery_tables()
     
     # Background Task: Remove old analytics dumps (F-32)
     import asyncio

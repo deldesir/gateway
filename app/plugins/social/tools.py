@@ -28,6 +28,11 @@ from app.plugins.social.scenarios import (
     get_scenario,
     load_scenarios,
 )
+from app.plugins.social.mastery import (
+    record_drill,
+    get_session_stats,
+    FSRS_LABELS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -320,10 +325,25 @@ def sim_drill_grade(args: dict, **kw) -> str:
     _set_sim_var(urn, "trust", str(new_trust))
     _set_sim_var(urn, "boredom", str(new_boredom))
 
+    # ── FSRS mastery tracking ──
+    scenario_key = _get_sim_var(urn, "current_cue", "")[:80] or "unknown"
+    app_slug = _get_sim_var(urn, "app", "")
+    difficulty = int(_get_sim_var(urn, "difficulty", "1"))
+    fsrs_result = record_drill(
+        user_urn=urn,
+        scenario_key=scenario_key,
+        app_slug=app_slug,
+        difficulty=difficulty,
+        skill=skill,
+        warmth=warmth,
+        lang=lang,
+    )
+
     # ── Format scorecard ──
     skill_emoji = "🟢" if skill >= 80 else "🟡" if skill >= 60 else "🔴"
     warmth_emoji = "🟢" if warmth >= 80 else "🟡" if warmth >= 60 else "🔴"
     trust_dir = "📈" if trust_delta > 0 else "📉" if trust_delta < 0 else "➡️"
+    fsrs_emoji = {1: "🔴", 2: "🟠", 3: "🟢", 4: "✨"}.get(fsrs_result["rating"], "⚪")
 
     card = (
         f"📊 *Scorecard*\n\n"
@@ -331,6 +351,7 @@ def sim_drill_grade(args: dict, **kw) -> str:
         f"{warmth_emoji} *Warmth*: {warmth}/100\n"
         f"{trust_dir} *Trust*: {current_trust} → {new_trust} ({'+' if trust_delta >= 0 else ''}{trust_delta})\n"
         f"😊 *Mood*: {current_mood} → {new_mood}\n"
+        f"{fsrs_emoji} *Review*: {fsrs_result['label']} (next {fsrs_result['interval_text']})\n"
     )
 
     if grade.get("critique"):
@@ -343,9 +364,124 @@ def sim_drill_grade(args: dict, **kw) -> str:
         card += "\n⚠️ The persona is getting bored! Try asking questions or sharing something personal."
 
     logger.info(
-        "[social] %s drill grade: skill=%d warmth=%d trust=%d→%d mood=%s→%s",
-        urn, skill, warmth, current_trust, new_trust, current_mood, new_mood
+        "[social] %s drill grade: skill=%d warmth=%d trust=%d→%d mood=%s→%s fsrs=%s",
+        urn, skill, warmth, current_trust, new_trust, current_mood, new_mood,
+        fsrs_result['label'],
     )
 
     return card
 
+
+@register_tool(
+    name="sim_freetext",
+    description="Handle free-text input that doesn't match a menu option. "
+                "Routes to RiveBot first; if no match, forwards to Hermes.",
+    trigger="",
+)
+def sim_freetext(args: dict, **kw) -> str:
+    """Conversational fallback for unrecognized menu input.
+
+    Architecture: RiveBot first (deterministic), Hermes second (AI).
+    Always returns the user to the menu they were on.
+    """
+    urn = _get_urn(args)
+    user_input = args.get("user_input", "").strip()
+
+    if not user_input:
+        return "❓ I didn't catch that. Please pick an option from the menu."
+
+    # 1. Try RiveBot first (deterministic match)
+    try:
+        resp = httpx.post(
+            f"{RIVEBOT_URL}/reply",
+            json={"persona": "social-code", "user": urn, "message": user_input},
+            timeout=3.0,
+        )
+        rivebot_reply = resp.json().get("reply", "").strip()
+
+        # RiveBot returns empty or its catchall "I don't understand" for non-matches
+        if rivebot_reply and "i don't" not in rivebot_reply.lower() and len(rivebot_reply) > 5:
+            return f"💬 {rivebot_reply}\n\n_Pick an option from the menu to continue._"
+    except Exception as e:
+        logger.debug("[sim_freetext] RiveBot unavailable: %s", e)
+
+    # 2. Fall back to Hermes AI (lightweight direct LLM call)
+    try:
+        import google.generativeai as genai
+        import os
+        api_key = os.getenv("GEMINI_API_KEY", "")
+        if api_key:
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel(os.getenv("LLM_MODEL", "gemini-2.0-flash"))
+            resp = model.generate_content(
+                f"You are a social skills training assistant on WhatsApp. "
+                f"Answer the user's question briefly (2-3 sentences max). "
+                f"User said: {user_input}",
+            )
+            ai_reply = resp.text.strip() if resp.text else ""
+            if ai_reply:
+                return f"🤖 {ai_reply}\n\n_Pick an option from the menu to continue._"
+    except Exception as e:
+        logger.debug("[sim_freetext] LLM unavailable: %s", e)
+
+    # 3. Final fallback
+    return "❓ I didn't understand that. Please pick an option from the menu, or type *exit* to leave."
+
+
+@register_tool(
+    name="sim_set_language",
+    description="Set the user's preferred language for Social-Code training.",
+    trigger="",
+)
+def sim_set_language(args: dict, **kw) -> str:
+    """Persist language preference for drill scenarios and feedback."""
+    urn = _get_urn(args)
+    lang_input = args.get("language", args.get("lang", "en")).strip().lower()
+
+    # Normalize input to ISO code
+    LANG_MAP = {
+        "english": "en", "en": "en",
+        "kreyòl": "ht", "kreol": "ht", "kreyol": "ht", "ht": "ht",
+        "español": "es", "espanol": "es", "spanish": "es", "es": "es",
+        "français": "fr", "francais": "fr", "french": "fr", "fr": "fr",
+    }
+    lang = LANG_MAP.get(lang_input, "en")
+    lang_names = {"en": "English", "ht": "Kreyòl", "es": "Español", "fr": "Français"}
+
+    # Persist in RiveBot state
+    try:
+        httpx.post(
+            f"{RIVEBOT_URL}/set-var",
+            json={"persona": "social-code", "user": urn, "var": "lang", "value": lang},
+            timeout=2.0,
+        )
+    except Exception as e:
+        logger.warning("[sim_set_language] Failed: %s", e)
+        return "⚠️ Could not save language preference."
+
+    return f"🌐 Language set to *{lang_names.get(lang, lang)}*.\n\nScenarios and feedback will now be in {lang_names.get(lang, lang)}."
+
+
+@register_tool(
+    name="sim_session_summary",
+    description="Show a summary of the current training session.",
+    trigger="",
+)
+def sim_session_summary(args: dict, **kw) -> str:
+    """Aggregate session stats from the drill history database."""
+    urn = _get_urn(args)
+    stats = get_session_stats(urn, since_minutes=120)
+
+    if stats["rounds"] == 0:
+        return "📊 No drills completed in this session yet. Pick an app and start training!"
+
+    avg_emoji = "🟢" if stats["avg_score"] >= 80 else "🟡" if stats["avg_score"] >= 60 else "🔴"
+
+    return (
+        f"📊 *Session Summary*\n\n"
+        f"🔢 *Rounds*: {stats['rounds']}\n"
+        f"{avg_emoji} *Avg Score*: {stats['avg_score']}/100\n"
+        f"⚡ *Avg Skill*: {stats['avg_skill']}/100\n"
+        f"💚 *Avg Warmth*: {stats['avg_warmth']}/100\n\n"
+        f"_Type *train* to continue practicing!_"
+    )

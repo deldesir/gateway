@@ -85,6 +85,20 @@ def generate_drill_flow():
         "timeout":        u(),
         "exit":           u(),
 
+        # Language picker
+        "lang_menu":      u(),
+        "lang_wh":        u(),
+        "lang_ok":        u(),
+        "lang_err":       u(),
+
+        # Free-text handler ("Other" input on menus)
+        "freetext_wh":    u(),
+        "freetext_ok":    u(),
+
+        # Session summary
+        "summary_wh":     u(),
+        "summary_ok":     u(),
+
         # Scenario loading
         "scenario_wh":    u(),
         "scenario_ok":    u(),
@@ -124,7 +138,7 @@ def generate_drill_flow():
         "🎯 *Social-Code Training*\n\n"
         "Choose a drill app to practice your social skills:",
         [(label, N["diff_menu"]) for _slug, label in APPS],
-        timeout_dest=N["timeout"], default_dest=N["app_menu"],
+        timeout_dest=N["timeout"], default_dest=N["freetext_wh"],
     ))
 
     nodes.append(_make_msg_node(N["timeout"],
@@ -141,9 +155,68 @@ def generate_drill_flow():
         "⚙️ *Select Difficulty*\n\n"
         "Choose your training level:",
         [(label, N["scenario_wh"]) for _level, label in DIFFICULTIES] +
-        [("⬅️ Back", N["app_menu"]), ("❌ Exit", N["exit"])],
-        timeout_dest=N["timeout"], default_dest=N["diff_menu"],
+        [
+            ("🌐 Language", N["lang_menu"]),
+            ("📊 Summary", N["summary_wh"]),
+            ("⬅️ Back", N["app_menu"]),
+            ("❌ Exit", N["exit"]),
+        ],
+        timeout_dest=N["timeout"], default_dest=N["freetext_wh"],
     ))
+
+    # ════════════════════════════════════════════════════════════════════════
+    #  Language Picker (Quick Reply — 4 languages)
+    # ════════════════════════════════════════════════════════════════════════
+
+    nodes.append(_make_wait_menu(N["lang_menu"],
+        "🌐 *Select Language*\n\n"
+        "Choose your preferred language for scenarios and feedback:",
+        [
+            ("English", N["lang_wh"]),
+            ("Kreyol", N["lang_wh"]),
+            ("Espanol", N["lang_wh"]),
+            ("Francais", N["lang_wh"]),
+            ("⬅️ Back", N["diff_menu"]),
+        ],
+        timeout_dest=N["timeout"], default_dest=N["lang_menu"],
+    ))
+
+    lang_result_key = f"menu_{N['lang_menu'][:8]}"
+    nodes.append(_make_webhook_split(N["lang_wh"],
+        "POST", f"{GW}/v1/tools/sim_set_language",
+        "lang_result", N["lang_ok"], N["lang_err"],
+        body='{"language": "@results.' + lang_result_key + '.value"}',
+        auth_type="gateway"))
+
+    nodes.append(_make_msg_node(N["lang_ok"],
+        "@webhook.json.result", dest_uuid=N["diff_menu"]))
+    nodes.append(_make_msg_node(N["lang_err"],
+        "⚠️ Could not change language.", dest_uuid=N["diff_menu"]))
+
+    # ════════════════════════════════════════════════════════════════════════
+    #  Free-Text Handler ("Other" input → RiveBot → Hermes)
+    # ════════════════════════════════════════════════════════════════════════
+
+    nodes.append(_make_webhook_split(N["freetext_wh"],
+        "POST", f"{GW}/v1/tools/sim_freetext",
+        "freetext", N["freetext_ok"], N["freetext_ok"],
+        body='{"user_input": "@input.text"}',
+        auth_type="gateway"))
+
+    nodes.append(_make_msg_node(N["freetext_ok"],
+        "@webhook.json.result", dest_uuid=N["app_menu"]))
+
+    # ════════════════════════════════════════════════════════════════════════
+    #  Session Summary (webhook → sim_session_summary)
+    # ════════════════════════════════════════════════════════════════════════
+
+    nodes.append(_make_webhook_split(N["summary_wh"],
+        "GET", f"{GW}/v1/tools/sim_session_summary",
+        "summary", N["summary_ok"], N["summary_ok"],
+        auth_type="gateway"))
+
+    nodes.append(_make_msg_node(N["summary_ok"],
+        "@webhook.json.result", dest_uuid=N["diff_menu"]))
 
     # ════════════════════════════════════════════════════════════════════════
     #  Phase 3: Load Scenario (webhook → sim_get_scenario)
@@ -218,7 +291,7 @@ def generate_drill_flow():
             ("🏠 Back to Menu", N["app_menu"]),
             ("❌ Exit",         N["exit"]),
         ],
-        timeout_dest=N["timeout"], default_dest=N["scenario_wh"],
+        timeout_dest=N["timeout"], default_dest=N["freetext_wh"],
         timeout_seconds=600,
     ))
 
@@ -231,15 +304,23 @@ def generate_drill_flow():
         N["app_menu"]:      (400, 0),
         N["timeout"]:       (800, 0),
         N["exit"]:          (800, ROW),
-        N["diff_menu"]:     (400, ROW * 2),
-        N["scenario_wh"]:   (400, ROW * 3),
-        N["scenario_ok"]:   (400, ROW * 4),
-        N["scenario_err"]:  (700, ROW * 4),
-        N["round_wait"]:    (400, ROW * 5),
-        N["grade_wh"]:      (400, ROW * 6),
-        N["grade_ok"]:      (400, ROW * 7),
-        N["grade_err"]:     (700, ROW * 7),
-        N["round_action"]:  (400, ROW * 8),
+        N["freetext_wh"]:   (0, ROW),
+        N["freetext_ok"]:   (0, ROW * 2),
+        N["lang_menu"]:     (800, ROW * 2),
+        N["lang_wh"]:       (800, ROW * 3),
+        N["lang_ok"]:       (800, ROW * 4),
+        N["lang_err"]:      (1050, ROW * 4),
+        N["summary_wh"]:    (1050, ROW * 2),
+        N["summary_ok"]:    (1050, ROW * 3),
+        N["diff_menu"]:     (400, ROW * 3),
+        N["scenario_wh"]:   (400, ROW * 4),
+        N["scenario_ok"]:   (400, ROW * 5),
+        N["scenario_err"]:  (700, ROW * 5),
+        N["round_wait"]:    (400, ROW * 6),
+        N["grade_wh"]:      (400, ROW * 7),
+        N["grade_ok"]:      (400, ROW * 8),
+        N["grade_err"]:     (700, ROW * 8),
+        N["round_action"]:  (400, ROW * 9),
     }
 
     return flow_uuid, make_flow(flow_uuid, "Social-Code Training", nodes, layout, expire=60)

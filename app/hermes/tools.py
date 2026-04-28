@@ -187,9 +187,12 @@ def register_all_tools() -> None:
     registry.register("sim_grade_response", "social", social_schemas.SIM_GRADE_RESPONSE, social.sim_grade_response)
     registry.register("sim_get_scenario", "social", social_schemas.SIM_GET_SCENARIO, social.sim_get_scenario)
     registry.register("sim_drill_grade", "social", social_schemas.SIM_DRILL_GRADE, social.sim_drill_grade)
+    registry.register("sim_freetext", "social", social_schemas.SIM_FREETEXT, social.sim_freetext)
+    registry.register("sim_set_language", "social", social_schemas.SIM_SET_LANGUAGE, social.sim_set_language)
+    registry.register("sim_session_summary", "social", social_schemas.SIM_SESSION_SUMMARY, social.sim_session_summary)
 
     _registered = True
-    logger.info("Registered 51 native Hermes-compatible tools globally.")
+    logger.info("Registered 54 native Hermes-compatible tools globally.")
 
 def get_hermes_tools() -> dict:
     """Return the global registry dict if anything needs to introspect it."""
