@@ -38,6 +38,55 @@ logger = logging.getLogger(__name__)
 
 RIVEBOT_URL = os.getenv("RIVEBOT_URL", "http://127.0.0.1:8087")
 
+
+# ════════════════════════════════════════════════════════════════════════════
+#  Lightweight Hermes Chat — structured prompts, no tool loop
+# ════════════════════════════════════════════════════════════════════════════
+
+def _hermes_chat(prompt: str, urn: str = "system:social-code") -> str | None:
+    """Send a one-shot prompt to Hermes (no tools, no history).
+
+    Uses AIAgent.chat() in minimal mode — same LLM config as the full
+    agent but without the tool loop, history, or session overhead.
+    Returns the text response, or None on failure.
+    """
+    try:
+        from run_agent import AIAgent
+
+        _provider = os.getenv("HERMES_PROVIDER", "")
+        _gemini_key = os.getenv("GEMINI_API_KEY", "")
+        _llm_model = os.getenv("LLM_MODEL", "gemini-2.0-flash")
+
+        agent_kwargs = dict(
+            model=_llm_model,
+            max_iterations=1,
+            enabled_toolsets=[],       # No tools — pure LLM prompt
+            ephemeral_system_prompt=prompt,
+            session_id=f"social-onetime-{urn}",
+            user_id=urn,
+            platform="whatsapp",
+            quiet_mode=True,
+            skip_context_files=True,   # No SOUL.md — just the prompt
+            skip_memory=True,          # No memory overhead
+            verbose_logging=False,
+        )
+
+        if _provider:
+            agent_kwargs["provider"] = _provider
+            if _gemini_key:
+                agent_kwargs["api_key"] = _gemini_key
+        else:
+            agent_kwargs["api_key"] = os.getenv("OPENAI_API_KEY", "")
+            agent_kwargs["base_url"] = os.getenv("LITELLM_BASE_URL", "http://localhost:4000/v1")
+
+        agent = AIAgent(**agent_kwargs)
+        result = agent.chat("Generate.")
+        return result.strip() if result else None
+
+    except Exception as e:
+        logger.warning("[social] _hermes_chat failed: %s", e)
+        return None
+
 # ════════════════════════════════════════════════════════════════════════════
 #  RiveBot State Persistence Helpers
 # ════════════════════════════════════════════════════════════════════════════
@@ -253,15 +302,38 @@ def sim_grade_response(args: dict, **kw) -> str:
     trigger="",
 )
 def sim_get_scenario(args: dict, **kw) -> str:
-    """Load a random golden-set scenario and format it."""
+    """Load a scenario — golden set or AI-generated when AI mode is on."""
     urn = _get_urn(args)
     difficulty = int(args.get("difficulty", 1))
 
-    # Get language from RiveBot context (stored as 'lang', not 'sim_lang')
+    # Get language and AI mode from RiveBot context
     lang = _get_rivebot_var(urn, "lang", "en")
     if not lang or lang == "undefined":
         lang = "en"
+    ai_enabled = _get_sim_var(urn, "ai_grading", "off").lower() == "on"
 
+    # When AI is on, 30% chance of an AI-generated scenario for variety
+    import random as _random
+    use_ai_scenario = ai_enabled and _random.random() < 0.3
+
+    if use_ai_scenario:
+        ai_scenario = _generate_scenario_ai(difficulty, lang)
+        if ai_scenario:
+            _set_sim_var(urn, "current_context", ai_scenario["context"][:200])
+            _set_sim_var(urn, "current_cue", ai_scenario["cue"][:200])
+            _set_sim_var(urn, "current_persona", ai_scenario["target_persona"])
+            _set_sim_var(urn, "difficulty", str(difficulty))
+
+            import json as _json
+            ideal_links = ai_scenario.get("ideal_links", [])
+            if ideal_links:
+                _set_sim_var(urn, "ideal_links", _json.dumps(ideal_links)[:500])
+            else:
+                _set_sim_var(urn, "ideal_links", "")
+
+            return format_scenario_whatsapp(ai_scenario)
+
+    # Default: golden set
     scenario = get_scenario(difficulty=difficulty, lang=lang)
     if not scenario:
         return "No scenarios available at this difficulty level."
@@ -281,6 +353,172 @@ def sim_get_scenario(args: dict, **kw) -> str:
     return format_scenario_whatsapp(scenario)
 
 
+# ════════════════════════════════════════════════════════════════════════════
+#  AI Scenario Generation
+# ════════════════════════════════════════════════════════════════════════════
+
+_SCENARIO_GEN_PROMPT = """Generate a social skills training scenario at difficulty level {difficulty}/4.
+
+Level guide:
+- Level 1: Casual everyday encounters (coffee shop, park, elevator)
+- Level 2: Light workplace/social situations requiring tact
+- Level 3: Challenging interpersonal conflicts, negotiations, or boundary-setting
+- Level 4: High-stakes emotional situations (grief, confrontation, crisis)
+
+Language: {lang_name}
+
+Reply in this EXACT format (no extra text):
+CONTEXT: <2-3 sentence scene description>
+CUE: <what the other person says or does — 1 sentence>
+PERSONA: <who the other person is — 2-3 words>
+IDEAL: <your best response — 1-2 sentences>
+STRATEGY: <strategy name — 2-3 words like 'Empathy', 'Humorous Pivot', 'Direct Challenge'>
+EXPLANATION: <why this ideal response works — 1 sentence>"""
+
+_LANG_NAMES = {"en": "English", "ht": "Kreyòl Ayisyen", "es": "Español", "fr": "Français"}
+
+
+def _generate_scenario_ai(difficulty: int, lang: str = "en") -> dict | None:
+    """Generate a fresh scenario using Hermes. Returns dict or None on failure."""
+    try:
+        text = _hermes_chat(
+            _SCENARIO_GEN_PROMPT.format(
+                difficulty=difficulty,
+                lang_name=_LANG_NAMES.get(lang, "English"),
+            ),
+            urn="system:social-code",
+        )
+        if not text:
+            return None
+
+        # Parse structured response
+        context = cue = persona = ideal = strategy = explanation = ""
+        for line in text.split("\n"):
+            line = line.strip()
+            if line.upper().startswith("CONTEXT:"):
+                context = line.split(":", 1)[1].strip()
+            elif line.upper().startswith("CUE:"):
+                cue = line.split(":", 1)[1].strip()
+            elif line.upper().startswith("PERSONA:"):
+                persona = line.split(":", 1)[1].strip()
+            elif line.upper().startswith("IDEAL:"):
+                ideal = line.split(":", 1)[1].strip()
+            elif line.upper().startswith("STRATEGY:"):
+                strategy = line.split(":", 1)[1].strip()
+            elif line.upper().startswith("EXPLANATION:"):
+                explanation = line.split(":", 1)[1].strip()
+
+        if not context or not cue:
+            return None
+
+        scenario = {
+            "context": context,
+            "cue": cue,
+            "cue_category": "AI Generated",
+            "difficulty": difficulty,
+            "target_persona": persona or "Someone",
+            "cultural_context": "",
+            "tags": ["ai-generated"],
+            "ideal_links": [],
+        }
+
+        if ideal:
+            scenario["ideal_links"] = [{
+                "angle_type": strategy or "AI Suggested",
+                "link_text": ideal,
+                "explanation": explanation or "",
+            }]
+
+        logger.info("[social] AI-generated scenario: %s", context[:60])
+        return scenario
+
+    except Exception as e:
+        logger.warning("[social] AI scenario generation failed: %s", e)
+        return None
+
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  AI Grading — LLM-based context-aware scoring
+# ════════════════════════════════════════════════════════════════════════════
+
+_AI_GRADE_PROMPT = """You are grading a social skills training response.
+
+SCENARIO: {context}
+USER RESPONSE: {user_input}
+EXPERT IDEAL ({angle}): {ideal}
+
+Score the user's response on two axes (0-100 each):
+- SKILL: appropriateness, strategy, social intelligence for THIS specific scenario
+- WARMTH: emotional connection, empathy, genuine human warmth
+
+Provide a brief critique (2-3 bullet points, use ✅ for strengths and 📌 for areas to improve).
+Optionally suggest a better response if score < 80.
+
+Reply in this EXACT format (no extra text):
+SKILL: <number>
+WARMTH: <number>
+CRITIQUE: <text>
+BETTER: <text or NONE>"""
+
+
+def _grade_with_ai(
+    context: str, user_input: str,
+    golden_ideal: str | None, golden_angle: str | None,
+    lang: str = "en",
+) -> tuple:
+    """Grade a response via Hermes. Returns (skill, warmth, critique, better).
+
+    Falls back to offline grading if Hermes is unavailable.
+    """
+    try:
+        prompt = _AI_GRADE_PROMPT.format(
+            context=context[:300],
+            user_input=user_input[:500],
+            angle=golden_angle or "General",
+            ideal=golden_ideal or "N/A",
+        )
+
+        text = _hermes_chat(prompt, urn="system:social-code")
+        if not text:
+            raise RuntimeError("Empty Hermes response")
+
+        # Parse structured response
+        skill = 50
+        warmth = 50
+        critique = ""
+        better = ""
+
+        for line in text.split("\n"):
+            line = line.strip()
+            if line.upper().startswith("SKILL:"):
+                try:
+                    skill = int("".join(c for c in line.split(":", 1)[1] if c.isdigit())[:3])
+                except (ValueError, IndexError):
+                    pass
+            elif line.upper().startswith("WARMTH:"):
+                try:
+                    warmth = int("".join(c for c in line.split(":", 1)[1] if c.isdigit())[:3])
+                except (ValueError, IndexError):
+                    pass
+            elif line.upper().startswith("CRITIQUE:"):
+                critique = line.split(":", 1)[1].strip()
+            elif line.upper().startswith("BETTER:"):
+                val = line.split(":", 1)[1].strip()
+                if val.upper() != "NONE":
+                    better = val
+
+        skill = max(0, min(100, skill))
+        warmth = max(0, min(100, warmth))
+
+        return skill, warmth, critique, better
+
+    except Exception as e:
+        logger.warning("[social] AI grading failed, falling back to offline: %s", e)
+        grade = analyze_response_offline(context, user_input, lang)
+        return grade["score"], grade["warmth_score"], grade.get("critique", ""), ""
+
+
 @register_tool(
     name="sim_drill_grade",
     description="Grade a user's drill response using offline analysis + state tracking. "
@@ -290,12 +528,9 @@ def sim_get_scenario(args: dict, **kw) -> str:
 def sim_drill_grade(args: dict, **kw) -> str:
     """Full grading pipeline for flow webhooks.
 
-    Unlike sim_grade_response (which accepts pre-computed scores from the LLM),
-    this tool actually analyzes the user's text:
-      1. Reads current scenario context from RiveBot state
-      2. Runs offline keyword grading
-      3. Updates mood and trust via RiveBot state
-      4. Returns formatted WhatsApp scorecard
+    Two modes based on user's ai_grading preference:
+      - Practice mode (default): qualitative feedback + golden ideals, no numeric scores
+      - AI mode: LLM-graded numeric scores + FSRS scheduling
     """
     urn = _get_urn(args)
     user_input = args.get("user_input", args.get("critique", ""))
@@ -309,28 +544,26 @@ def sim_drill_grade(args: dict, **kw) -> str:
     current_trust = int(_get_sim_var(urn, "trust", "20"))
     current_boredom = int(_get_sim_var(urn, "boredom", "0"))
     lang = _get_rivebot_var(urn, "lang", "en") or "en"
+    ai_enabled = _get_sim_var(urn, "ai_grading", "off").lower() == "on"
 
-    # ── Read golden ideal_links from state (stored during scenario load) ──
+    # ── Read golden ideal_links from state ──
     import json as _json
     ideal_links_raw = _get_sim_var(urn, "ideal_links", "")
     golden_ideal = None
     golden_explanation = None
+    golden_angle = None
     if ideal_links_raw and ideal_links_raw != "undefined":
         try:
             ideal_links = _json.loads(ideal_links_raw)
             if ideal_links and isinstance(ideal_links, list):
-                link = ideal_links[0]  # Primary ideal response
+                link = ideal_links[0]
                 golden_ideal = link.get("link_text", "")
                 golden_explanation = link.get("explanation", "")
+                golden_angle = link.get("angle_type", "")
         except (ValueError, KeyError):
             pass
 
-    # ── Grade with offline engine ──
-    grade = analyze_response_offline(context, user_input, lang)
-    skill = grade["score"]
-    warmth = grade["warmth_score"]
-
-    # ── Update mood & trust ──
+    # ── Update mood & trust (always, both modes) ──
     sentiment = detect_sentiment(user_input, lang)
     trust_delta = compute_trust_delta(user_input, current_trust, lang)
     new_trust = max(0, min(100, current_trust + trust_delta))
@@ -341,60 +574,89 @@ def sim_drill_grade(args: dict, **kw) -> str:
     word_count = len(user_input.split())
     new_boredom = max(0, min(10, current_boredom + (1 if word_count < 4 else -1)))
 
-    # ── Persist updated state ──
     _set_sim_var(urn, "mood", new_mood)
     _set_sim_var(urn, "trust", str(new_trust))
     _set_sim_var(urn, "boredom", str(new_boredom))
 
-    # ── FSRS mastery tracking ──
-    scenario_key = _get_sim_var(urn, "current_cue", "")[:80] or "unknown"
-    app_slug = _get_sim_var(urn, "app", "")
-    difficulty = int(_get_sim_var(urn, "difficulty", "1"))
-    fsrs_result = record_drill(
-        user_urn=urn,
-        scenario_key=scenario_key,
-        app_slug=app_slug,
-        difficulty=difficulty,
-        skill=skill,
-        warmth=warmth,
-        lang=lang,
-    )
+    # ══════════════════════════════════════════════════════════════════════
+    #  AI MODE — LLM-graded numeric scores + FSRS
+    # ══════════════════════════════════════════════════════════════════════
+    if ai_enabled:
+        skill, warmth, ai_critique, ai_better = _grade_with_ai(
+            context, user_input, golden_ideal, golden_angle, lang
+        )
 
-    # ── Format scorecard ──
-    skill_emoji = "🟢" if skill >= 80 else "🟡" if skill >= 60 else "🔴"
-    warmth_emoji = "🟢" if warmth >= 80 else "🟡" if warmth >= 60 else "🔴"
+        # FSRS tracking with AI-calibrated scores
+        scenario_key = _get_sim_var(urn, "current_cue", "")[:80] or "unknown"
+        app_slug = _get_sim_var(urn, "app", "")
+        difficulty = int(_get_sim_var(urn, "difficulty", "1"))
+        fsrs_result = record_drill(
+            user_urn=urn, scenario_key=scenario_key, app_slug=app_slug,
+            difficulty=difficulty, skill=skill, warmth=warmth, lang=lang,
+        )
+
+        skill_emoji = "🟢" if skill >= 80 else "🟡" if skill >= 60 else "🔴"
+        warmth_emoji = "🟢" if warmth >= 80 else "🟡" if warmth >= 60 else "🔴"
+        trust_dir = "📈" if trust_delta > 0 else "📉" if trust_delta < 0 else "➡️"
+        fsrs_emoji = {1: "🔴", 2: "🟠", 3: "🟢", 4: "✨"}.get(fsrs_result["rating"], "⚪")
+
+        card = (
+            f"📊 *Scorecard* 🤖\n\n"
+            f"{skill_emoji} *Skill*: {skill}/100\n"
+            f"{warmth_emoji} *Warmth*: {warmth}/100\n"
+            f"{trust_dir} *Trust*: {current_trust} → {new_trust}\n"
+            f"😊 *Mood*: {current_mood} → {new_mood}\n"
+            f"{fsrs_emoji} *Review*: {fsrs_result['label']} (next {fsrs_result['interval_text']})\n"
+        )
+
+        if ai_critique:
+            card += f"\n{ai_critique}\n"
+
+        # Show AI ideal or golden ideal
+        if ai_better:
+            card += f"\n✨ *Try this:* _{ai_better}_\n"
+        if golden_ideal:
+            card += f"\n🎯 *Expert approach ({golden_angle}):* _{golden_ideal}_\n"
+            if golden_explanation:
+                card += f"💡 _{golden_explanation}_\n"
+
+        logger.info(
+            "[social] %s AI grade: skill=%d warmth=%d trust=%d→%d mood=%s→%s fsrs=%s",
+            urn, skill, warmth, current_trust, new_trust, current_mood, new_mood,
+            fsrs_result['label'],
+        )
+        return card
+
+    # ══════════════════════════════════════════════════════════════════════
+    #  PRACTICE MODE (default) — qualitative feedback, no numeric scores
+    # ══════════════════════════════════════════════════════════════════════
+    grade = analyze_response_offline(context, user_input, lang)
+
+    # Build qualitative card
     trust_dir = "📈" if trust_delta > 0 else "📉" if trust_delta < 0 else "➡️"
-    fsrs_emoji = {1: "🔴", 2: "🟠", 3: "🟢", 4: "✨"}.get(fsrs_result["rating"], "⚪")
-
     card = (
-        f"📊 *Scorecard*\n\n"
-        f"{skill_emoji} *Skill*: {skill}/100\n"
-        f"{warmth_emoji} *Warmth*: {warmth}/100\n"
-        f"{trust_dir} *Trust*: {current_trust} → {new_trust} ({'+' if trust_delta >= 0 else ''}{trust_delta})\n"
+        f"📋 *Feedback*\n\n"
+        f"{trust_dir} *Trust*: {current_trust} → {new_trust}\n"
         f"😊 *Mood*: {current_mood} → {new_mood}\n"
-        f"{fsrs_emoji} *Review*: {fsrs_result['label']} (next {fsrs_result['interval_text']})\n"
     )
 
     if grade.get("critique"):
         card += f"\n{grade['critique']}\n"
 
-    # Use golden ideal_links (expert-crafted) over template-generated suggestions
     if golden_ideal:
-        card += f"\n✨ *Try this:* _{golden_ideal}_\n"
+        card += f"\n✨ *Expert approach ({golden_angle}):* _{golden_ideal}_\n"
         if golden_explanation:
             card += f"💡 _{golden_explanation}_\n"
-    elif grade.get("better_version"):
-        card += f"\n✨ *Try this:* _{grade['better_version']}_\n"
 
     if new_boredom >= 8:
         card += "\n⚠️ The persona is getting bored! Try asking questions or sharing something personal."
 
-    logger.info(
-        "[social] %s drill grade: skill=%d warmth=%d trust=%d→%d mood=%s→%s fsrs=%s",
-        urn, skill, warmth, current_trust, new_trust, current_mood, new_mood,
-        fsrs_result['label'],
-    )
+    card += "\n_Enable 🤖 AI Grading in the menu for scored feedback + spaced repetition._"
 
+    logger.info(
+        "[social] %s practice grade: trust=%d→%d mood=%s→%s",
+        urn, current_trust, new_trust, current_mood, new_mood,
+    )
     return card
 
 
@@ -431,24 +693,18 @@ def sim_freetext(args: dict, **kw) -> str:
     except Exception as e:
         logger.debug("[sim_freetext] RiveBot unavailable: %s", e)
 
-    # 2. Fall back to Hermes AI (lightweight direct LLM call)
+    # 2. Fall back to Hermes AI (lightweight one-shot prompt)
     try:
-        import google.generativeai as genai
-        import os
-        api_key = os.getenv("GEMINI_API_KEY", "")
-        if api_key:
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel(os.getenv("LLM_MODEL", "gemini-2.0-flash"))
-            resp = model.generate_content(
-                f"You are a social skills training assistant on WhatsApp. "
-                f"Answer the user's question briefly (2-3 sentences max). "
-                f"User said: {user_input}",
-            )
-            ai_reply = resp.text.strip() if resp.text else ""
-            if ai_reply:
-                return f"🤖 {ai_reply}\n\n_Pick an option from the menu to continue._"
+        ai_reply = _hermes_chat(
+            f"You are a social skills training assistant on WhatsApp. "
+            f"Answer the user's question briefly (2-3 sentences max). "
+            f"User said: {user_input}",
+            urn=urn,
+        )
+        if ai_reply:
+            return f"🤖 {ai_reply}\n\n_Pick an option from the menu to continue._"
     except Exception as e:
-        logger.debug("[sim_freetext] LLM unavailable: %s", e)
+        logger.debug("[sim_freetext] Hermes unavailable: %s", e)
 
     # 3. Final fallback
     return "❓ I didn't understand that. Please pick an option from the menu, or type *exit* to leave."
@@ -486,6 +742,41 @@ def sim_set_language(args: dict, **kw) -> str:
         return "⚠️ Could not save language preference."
 
     return f"🌐 Language set to *{lang_names.get(lang, lang)}*.\n\nScenarios and feedback will now be in {lang_names.get(lang, lang)}."
+
+
+@register_tool(
+    name="sim_toggle_ai",
+    description="Toggle AI-powered grading on/off for Social-Code training.",
+    trigger="",
+)
+def sim_toggle_ai(args: dict, **kw) -> str:
+    """Toggle AI grading mode. Off = qualitative feedback only. On = LLM scores + FSRS."""
+    urn = _get_urn(args)
+
+    # Read current state and toggle
+    current = _get_sim_var(urn, "ai_grading", "off").lower()
+    new_state = "off" if current == "on" else "on"
+
+    _set_sim_var(urn, "ai_grading", new_state)
+
+    if new_state == "on":
+        return (
+            "🤖 *AI Grading: ON*\n\n"
+            "Your responses will now be scored by AI with:\n"
+            "• 📊 Numeric Skill & Warmth scores (0-100)\n"
+            "• 📅 Spaced repetition scheduling (FSRS)\n"
+            "• 🎯 Context-aware feedback\n\n"
+            "_Note: Requires internet connection._"
+        )
+    else:
+        return (
+            "📋 *AI Grading: OFF*\n\n"
+            "You'll receive qualitative feedback:\n"
+            "• ✅ What you did well\n"
+            "• 📌 Areas to improve\n"
+            "• ✨ Expert ideal responses\n\n"
+            "_No numeric scores or internet needed._"
+        )
 
 
 @register_tool(

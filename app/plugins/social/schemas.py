@@ -234,3 +234,13 @@ SIM_SESSION_SUMMARY = {
         "required": [],
     },
 }
+
+SIM_TOGGLE_AI = {
+    "name": "sim_toggle_ai",
+    "description": "Toggle AI-powered grading on/off. Off = qualitative feedback. On = numeric scores + FSRS.",
+    "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+    },
+}

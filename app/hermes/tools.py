@@ -190,6 +190,7 @@ def register_all_tools() -> None:
     registry.register("sim_freetext", "social", social_schemas.SIM_FREETEXT, social.sim_freetext)
     registry.register("sim_set_language", "social", social_schemas.SIM_SET_LANGUAGE, social.sim_set_language)
     registry.register("sim_session_summary", "social", social_schemas.SIM_SESSION_SUMMARY, social.sim_session_summary)
+    registry.register("sim_toggle_ai", "social", social_schemas.SIM_TOGGLE_AI, social.sim_toggle_ai)
 
     _registered = True
     logger.info("Registered 54 native Hermes-compatible tools globally.")

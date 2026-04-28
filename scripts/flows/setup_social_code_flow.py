@@ -99,6 +99,11 @@ def generate_drill_flow():
         "summary_wh":     u(),
         "summary_ok":     u(),
 
+        # AI toggle
+        "ai_toggle_wh":   u(),
+        "ai_toggle_ok":   u(),
+        "ai_toggle_err":  u(),
+
         # Scenario loading
         "scenario_wh":    u(),
         "scenario_ok":    u(),
@@ -156,6 +161,7 @@ def generate_drill_flow():
         "Choose your training level:",
         [(label, N["scenario_wh"]) for _level, label in DIFFICULTIES] +
         [
+            ("🤖 AI Grading", N["ai_toggle_wh"]),
             ("🌐 Language", N["lang_menu"]),
             ("📊 Summary", N["summary_wh"]),
             ("⬅️ Back", N["app_menu"]),
@@ -163,6 +169,21 @@ def generate_drill_flow():
         ],
         timeout_dest=N["timeout"], default_dest=N["freetext_wh"],
     ))
+
+    # ════════════════════════════════════════════════════════════════════════
+    #  AI Grading Toggle
+    # ════════════════════════════════════════════════════════════════════════
+
+    nodes.append(_make_webhook_split(N["ai_toggle_wh"],
+        "POST", f"{GW}/v1/tools/sim_toggle_ai",
+        "ai_toggle_result", N["ai_toggle_ok"], N["ai_toggle_err"],
+        body='{}',
+        auth_type="gateway"))
+
+    nodes.append(_make_msg_node(N["ai_toggle_ok"],
+        "@webhook.json.result", dest_uuid=N["diff_menu"]))
+    nodes.append(_make_msg_node(N["ai_toggle_err"],
+        "⚠️ Could not toggle AI grading.", dest_uuid=N["diff_menu"]))
 
     # ════════════════════════════════════════════════════════════════════════
     #  Language Picker (Quick Reply — 4 languages)
