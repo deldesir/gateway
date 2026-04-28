@@ -275,11 +275,24 @@ def generate_drill_flow():
     #  Phase 4: Drill Round Loop
     # ════════════════════════════════════════════════════════════════════════
 
-    # Wait for user's response
-    nodes.append(_make_wait_input(N["round_wait"],
-        "💬 Your turn — respond naturally:",
-        "drill_response", N["grade_wh"], N["timeout"],
-        timeout_seconds=600))
+    # Wait for user's response (no extra prompt — scenario_ok already invites)
+    _exit_resp = _make_exit(N["grade_wh"])
+    _exit_timeout = _make_exit(N["timeout"])
+    _cat_resp = _make_category("All Responses", _exit_resp["uuid"])
+    _cat_timeout = _make_category("No Response", _exit_timeout["uuid"])
+    nodes.append({
+        "uuid": N["round_wait"],
+        "actions": [],   # No send_msg — scenario display already has CTA
+        "router": {
+            "type": "switch", "operand": "@input.text",
+            "wait": {"type": "msg", "timeout": {"seconds": 600,
+                     "category_uuid": _cat_timeout["uuid"]}},
+            "cases": [], "categories": [_cat_resp, _cat_timeout],
+            "default_category_uuid": _cat_resp["uuid"],
+            "result_name": "drill_response",
+        },
+        "exits": [_exit_resp, _exit_timeout],
+    })
 
     # Grade the response (webhook → sim_drill_grade)
     # sim_drill_grade reads scenario context from RiveBot state,
