@@ -463,7 +463,8 @@ Score the user's response on two axes (0-100 each):
 - WARMTH: emotional connection, empathy, genuine human warmth
 
 Provide a brief critique (2-3 bullet points, use ✅ for strengths and 📌 for areas to improve).
-Optionally suggest a better response if score < 80.
+Optionally suggest a better response if score < 80. 
+CRITICAL: The BETTER response MUST NOT be generic. It MUST directly apply the expert strategy ({angle}) and address the specific weaknesses noted in your critique. Keep it natural, conversational, and aligned with the curriculum.
 
 Reply in this EXACT format (no extra text):
 SKILL: <number>
