@@ -294,30 +294,21 @@ def generate_drill_flow():
         "exits": [_exit_resp, _exit_timeout],
     })
 
-    # Grade the response (webhook → sim_drill_grade)
-    # sim_drill_grade reads scenario context from RiveBot state,
-    # runs offline analysis, updates mood/trust, and returns a scorecard.
+    # Grade the response — success goes directly to round_action
+    # which shows feedback + action buttons in one message.
     nodes.append(_make_webhook_split(N["grade_wh"],
         "POST", f"{GW}/v1/tools/sim_drill_grade",
-        "grade", N["grade_ok"], N["grade_err"],
+        "grade", N["round_action"], N["grade_err"],
         body='{"user_input": "@results.drill_response.value"}',
         auth_type="gateway"))
 
-    # Show grading result + round action buttons
-    nodes.append(_make_msg_node(N["grade_ok"],
-        "@webhook.json.result",
-        dest_uuid=N["round_action"]))
-
     nodes.append(_make_msg_node(N["grade_err"],
-        "⚠️ Grading unavailable. Let's continue to the next round.",
+        "⚠️ Grading unavailable. Let's continue.",
         dest_uuid=N["round_action"]))
 
-    # ════════════════════════════════════════════════════════════════════════
-    #  Phase 5: Round Actions (Quick Reply)
-    # ════════════════════════════════════════════════════════════════════════
-
+    # Feedback + round actions in one message (Quick Reply)
     nodes.append(_make_wait_menu(N["round_action"],
-        "What's next?",
+        "@webhook.json.result",
         [
             ("▶️ Next Round",   N["scenario_wh"]),
             ("🔄 Same Level",   N["scenario_wh"]),

@@ -91,6 +91,11 @@ def _hermes_chat(prompt: str, urn: str = "system:social-code") -> str | None:
 #  RiveBot State Persistence Helpers
 # ════════════════════════════════════════════════════════════════════════════
 
+# In-process state cache — fallback when RiveBot is down.
+# Keyed by (urn, var), pruned on write. Ensures scenario context
+# survives from sim_get_scenario to sim_drill_grade within one process.
+_local_state_cache: dict[tuple[str, str], str] = {}
+
 
 def _get_urn(args: dict = None, **kw) -> str:
     """Extract the user URN from the invocation context.
@@ -118,7 +123,8 @@ def _get_urn(args: dict = None, **kw) -> str:
 
 
 def _set_sim_var(urn: str, var: str, value: str) -> bool:
-    """Persist a simulation variable in RiveBot (per-user, per-persona)."""
+    """Persist a simulation variable in RiveBot + local cache."""
+    _local_state_cache[(urn, var)] = str(value)
     try:
         httpx.post(
             f"{RIVEBOT_URL}/set-var",
@@ -132,13 +138,17 @@ def _set_sim_var(urn: str, var: str, value: str) -> bool:
         )
         return True
     except Exception as e:
-        logger.warning("Failed to set sim var %s for %s: %s", var, urn, e)
+        logger.debug("RiveBot set failed for %s/%s, using local cache: %s", urn, var, e)
         return False
 
 
 def _get_sim_var(urn: str, var: str, default: str = "") -> str:
-    """Read a simulation variable from RiveBot (auto-prefixed with sim_)."""
-    return _get_rivebot_var(urn, f"sim_{var}", default)
+    """Read a simulation variable — RiveBot first, local cache fallback."""
+    val = _get_rivebot_var(urn, f"sim_{var}", "")
+    if val and val != "undefined":
+        return val
+    # Fallback to local process cache
+    return _local_state_cache.get((urn, var), default)
 
 
 def _get_rivebot_var(urn: str, var: str, default: str = "") -> str:
@@ -561,6 +571,34 @@ def sim_drill_grade(args: dict, **kw) -> str:
                 golden_explanation = link.get("explanation", "")
                 golden_angle = link.get("angle_type", "")
         except (ValueError, KeyError):
+            pass
+
+    # Fallback: search the scenario bank by context if RiveBot state failed
+    if not golden_ideal and context and context != "a social situation":
+        try:
+            bank = load_scenarios()
+            for _lvl, scenarios in bank.items():
+                for sc in scenarios:
+                    sc_ctx = sc.get("context", "")
+                    if isinstance(sc_ctx, dict):
+                        sc_ctx = sc_ctx.get(lang, sc_ctx.get("en", ""))
+                    if sc_ctx and context[:50] in sc_ctx:
+                        links = sc.get("ideal_links", [])
+                        if links:
+                            link = links[0]
+                            lt = link.get("link_text", "")
+                            if isinstance(lt, dict):
+                                lt = lt.get(lang, lt.get("en", ""))
+                            expl = link.get("explanation", "")
+                            if isinstance(expl, dict):
+                                expl = expl.get(lang, expl.get("en", ""))
+                            golden_ideal = lt
+                            golden_explanation = expl
+                            golden_angle = link.get("angle_type", "")
+                        break
+                if golden_ideal:
+                    break
+        except Exception:
             pass
 
     # ── Update mood & trust (always, both modes) ──
