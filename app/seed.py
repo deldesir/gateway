@@ -7,7 +7,6 @@ personas whose slug doesn't already exist, so admin edits survive.
 
 from sqlmodel import select
 import os
-import json
 from app.db import async_session
 from app.models import Persona
 from app.logger import logger
@@ -110,16 +109,15 @@ async def seed_personas() -> None:
     # Build list of admin URNs from env variable
     admin_phones = os.getenv("ADMIN_PHONE", "").replace(" ", "").split(",")
     admin_urns = [f"whatsapp:{p.strip()}" for p in admin_phones if p.strip()]
-    admin_urns_json = json.dumps(admin_urns) if admin_urns else "[]"
     
     async with async_session() as session:
         inserted = 0
         for data in _SEED_DATA:
             # Secure privileged personas against DB drops by re-applying restrictions
             if data["slug"] in ("assistant", "talkprep"):
-                data["allowed_urns"] = admin_urns_json
+                data["allowed_urns"] = admin_urns
             elif data["slug"] in ("general", "konex-support", "konex-sales", "social-code"):
-                data["allowed_urns"] = "[]"
+                data["allowed_urns"] = []
                 
             # Check if slug exists
             result = await session.execute(

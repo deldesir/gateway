@@ -42,11 +42,19 @@ class PersonaPromptRegistry:
                 tools = json.loads(tools)
             except Exception:
                 tools = []
+        # Parse allowed_urns (may be stored as JSON string in SQLite)
+        urns = p.allowed_urns or []
+        if isinstance(urns, str):
+            try:
+                urns = json.loads(urns)
+            except Exception:
+                urns = []
         return {
             "persona_name": p.name,
             "persona_personality": p.personality,
             "persona_style": p.style,
             "allowed_tools": tools,
+            "allowed_urns": urns,
         }
 
     @classmethod

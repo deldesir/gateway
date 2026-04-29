@@ -569,6 +569,401 @@ SIYUAN_READ = {
     },
 }
 
+# ── SiYuan Wiki Tools (LLM Wiki pattern) ────────────────────────────────────
+
+SIYUAN_LIST_DOCS = {
+    "name": "siyuan_list_docs",
+    "description": (
+        "List documents in a SiYuan notebook path. Returns document names and IDs. "
+        "Use to browse the wiki tree structure and discover existing pages."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "notebook": {
+                "type": "string",
+                "description": "Notebook name (e.g., 'Wiki')."
+            },
+            "path": {
+                "type": "string",
+                "description": "Path within the notebook. Use '/' for root. Default: '/'."
+            },
+        },
+        "required": ["notebook"],
+    },
+}
+
+SIYUAN_CREATE_NOTEBOOK = {
+    "name": "siyuan_create_notebook",
+    "description": "Create a new SiYuan notebook. Returns the notebook ID.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string",
+                "description": "Human-readable notebook name."
+            },
+        },
+        "required": ["name"],
+    },
+}
+
+SIYUAN_CREATE_DOC = {
+    "name": "siyuan_create_doc",
+    "description": (
+        "Create a new document in a SiYuan notebook. Use for wiki pages: entities, "
+        "concepts, comparisons, raw sources. The path determines the document's "
+        "position in the tree (e.g., '/entities/my-entity')."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "notebook": {
+                "type": "string",
+                "description": "Notebook name (e.g., 'Wiki')."
+            },
+            "path": {
+                "type": "string",
+                "description": "Document path (e.g., '/entities/transformer-architecture')."
+            },
+            "markdown": {
+                "type": "string",
+                "description": "Markdown content for the new document."
+            },
+        },
+        "required": ["notebook", "path", "markdown"],
+    },
+}
+
+SIYUAN_UPDATE_BLOCK = {
+    "name": "siyuan_update_block",
+    "description": (
+        "Replace a block's content with new markdown. Use to update existing wiki "
+        "pages. Get the block ID from siyuan_search or siyuan_read results."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "block_id": {
+                "type": "string",
+                "description": "ID of the block to update."
+            },
+            "markdown": {
+                "type": "string",
+                "description": "New markdown content to replace the block's current content."
+            },
+        },
+        "required": ["block_id", "markdown"],
+    },
+}
+
+SIYUAN_APPEND_BLOCK = {
+    "name": "siyuan_append_block",
+    "description": (
+        "Append markdown content to an existing SiYuan page. Use to add new "
+        "information to a page without replacing existing content — for example, "
+        "appending a log entry or adding a new section to a wiki page."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "notebook": {
+                "type": "string",
+                "description": "Notebook name."
+            },
+            "path": {
+                "type": "string",
+                "description": "Document path within the notebook."
+            },
+            "markdown": {
+                "type": "string",
+                "description": "Markdown content to append."
+            },
+        },
+        "required": ["notebook", "path", "markdown"],
+    },
+}
+
+SIYUAN_SET_ATTRS = {
+    "name": "siyuan_set_attrs",
+    "description": (
+        "Set custom attributes on a SiYuan block (replaces YAML frontmatter). "
+        "Use for wiki metadata: type, tags, confidence, sources, dates. "
+        "Keys are auto-prefixed with 'custom-' if not already prefixed."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "block_id": {
+                "type": "string",
+                "description": "Block ID to set attributes on."
+            },
+            "attrs": {
+                "type": "object",
+                "description": (
+                    "Key-value pairs. Example: {\"type\": \"entity\", \"tags\": \"model,architecture\", "
+                    "\"confidence\": \"high\", \"created\": \"2026-04-29\"}"
+                ),
+            },
+        },
+        "required": ["block_id", "attrs"],
+    },
+}
+
+SIYUAN_GET_ATTRS = {
+    "name": "siyuan_get_attrs",
+    "description": "Get all attributes of a SiYuan block. Returns custom metadata like type, tags, confidence.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "block_id": {
+                "type": "string",
+                "description": "Block ID to get attributes for."
+            },
+        },
+        "required": ["block_id"],
+    },
+}
+
+SIYUAN_SQL_QUERY = {
+    "name": "siyuan_sql_query",
+    "description": (
+        "Execute a read-only SQL SELECT query against SiYuan's block database. "
+        "Useful for wiki lint operations: finding orphan pages, checking tags, "
+        "listing pages by type. Only SELECT statements are allowed. "
+        "Key columns: id, parent_id, root_id, box (notebook ID), path, content, "
+        "type (d=doc, p=paragraph, h=heading), created, updated."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "sql": {
+                "type": "string",
+                "description": "SQL SELECT statement. Example: SELECT id, content FROM blocks WHERE type='d' LIMIT 20"
+            },
+        },
+        "required": ["sql"],
+    },
+}
+
+SIYUAN_DELETE_BLOCK = {
+    "name": "siyuan_delete_block",
+    "description": "Delete a SiYuan block by ID. Use with caution — this is permanent.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "block_id": {
+                "type": "string",
+                "description": "Block ID to delete."
+            },
+        },
+        "required": ["block_id"],
+    },
+}
+
+SIYUAN_RENAME_DOC = {
+    "name": "siyuan_rename_doc",
+    "description": "Rename a SiYuan document. Changes the document's title in the tree.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "doc_id": {
+                "type": "string",
+                "description": "Document root block ID."
+            },
+            "title": {
+                "type": "string",
+                "description": "New document title."
+            },
+        },
+        "required": ["doc_id", "title"],
+    },
+}
+
+SIYUAN_INIT_WIKI = {
+    "name": "siyuan_init_wiki",
+    "description": (
+        "Bootstrap a new LLM Wiki in SiYuan. Creates a notebook with Schema, Index, "
+        "and Log documents, plus directory structure (raw/, entities/, concepts/, "
+        "comparisons/, queries/). Use this once to set up a new wiki — then use "
+        "the other siyuan_* tools to populate it."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string",
+                "description": "Notebook name (default: 'Wiki')."
+            },
+            "domain": {
+                "type": "string",
+                "description": "What this wiki covers (e.g., 'AI/ML research', 'IIAB infrastructure')."
+            },
+            "tags": {
+                "type": "string",
+                "description": "Initial tag taxonomy as multi-line text. Leave empty for defaults."
+            },
+        },
+        "required": ["domain"],
+    },
+}
+
+SIYUAN_GET_BACKLINKS = {
+    "name": "siyuan_get_backlinks",
+    "description": (
+        "Get all blocks that reference (link to) a given document. Returns the "
+        "backlinks — essential for wiki lint to find orphan pages (pages with zero "
+        "inbound references). Also useful for understanding how a concept connects "
+        "to the rest of the wiki."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "doc_id": {
+                "type": "string",
+                "description": "Document root block ID to find backlinks for."
+            },
+        },
+        "required": ["doc_id"],
+    },
+}
+
+SIYUAN_GET_CHILDREN = {
+    "name": "siyuan_get_children",
+    "description": (
+        "Get the child blocks of a block (the block tree). Returns block IDs and "
+        "types (h=heading, p=paragraph, l=list, etc.). Use to navigate document "
+        "structure — for example, finding the block ID of a specific heading to "
+        "update just that section."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "block_id": {
+                "type": "string",
+                "description": "Parent block ID (typically a document root block)."
+            },
+        },
+        "required": ["block_id"],
+    },
+}
+
+SIYUAN_GET_HPATH = {
+    "name": "siyuan_get_hpath",
+    "description": (
+        "Convert a block ID to a human-readable document path. For example, "
+        "converts '20260429041444-wppl57p' to '/entities/kubernetes'. Use when "
+        "displaying results to the user or building cross-references."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "block_id": {
+                "type": "string",
+                "description": "Block ID to resolve."
+            },
+        },
+        "required": ["block_id"],
+    },
+}
+
+SIYUAN_REMOVE_DOC = {
+    "name": "siyuan_remove_doc",
+    "description": (
+        "Permanently delete a SiYuan document. Use for archiving superseded wiki "
+        "pages. This is irreversible — use with caution. Before deleting, update "
+        "any pages that link to the document being removed."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "doc_id": {
+                "type": "string",
+                "description": "Document root block ID to delete."
+            },
+        },
+        "required": ["doc_id"],
+    },
+}
+
+SIYUAN_UPSERT_PAGE = {
+    "name": "siyuan_upsert_page",
+    "description": (
+        "Create or update a wiki page by path. If the page already exists at the "
+        "given path, its content is replaced. If it doesn't exist, a new page is "
+        "created. This is the preferred tool for wiki ingest — avoids manual "
+        "search-then-decide-create-or-update logic."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "notebook": {
+                "type": "string",
+                "description": "Notebook name (e.g., 'Life', 'IIAB')."
+            },
+            "path": {
+                "type": "string",
+                "description": "Page path within the notebook (e.g., '/people/mom', '/concepts/kubernetes')."
+            },
+            "markdown": {
+                "type": "string",
+                "description": "Full markdown content for the page."
+            },
+        },
+        "required": ["notebook", "path", "markdown"],
+    },
+}
+
+SIYUAN_LINT = {
+    "name": "siyuan_lint",
+    "description": (
+        "Run 10 wiki quality rules against a SiYuan notebook and return a "
+        "structured lint report. Checks for: broken refs, orphan pages, "
+        "missing attributes, duplicate titles, empty pages, low confidence, "
+        "contradictions, stale pages, cross-link minimums, and index completeness. "
+        "Use when the user asks to audit, health-check, or lint their wiki."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "notebook": {
+                "type": "string",
+                "description": "Notebook name to lint (e.g., 'Life', 'IIAB')."
+            },
+        },
+        "required": ["notebook"],
+    },
+}
+
+SIYUAN_DASHBOARD = {
+    "name": "siyuan_dashboard",
+    "description": (
+        "Generate an on-demand dashboard from SiYuan wiki data. "
+        "Available dashboards:\n"
+        "• crm_health — People directory stats, contact freshness, circle breakdown\n"
+        "• recent_contacts — People sorted by last-contact date with freshness indicators\n"
+        "• wiki_quality — Formatted lint report with errors, warnings, info\n"
+        "• habits — Active habits, streaks, daily/weekly compliance\n"
+        "• goals — Goal status breakdown with progress bars and overdue alerts\n\n"
+        "Use when the user asks about their contacts, habits, goals, or wiki health."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "dashboard_type": {
+                "type": "string",
+                "enum": ["crm_health", "recent_contacts", "wiki_quality", "habits", "goals"],
+                "description": "Type of dashboard to generate."
+            },
+            "notebook": {
+                "type": "string",
+                "description": "Notebook name (default: 'Life')."
+            },
+        },
+        "required": ["dashboard_type"],
+    },
+}
+
 # ── CRM Operations (ADR-010) ────────────────────────────────────────────────
 
 START_CRM_OPS = {
