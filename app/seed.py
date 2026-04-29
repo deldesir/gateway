@@ -90,6 +90,7 @@ _SEED_DATA = [
         "allowed_tools": [
             "mempalace", "memory", "todo", "file",
             "code_execution", "terminal", "skills", "siyuan",
+            "rapidpro", "config", "system",
             "web", "delegation", "session_search",
         ],
     },
